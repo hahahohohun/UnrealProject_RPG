@@ -5,7 +5,9 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Camera/CameraComponent.h"
+#include "Component/PC_StatComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "PC/UI/PC_HUDWidget.h"
 
 
 // Sets default values
@@ -13,8 +15,7 @@ APC_PlayableCharaceter::APC_PlayableCharaceter()
 {
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
-
+	
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
@@ -25,7 +26,6 @@ APC_PlayableCharaceter::APC_PlayableCharaceter()
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
-
 }
 
 // Called when the game starts or when spawned
@@ -77,6 +77,15 @@ void APC_PlayableCharaceter::Look(const FInputActionValue& Value)
 		// add yaw and pitch input to controller
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
+	}
+}
+
+void APC_PlayableCharaceter::SetupHUDWidget(UPC_HUDWidget* InWidget)
+{
+	if(InWidget)
+	{
+		InWidget->UpdateStat(StatComponent->GetBaseStat(), StatComponent->GetModifierStat());
+		StatComponent->OnStatChangedDelegate.AddUObject(InWidget, &UPC_HUDWidget::UpdateStat);
 	}
 }
 

@@ -3,7 +3,6 @@
 
 #include "PC_CharacterHUDInterface.h"
 
-void IPC_CharacterHUDInterface::SetupCharacterWidget(class UPC_UserWidget* InWidget)
+void IPC_CharacterHUDInterface::SetupHUDWidget(class UPC_HUDWidget* InWidget)
 {
-	
 }

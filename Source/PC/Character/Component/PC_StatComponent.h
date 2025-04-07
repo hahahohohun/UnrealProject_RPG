@@ -17,20 +17,21 @@ class PC_API UPC_StatComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
-	FOnHPChangedDelegate OnHPChangedDelegate;
-	FOnSatChangedDelegate OnSatChangedDelegate;
 
 public:
 	// Sets default values for this component's properties
 	UPC_StatComponent();
+	virtual  void InitializeComponent() override;
+	FOnHPChangedDelegate OnHPChangedDelegate;
+	FOnSatChangedDelegate OnStatChangedDelegate;
 
 	void AddBaseStat(const FPC_CharacterStatTableRow& InAddBaseStat);
 	void SetBaseStat(const FPC_CharacterStatTableRow& InSetBaseStat);
 	void SetModfierStat(const FPC_CharacterStatTableRow& InModfierStat);
 
 	const FPC_CharacterStatTableRow& GetBaseStat() const { return BaseStat; }
-	const FPC_CharacterStatTableRow& GetModfierStat() const { return ModfierStat; }
-	FPC_CharacterStatTableRow GetTotalStat() const { return BaseStat + ModfierStat; }
+	const FPC_CharacterStatTableRow& GetModifierStat() const { return ModifierStat; }
+	FPC_CharacterStatTableRow GetTotalStat() const { return BaseStat + ModifierStat; }
 
 	float GetCurrentHp() const { return CurrentHp; }
 	float GetMaxHp() const { return MaxHp; }
@@ -47,7 +48,7 @@ public:
 	FPC_CharacterStatTableRow BaseStat;
 
 	UPROPERTY(Meta= (AllowPrivateAccess = "true"))
-	FPC_CharacterStatTableRow ModfierStat;
+	FPC_CharacterStatTableRow ModifierStat;
 
 	void ResetStats();
 };

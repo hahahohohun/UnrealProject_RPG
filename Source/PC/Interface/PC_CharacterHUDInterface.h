@@ -22,5 +22,5 @@ class PC_API IPC_CharacterHUDInterface
 
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
-	virtual void SetupCharacterWidget(class UPC_UserWidget* InWidget);
+	virtual void SetupHUDWidget(class UPC_HUDWidget* InWidget);
 };

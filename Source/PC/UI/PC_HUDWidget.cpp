@@ -9,13 +9,13 @@
 void UPC_HUDWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
-
-	CharacterStatWidget = Cast<UPC_CharacterStatWidget>(GetWidgetFromName(TEXT("CharacterStatWidget")));
+//WBP_HUDUI에 있는 WidgetCharacterStat 불러오기
+	CharacterStatWidget = Cast<UPC_CharacterStatWidget>(GetWidgetFromName(TEXT("WidgetCharacterStat")));
 	ensure(CharacterStatWidget);
 	
-	if(IPC_CharacterHUDInterface* HUDPawn =  Cast<IPC_CharacterHUDInterface>(GetOwningPlayer()))
+	if(IPC_CharacterHUDInterface* HUDPawn = Cast<IPC_CharacterHUDInterface>(GetOwningPlayerPawn()))
 	{
-		HUDPawn->SetupCharacterWidget(this);
+		HUDPawn->SetupHUDWidget(this);
 	}
 }
 

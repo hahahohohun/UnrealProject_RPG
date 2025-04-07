@@ -58,6 +58,10 @@ void APC_BaseCharacter::AttackTrace(bool bStart, FName TraceBoneName)
 	}
 }
 
+void APC_BaseCharacter::SetupCharacterWidget(UPC_UserWidget* InWidget)
+{
+}
+
 //
 
 

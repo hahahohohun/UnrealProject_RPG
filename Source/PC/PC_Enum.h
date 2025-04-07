@@ -5,6 +5,7 @@ enum class EPC_DataTableType : int32
 {
 	None,
 	CharacterStat,
+	Enemy,
 	Num,
 };
 

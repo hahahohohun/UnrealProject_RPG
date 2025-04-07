@@ -5,11 +5,12 @@
 #include "Animation/AnimMontage.h"
 #include "CoreMinimal.h"
 #include "PC_BaseCharacter.h"
+#include "PC/Interface/PC_CharacterHUDInterface.h"
 #include "PC_PlayableCharaceter.generated.h"
 
 
 UCLASS()
-class PC_API APC_PlayableCharaceter : public APC_BaseCharacter
+class PC_API APC_PlayableCharaceter : public APC_BaseCharacter, public IPC_CharacterHUDInterface
 {
 	GENERATED_BODY()
 	
@@ -28,7 +29,8 @@ protected:
 
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
-			
+
+	virtual void SetupHUDWidget(UPC_HUDWidget* InWidget) override;
 	virtual void Attack(const FInputActionValue& Value);
 
 public:
