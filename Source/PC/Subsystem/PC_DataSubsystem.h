@@ -30,5 +30,8 @@ public:
 	TPair<EPC_DataTableType, UDataTable*> DataTableMaps;
 private:
 	UPROPERTY(Config)
-	FSoftObjectPath CharacterStat_DataTablePth;
+	FSoftObjectPath CharacterStat_DataTablePath;
+
+	UPROPERTY(Config)
+	FSoftObjectPath EnemyStat_DataTablePath;
 };

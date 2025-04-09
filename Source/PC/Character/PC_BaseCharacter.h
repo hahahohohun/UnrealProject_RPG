@@ -4,9 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "InputActionValue.h"
 #include "Component/PC_BattleComponent.h"
+#include "Component/PC_StatComponent.h"
+#include "Component/PC_WidgetComponent.h"
 #include "PC/PC_Enum.h"
+#include "PC/Data/PC_TableRows.h"
 #include "PC/Interface/PC_AnimationAttackInterface.h"
 #include "PC/Interface/PC_CharacterWidgetInterface.h"
 #include "PC_BaseCharacter.generated.h"
@@ -27,16 +29,23 @@ protected:
 	
 	virtual void AttackTrace(bool bStart, FName TraceBoneName) override;
 	virtual void SetupCharacterWidget(UPC_UserWidget* InWidget) override;
+	virtual void PostInitializeComponents() override;
 
 protected:
 
 	// To add mapping context
 	virtual void BeginPlay();
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Component, meta = (AllowPrivateAccess = "true"))
-	class UPC_BattleComponent* BattleComponent = nullptr;
+public:
+	void Applystat(const FPC_CharacterStatTableRow& BaseStat, const FPC_CharacterStatTableRow& ModifierStat);
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Component, meta = (AllowPrivateAccess = "true"))
-	class UPC_StatComponent*  StatComponent = nullptr;
+	TObjectPtr<UPC_BattleComponent> BattleComponent = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Component, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UPC_StatComponent>  StatComponent = nullptr;
+	
+	UPROPERTY()
+	TObjectPtr<UPC_WidgetComponent> WidgetComponent = nullptr;
 };
 

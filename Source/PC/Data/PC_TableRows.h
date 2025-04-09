@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "CoreMinimal.h"
+#include "BehaviorTree/BlackboardData.h"
 #include "Engine/DataTable.h"
 #include "PC/PC_Enum.h"
 #include "PC_TableRows.generated.h"
@@ -10,7 +11,7 @@ struct FPC_CharacterStatTableRow : public FTableRowBase
 	GENERATED_BODY()
 	
 	public:
-	FPC_CharacterStatTableRow() :MaxHp(0.0f), Attack(0.0f), MovemnetSpeed(0.0f){}
+	FPC_CharacterStatTableRow() :MaxHp(0.0f), Attack(0.0f), MovementSpeed(0.0f){}
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Stat")
 	EPC_CharacterType CharacterType;
@@ -22,7 +23,7 @@ struct FPC_CharacterStatTableRow : public FTableRowBase
 	float Attack;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Stat")
-	float MovemnetSpeed;
+	float MovementSpeed;
 
 	FPC_CharacterStatTableRow operator+(const FPC_CharacterStatTableRow& Other) const
 	{
@@ -30,9 +31,39 @@ struct FPC_CharacterStatTableRow : public FTableRowBase
 
 		Result.MaxHp = this->MaxHp + Other.MaxHp;
 		Result.Attack = this->Attack + Other.Attack;
-		Result.MovemnetSpeed = this->MovemnetSpeed + Other.MovemnetSpeed;
+		Result.MovementSpeed = this->MovementSpeed + Other.MovementSpeed;
 		
 		return Result;
 	}
 	
+};
+
+USTRUCT(BlueprintType)
+struct FPC_EnemyTableRow : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Type)
+	EPC_CharacterType EnemyType;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	USkeletalMesh* SkeletalMesh = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<UAnimInstance> AnimInstance = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TObjectPtr<UBlackboardData> BlackBoard = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TObjectPtr<UBehaviorTree> BehaviorTree = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float MovementSpeed = 0.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float DetectRange = 0.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float AttackRange = 0.f;
 };

@@ -14,6 +14,6 @@ enum class EPC_CharacterType : int32
 {
 	None,
 	Player,
-	Enemy,
+	Kallari,
 	Num
 };

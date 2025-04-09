@@ -17,7 +17,7 @@ class PC_API UPC_CharacterStatWidget : public UPC_UserWidget
 
 protected:
 	virtual void NativeConstruct() override;
-	
+
 public:
 	void UpdateStat(const FPC_CharacterStatTableRow& BaseStat, const FPC_CharacterStatTableRow& ModifierStat);
 
@@ -25,6 +25,6 @@ private:
 	UPROPERTY()
 	TMap<FName, class UTextBlock*> BaseLookup;
 
-	UPROPERTY()
+	UPROPERTY() 
 	TMap<FName, class UTextBlock*> ModifierLookup;
 };

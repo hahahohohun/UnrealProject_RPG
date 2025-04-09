@@ -14,7 +14,8 @@ void UPC_DataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	Super::Initialize(Collection);
 	
 	TArray<TPair<EPC_DataTableType, FSoftObjectPath>> LoadList;
-	LoadList.Add(TPair<EPC_DataTableType, FSoftObjectPath>(EPC_DataTableType::CharacterStat, CharacterStat_DataTablePth));
+	LoadList.Add(TPair<EPC_DataTableType, FSoftObjectPath>(EPC_DataTableType::CharacterStat, CharacterStat_DataTablePath));
+	LoadList.Add(TPair<EPC_DataTableType, FSoftObjectPath>(EPC_DataTableType::Enemy, EnemyStat_DataTablePath));
 
 	for (const auto& Element : LoadList)
 	{

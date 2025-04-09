@@ -4,6 +4,7 @@
 
 #include "Animation/AnimMontage.h"
 #include "CoreMinimal.h"
+#include "InputActionValue.h"
 #include "PC_BaseCharacter.h"
 #include "PC/Interface/PC_CharacterHUDInterface.h"
 #include "PC_PlayableCharaceter.generated.h"
@@ -24,16 +25,13 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	/** Called for movement input */
 	void Move(const FInputActionValue& Value);
-
-	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
 
+public:
 	virtual void SetupHUDWidget(UPC_HUDWidget* InWidget) override;
 	virtual void Attack(const FInputActionValue& Value);
 
-public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 	

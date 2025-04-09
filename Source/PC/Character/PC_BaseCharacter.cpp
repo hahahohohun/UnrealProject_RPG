@@ -6,8 +6,11 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "Component/PC_StatComponent.h"
+#include "Component/PC_WidgetComponent.h"
+#include "Component/PC_BattleComponent.h"
+#include "PC/PC.h"
+#include "PC/UI/PC_HPBarWidget.h"
 
-//////////////////////////////////////////////////////////////////////////
 // APCCharacter
 
 APC_BaseCharacter::APC_BaseCharacter()
@@ -34,13 +37,31 @@ APC_BaseCharacter::APC_BaseCharacter()
 
 	BattleComponent = CreateDefaultSubobject<UPC_BattleComponent>(TEXT("BattleComponent"));
 	StatComponent = CreateDefaultSubobject<UPC_StatComponent>(TEXT("StatComponent"));
-	
+	WidgetComponent = CreateDefaultSubobject<UPC_WidgetComponent>(TEXT("WidgetComponent"));
+	WidgetComponent->SetupAttachment(GetMesh());
+
+	static ConstructorHelpers::FClassFinder<UUserWidget> HpBarWidgetRef(TEXT("/Game/ProjectClass/UI/WBP_HPBar.WBP_HPBar_C"));
+	if (HpBarWidgetRef.Class)
+	{
+		WidgetComponent->SetWidgetClass(HpBarWidgetRef.Class);
+		WidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
+		WidgetComponent->SetDrawSize(FVector2D(150.0f, 15.0f));
+		WidgetComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+
 }
 
 void APC_BaseCharacter::BeginPlay()
 {
 	// Call the base class  
 	Super::BeginPlay();
+}
+
+void APC_BaseCharacter::Applystat(const FPC_CharacterStatTableRow& BaseStat,
+	const FPC_CharacterStatTableRow& ModifierStat)
+{
+	float MovementSpeed = (BaseStat + ModifierStat).MovementSpeed;
+	GetCharacterMovement()->MaxWalkSpeed = MovementSpeed;
 }
 
 void APC_BaseCharacter::AttackTrace(bool bStart, FName TraceBoneName)
@@ -60,6 +81,19 @@ void APC_BaseCharacter::AttackTrace(bool bStart, FName TraceBoneName)
 
 void APC_BaseCharacter::SetupCharacterWidget(UPC_UserWidget* InWidget)
 {
+	if (UPC_HPBarWidget* HpBarWidget = Cast<UPC_HPBarWidget>(InWidget))
+	{
+		HpBarWidget->UpdateHpBar(StatComponent->GetCurrentHp(), StatComponent->GetMaxHp());
+		StatComponent->OnHPChangedDelegate.AddUObject(HpBarWidget, &UPC_HPBarWidget::UpdateHpBar);
+	}
+}
+
+//액터의 컴포넌트가 초기화된 후에 호출
+void APC_BaseCharacter::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+
+	StatComponent->OnStatChangedDelegate.AddUObject(this, &APC_BaseCharacter::Applystat);
 }
 
 //

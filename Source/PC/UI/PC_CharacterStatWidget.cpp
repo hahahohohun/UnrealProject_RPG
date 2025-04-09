@@ -15,7 +15,7 @@ void UPC_CharacterStatWidget::NativeConstruct()
 		const FName PropKey(PropIt->GetName());
 		const FName TextBaseControlName = *FString::Printf(TEXT("Txt%sBase"), *PropIt->GetName());
 		const FName TextModifierControlName = *FString::Printf(TEXT("Txt%sModifier"), *PropIt->GetName());
-
+		
 		UTextBlock* BaseTextBlock = Cast<UTextBlock>(GetWidgetFromName(TextBaseControlName));
 		if (BaseTextBlock)
 		{
