@@ -31,6 +31,7 @@ protected:
 	virtual void SetupCharacterWidget(UPC_UserWidget* InWidget) override;
 	virtual void PostInitializeComponents() override;
 
+	virtual  float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 protected:
 
 	// To add mapping context

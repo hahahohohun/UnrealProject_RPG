@@ -6,7 +6,7 @@
 
 APC_NonPlayableCharacter::APC_NonPlayableCharacter()
 {
-	WidgetComponent->SetRelativeLocation(FVector(0.0f, 0.0f, 0.0f));
+	WidgetComponent->SetRelativeLocation(FVector(0.0f, 0.0f, 150.0f));
 }
 
 void APC_NonPlayableCharacter::BeginPlay()

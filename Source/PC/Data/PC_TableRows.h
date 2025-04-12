@@ -57,7 +57,7 @@ struct FPC_EnemyTableRow : public FTableRowBase
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TObjectPtr<UBehaviorTree> BehaviorTree = nullptr;
-
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float MovementSpeed = 0.f;
 

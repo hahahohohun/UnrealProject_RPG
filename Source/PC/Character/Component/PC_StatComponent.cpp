@@ -40,9 +40,9 @@ void UPC_StatComponent::SetBaseStat(const FPC_CharacterStatTableRow& InBaseStat)
 	OnStatChangedDelegate.Broadcast(GetBaseStat(), GetModifierStat()); 
 }
 
-void UPC_StatComponent::SetModfierStat(const FPC_CharacterStatTableRow& InModfierStat)
+void UPC_StatComponent::SetModifierStat(const FPC_CharacterStatTableRow& InModifierStat)
 {
-	ModifierStat = InModfierStat;
+	ModifierStat = InModifierStat;
 	OnStatChangedDelegate.Broadcast(GetBaseStat(), GetModifierStat());
 }
 
@@ -60,7 +60,7 @@ float UPC_StatComponent::ApplyDamage(float InDamage)
 	SetHp(PrevHp - ActualDamage);
 	if (CurrentHp <= KINDA_SMALL_NUMBER)
 	{
-		OnHPChangedDelegate.Broadcast(0, MaxHp);
+		OnCharacterDieDelegate.Broadcast();
 	}
 
 	return ActualDamage;

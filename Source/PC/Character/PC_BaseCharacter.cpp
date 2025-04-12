@@ -37,6 +37,7 @@ APC_BaseCharacter::APC_BaseCharacter()
 
 	BattleComponent = CreateDefaultSubobject<UPC_BattleComponent>(TEXT("BattleComponent"));
 	StatComponent = CreateDefaultSubobject<UPC_StatComponent>(TEXT("StatComponent"));
+	
 	WidgetComponent = CreateDefaultSubobject<UPC_WidgetComponent>(TEXT("WidgetComponent"));
 	WidgetComponent->SetupAttachment(GetMesh());
 
@@ -94,6 +95,13 @@ void APC_BaseCharacter::PostInitializeComponents()
 	Super::PostInitializeComponents();
 
 	StatComponent->OnStatChangedDelegate.AddUObject(this, &APC_BaseCharacter::Applystat);
+}
+
+float APC_BaseCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,
+	class AController* EventInstigator, AActor* DamageCauser)
+{
+	StatComponent->ApplyDamage(DamageAmount);
+	return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 }
 
 //

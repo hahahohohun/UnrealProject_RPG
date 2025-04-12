@@ -8,6 +8,7 @@
 #include "PC_StatComponent.generated.h"
 
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnHPChangedDelegate, float CurrentHP, float MaxHP);
+DECLARE_MULTICAST_DELEGATE(FOnCharacterDieDelegate);
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnSatChangedDelegate, const FPC_CharacterStatTableRow& BaseStat,
                                      const FPC_CharacterStatTableRow& ModfierStat);
 
@@ -24,10 +25,11 @@ public:
 	virtual  void InitializeComponent() override;
 	FOnHPChangedDelegate OnHPChangedDelegate;
 	FOnSatChangedDelegate OnStatChangedDelegate;
+	FOnCharacterDieDelegate OnCharacterDieDelegate;
 
 	void AddBaseStat(const FPC_CharacterStatTableRow& InAddBaseStat);
 	void SetBaseStat(const FPC_CharacterStatTableRow& InSetBaseStat);
-	void SetModfierStat(const FPC_CharacterStatTableRow& InModfierStat);
+	void SetModifierStat(const FPC_CharacterStatTableRow& InModifierStat);
 
 	const FPC_CharacterStatTableRow& GetBaseStat() const { return BaseStat; }
 	const FPC_CharacterStatTableRow& GetModifierStat() const { return ModifierStat; }

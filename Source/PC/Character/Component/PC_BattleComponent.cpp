@@ -46,6 +46,10 @@ void UPC_BattleComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 			if(!Character)
 				return;
 
+			AController* Controller = Character->GetController();
+			if (!Controller)
+				return;
+
 			USkeletalMeshComponent* SkeletalMeshComponent = Character->GetMesh();
 			if(!SkeletalMeshComponent)
 				return;
@@ -80,6 +84,10 @@ void UPC_BattleComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 					if (!DamageActors.Contains(Result.GetActor()))
 					{
 						UE_LOG(LogTemp, Log, TEXT("Hit!!"));
+
+						UGameplayStatics::ApplyDamage(Result.GetActor(), 10.f, Controller,
+							Character, UDamageType::StaticClass());
+						
 						DamageActors.Add(Result.GetActor());
 						SpawnEffect(Result.ImpactPoint);
 					}
