@@ -28,6 +28,8 @@ protected:
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
 
+	virtual  void Jump() override;
+
 public:
 	virtual void SetupHUDWidget(UPC_HUDWidget* InWidget) override;
 	virtual void Attack(const FInputActionValue& Value);
@@ -77,6 +79,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Anim)
 	TArray<UAnimMontage*> AttackMontages;
 
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<USoundBase> JumpSound;
+	
 	UFUNCTION(BlueprintCallable)
 	void ResetComb();
 

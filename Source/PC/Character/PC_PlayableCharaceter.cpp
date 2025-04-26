@@ -7,6 +7,7 @@
 #include "Camera/CameraComponent.h"
 #include "Component/PC_StatComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "PC/UI/PC_HUDWidget.h"
 
 
@@ -19,7 +20,7 @@ APC_PlayableCharaceter::APC_PlayableCharaceter()
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
-	CameraBoom->TargetArmLength = 800.0f; // The camera follows at this distance behind the character	
+	CameraBoom->TargetArmLength = 1000.0f; // The camera follows at this distance behind the character	
 	CameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
 
 	// Create a follow camera
@@ -80,6 +81,14 @@ void APC_PlayableCharaceter::Look(const FInputActionValue& Value)
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
+}
+
+void APC_PlayableCharaceter::Jump()
+{
+	Super::Jump();
+
+	MakeNoise(1, this, GetActorLocation());
+	UGameplayStatics::SpawnSoundAtLocation(GetWorld(), JumpSound, GetActorLocation());
 }
 
 void APC_PlayableCharaceter::SetupHUDWidget(UPC_HUDWidget* InWidget)
@@ -151,7 +160,7 @@ void APC_PlayableCharaceter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent)) {
 		
 		//Jumping
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ACharacter::Jump);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ThisClass::Jump);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 
 		//Moving

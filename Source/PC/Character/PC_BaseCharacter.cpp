@@ -65,6 +65,18 @@ void APC_BaseCharacter::Applystat(const FPC_CharacterStatTableRow& BaseStat,
 	GetCharacterMovement()->MaxWalkSpeed = MovementSpeed;
 }
 
+void APC_BaseCharacter::SetGenericTeamId(const FGenericTeamId& TeamID)
+{
+	IGenericTeamAgentInterface::SetGenericTeamId(TeamID);
+
+	GenericTeamId = TeamID;
+}
+
+FGenericTeamId APC_BaseCharacter::GetGenericTeamId() const
+{
+	return GenericTeamId;
+}
+
 void APC_BaseCharacter::AttackTrace(bool bStart, FName TraceBoneName)
 {
 	if(BattleComponent)

@@ -59,11 +59,38 @@ struct FPC_EnemyTableRow : public FTableRowBase
 	TObjectPtr<UBehaviorTree> BehaviorTree = nullptr;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float MovementSpeed = 0.f;
+	float MovementSpeed_Walk = 0.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float DetectRange = 0.f;
+	float MovementSpeed_Run = 0.f;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float TurnSpeed = 0.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float SightRadius = 0.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float LoseSightRadius = 0.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float SightAngle = 0.f;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float AttackRange = 0.f;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UAnimMontage> AttackAnim = nullptr;
+	
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UAnimMontage> Left90TurnAnim = nullptr;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UAnimMontage> Left180TurnAnim = nullptr;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UAnimMontage> Right90TurnAnim = nullptr;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UAnimMontage> Right180TurnAnim = nullptr;
 };
