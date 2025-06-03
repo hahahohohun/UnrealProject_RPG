@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "PC/Data//PC_TableRows.h"
 #include "PC_BattleComponent.generated.h"
 
 
@@ -16,32 +17,34 @@ public:
 	// Sets default values for this component's properties
 	UPC_BattleComponent();
 
-protected:
-	// Called when the game starts
-	virtual void BeginPlay() override;
-
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	UFUNCTION()
-	void StartTrace(FName TraceBoneName);
-
-	UFUNCTION()
+	void StartTraceWithWeapon();
+	void StartTrace(FName InTraceStartBoneName, FName InTraceEndBoneName);
 	void EndTrace();
-
-	UFUNCTION()
+	
 	void SpawnEffect(FVector InHitLocation);
 
-	bool IsTracing = false;
-	FName TraceBoneName;
+	void EquipWeapon(uint8 InWeaponId);
+	void UnEquipWeapon();
+	bool HasWeapon();
 	
-	FVector PrevLocation = FVector::ZeroVector;
+	bool bTracing = false;
 
-	float TraceInterval = 0.0f;
-	float TraceElapsedTime = 0.0f;
+	FName TraceStartBoneName;
+	FName TraceEndBoneName;
 
-	TArray<TWeakObjectPtr<AActor>> DamageActors;
+	FVector PrevStartBoneLocation = FVector::ZeroVector;
+	FVector PrevEndBoneLocation = FVector::ZeroVector;
+
+	float TraceInterval = 0.f;
+	float TraceElapsedTime = 0.f;
+	
+	TArray<TWeakObjectPtr<AActor>> DamagedActor;
+	
+	FPC_WeaponTableRow* CurrentWeaponTableRow = nullptr;
 };
 
 

@@ -51,7 +51,13 @@ protected:
 
 	FAIStimulus GetAIStimulus(AActor* Actor, EPC_AISenseType AIPerceptionSense);
 
+	virtual void SetGenericTeamId(const FGenericTeamId& TeamID);
+	virtual FGenericTeamId GetGenericTeamId() const;
+	
 private:
+	UPROPERTY()
+	FGenericTeamId GenericTeamId;
+	
 	UPROPERTY()
 	TObjectPtr<UBlackboardData> BBAsset;
 

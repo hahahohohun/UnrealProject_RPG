@@ -22,5 +22,7 @@ class PC_API IPC_AnimationAttackInterface
 
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
-	virtual  void AttackTrace(bool bStart, FName TraceBoneName);
+	virtual bool HasWeapon() = 0;
+	virtual void AttackTrace(bool bStart, FName TraceStartBoneName, FName TraceEndBoneName) = 0;
+	virtual void AttackTraceWithWeapon(bool bStart) = 0;
 };

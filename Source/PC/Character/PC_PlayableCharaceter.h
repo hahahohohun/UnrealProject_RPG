@@ -7,11 +7,17 @@
 #include "InputActionValue.h"
 #include "PC_BaseCharacter.h"
 #include "PC/Interface/PC_CharacterHUDInterface.h"
+#include "PC/Interface/PC_PlayerCharacterInterface.h"
 #include "PC_PlayableCharaceter.generated.h"
 
+class UPC_InputDataAsset;
+class UPC_PlayerDataAsset;
+class UPC_ActionComponent;
+class UPC_LockOnComponent;
+class UAIPerceptionStimuliSourceComponent;
 
 UCLASS()
-class PC_API APC_PlayableCharaceter : public APC_BaseCharacter, public IPC_CharacterHUDInterface
+class PC_API APC_PlayableCharaceter : public APC_BaseCharacter , public IPC_CharacterHUDInterface, public IGenericTeamAgentInterface, public IPC_PlayerCharacterInterface
 {
 	GENERATED_BODY()
 	
@@ -21,22 +27,37 @@ public:
 	APC_PlayableCharaceter();
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
+	
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
-
-	virtual  void Jump() override;
+	void Jump(const FInputActionValue& Value);
+	void Attack(const FInputActionValue& Value);
+	void Guard(const FInputActionValue& Value);
+	void Run(const FInputActionValue& Value);
+	void Roll(const FInputActionValue& Value);
+	void LockOn(const FInputActionValue& Value);
 
 public:
+	virtual void PossessedBy(AController* NewController) override;
 	virtual void SetupHUDWidget(UPC_HUDWidget* InWidget) override;
-	virtual void Attack(const FInputActionValue& Value);
-
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
 	
+	/** Returns CameraBoom subobject **/
+	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
+	/** Returns FollowCamera subobject **/
+	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+
+	void SetGenericTeamId(const FGenericTeamId& TeamID);
+	FGenericTeamId GetGenericTeamId() const;
+
+	virtual UStaticMeshComponent* GetWeaponStaticMeshComponent() const override { return WeaponStaticMeshComponent; }
+	virtual UPC_ActionComponent* GetActionComponent() const override { return ActionComponent; }
+	virtual UPC_LockOnComponent* GetLockOnComponent() const override { return LockOnComponent; }
+	virtual UPC_BattleComponent* GetBattleComponent() const override { return BattleComponent; }
+	virtual UPC_PlayerDataAsset* GetPlayerData() const override { return PlayerData; }
+
+public:
 	/** Camera boom positioning the camera behind the character */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* CameraBoom;
@@ -44,53 +65,29 @@ public:
 	/** Follow camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UAIPerceptionStimuliSourceComponent> StimulusSource;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UPC_LockOnComponent> LockOnComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Component, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UPC_ActionComponent> ActionComponent;
 	
 	/** MappingContext */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputMappingContext* DefaultMappingContext;
 
-	/** Jump Input Action */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* JumpAction;
-
-	/** Move Input Action */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* MoveAction;
-
-	/** Look Input Action */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* LookAction;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* AttackAction;
-
-
-	//
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	bool IsAttacking = false;
-
 	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	bool IsSaveAttack = false;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	int AttackCount = 0;
+	//===============================================================================================
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Anim)
-	TArray<UAnimMontage*> AttackMontages;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UPC_InputDataAsset> InputData;
 
-	UPROPERTY(EditAnywhere)
-	TObjectPtr<USoundBase> JumpSound;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UPC_PlayerDataAsset> PlayerData;
 	
-	UFUNCTION(BlueprintCallable)
-	void ResetComb();
-
-	UFUNCTION(BlueprintCallable)
-	void CombAttackSave();
-
-public:
-	/** Returns CameraBoom subobject **/
-	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
-	/** Returns FollowCamera subobject **/
-	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+	UPROPERTY()
+	FGenericTeamId GenericTeamId = 0;
 };

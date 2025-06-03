@@ -6,6 +6,7 @@ enum class EPC_DataTableType : int32
 	None,
 	CharacterStat,
 	Enemy,
+	Weapon,
 	Num,
 };
 
@@ -36,4 +37,30 @@ enum class EPC_AISenseType : uint8
 	Hearing,
 	Damage,
 	Num,
+};
+
+UENUM(BlueprintType)
+enum class EPC_ActionType : uint8
+{
+	None = 0,
+	Move = 1,
+	Jump = 2,
+	Attack =3,
+	Run = 4,
+	Roll= 5,
+	Guard = 6,
+	Num = 7,
+};
+
+UENUM(BlueprintType)
+enum class  EPC_LockCauseType: uint8
+{
+	None = 0,
+Move = 1,
+Jump = 2,
+Attack =3,
+Run = 4,
+Roll= 5,
+Guard = 6,
+Num = 7,
 };

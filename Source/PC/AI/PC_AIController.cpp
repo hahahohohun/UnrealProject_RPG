@@ -210,9 +210,23 @@ FAIStimulus APC_AIController::GetAIStimulus(AActor* Actor, EPC_AISenseType AIPer
 	return ResultStimulus;
 }
 
+void APC_AIController::SetGenericTeamId(const FGenericTeamId& GTeamID)
+{
+	IGenericTeamAgentInterface::SetGenericTeamId(GTeamID);
+
+	GenericTeamId = GTeamID;
+}
+
+FGenericTeamId APC_AIController::GetGenericTeamId() const
+{
+	return GenericTeamId;
+}
+
 void APC_AIController::OnPossess(APawn* Possessed)
 {
 	Super::OnPossess(Possessed);
+
+	SetGenericTeamId(FGenericTeamId(1));
 
 	if (APC_NonPlayableCharacter* NonPlayableCharacter = Cast<APC_NonPlayableCharacter>(GetPawn()))
 	{

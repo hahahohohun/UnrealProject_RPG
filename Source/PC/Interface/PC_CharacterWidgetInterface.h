@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "PC/UI/PC_LockOnWidget.h"
 #include "UObject/Interface.h"
 #include "PC_CharacterWidgetInterface.generated.h"
 
@@ -22,5 +23,9 @@ class PC_API IPC_CharacterWidgetInterface
 
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
-	virtual void SetupCharacterWidget(class UPC_UserWidget* InWidget);
+	//
+	virtual void SetupCharacterWidget(class UPC_UserWidget* InWidget) = 0;
+	virtual void SetupLockOnWidget(class UPC_UserWidget* InUserWidget) = 0;
+
+	virtual void OnLocked(bool bLocked) = 0;
 };

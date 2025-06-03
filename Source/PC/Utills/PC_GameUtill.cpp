@@ -30,3 +30,25 @@ FPC_EnemyTableRow* FPC_GameUtil::GetEnemyData(EPC_CharacterType CharacterType)
 	UE_LOG(LogPC, Error, TEXT("CharacterStatData is Invalid"));
 	return nullptr;
 }
+
+FPC_WeaponTableRow* FPC_GameUtil::GetWeaponData(uint8 WeaponId)
+{
+	TArray<FPC_WeaponTableRow*> EnemyTableRows = GetAllRows<FPC_WeaponTableRow>(EPC_DataTableType::Weapon);
+	if (FPC_WeaponTableRow** FoundRow = EnemyTableRows.FindByPredicate([WeaponId](const FPC_WeaponTableRow* Row)
+	{
+		return Row->WeaponId == WeaponId;
+	}))
+	{
+		return *FoundRow;
+	}
+	
+	UE_LOG(LogPC, Error, TEXT("WeaponData is Invalid"));
+	return nullptr;
+}
+void FPC_GameUtil::CameraShake()
+{
+	if (APlayerController* PlayerController = UGameplayStatics::GetPlayerController(GEngine->GetCurrentPlayWorld(), 0))
+	{
+		PlayerController->ClientStartCameraShake(UPC_LegacyCameraShake::StaticClass());
+	}
+}

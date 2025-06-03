@@ -10,7 +10,18 @@
 
 APC_NonPlayableCharacter::APC_NonPlayableCharacter()
 {
-	WidgetComponent->SetRelativeLocation(FVector(0.0f, 0.0f, 150.0f));
+	LockOnWidgetComponent = CreateDefaultSubobject<UPC_WidgetComponent>(TEXT("LockOnWidgetComponent"));
+	LockOnWidgetComponent->SetupAttachment(GetMesh(), FName("Pelvis"));
+	static ConstructorHelpers::FClassFinder<UUserWidget> LockOnWidgetRef(TEXT("/Game/ProjectClass/UI/WBP_LockOn.WBP_LockOn_C"));
+	if(LockOnWidgetRef.Class)
+	{
+		LockOnWidgetComponent->SetWidgetClass(LockOnWidgetRef.Class);
+		LockOnWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
+		LockOnWidgetComponent->SetDrawSize(FVector2D(30.f, 30.f));
+		LockOnWidgetComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+	
+	WidgetComponent->SetRelativeLocation(FVector(0.0f, 0.0f, 0.0f));
 }
 
 void APC_NonPlayableCharacter::BeginPlay()
@@ -35,11 +46,6 @@ void APC_NonPlayableCharacter::BeginPlay()
 void APC_NonPlayableCharacter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
-
-	if(NewController->GetClass() == APC_AIController::StaticClass())
-	{
-		SetGenericTeamId(FGenericTeamId(1));
-	}
 }
 
 float APC_NonPlayableCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent,

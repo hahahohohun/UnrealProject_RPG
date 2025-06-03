@@ -21,7 +21,8 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void PossessedBy(AController* NewController) override;
-	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
+	                         AActor* DamageCauser) override;
 
 	virtual void Tick(float DeltaTime) override;
 
@@ -46,6 +47,9 @@ protected:
 	virtual EPC_EnemyStateType GetState() override;
 
 private:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = camera, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UPC_WidgetComponent> LockOnWidgetComponent;
+
 	FAICharacterAttackFinished OnAttackFinished;
 	FAICharacterTurnFinished OnTurnFinished;
 
@@ -60,9 +64,9 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<AActor> PatrolRoute = nullptr;
-	
+
 	EPC_EnemyStateType EnemyState = EPC_EnemyStateType::None;
-	
+
 	bool IsTurning = false;
 
 	float TurnStartYaw = 0.0f;

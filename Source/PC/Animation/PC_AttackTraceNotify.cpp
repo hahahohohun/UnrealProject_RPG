@@ -14,7 +14,7 @@ void UPC_AttackTraceNotify::Notify(USkeletalMeshComponent* MeshComp, UAnimSequen
 	{
 		if(IPC_AnimationAttackInterface* AttackInterface = Cast<IPC_AnimationAttackInterface>(MeshComp->GetOwner()))
 		{
-			AttackInterface->AttackTrace(isStart, TraceBoneName);
+			AttackInterface->AttackTrace(isStart, TraceStartBoneName, TraceEndBoneName);
 		}
 	}
 }

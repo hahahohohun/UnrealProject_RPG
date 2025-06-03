@@ -22,5 +22,8 @@ public:
 	bool isStart = false;
 
 	UPROPERTY(EditAnywhere)
-	FName TraceBoneName;
+	FName TraceStartBoneName;
+
+	UPROPERTY(EditAnywhere)
+	FName TraceEndBoneName;
 };

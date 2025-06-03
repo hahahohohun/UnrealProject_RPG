@@ -2,7 +2,3 @@
 
 
 #include "PC_AnimationAttackInterface.h"
-
-void IPC_AnimationAttackInterface::AttackTrace(bool bStart, FName TraceBoneName)
-{
-}

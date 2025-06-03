@@ -3,137 +3,237 @@
 
 #include "PC_BattleComponent.h"
 
+#include "MovieSceneFwd.h"
+#include "PC_StatComponent.h"
+#include "Engine/DamageEvents.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystem.h"
+#include "PC/PC.h"
 #include "PC/Character/PC_BaseCharacter.h"
+#include "PC/Data/PC_PlayerDataAsset.h"
+#include "PC/Interface/PC_PlayerCharacterInterface.h"
+#include "PC/Utills/PC_GameUtill.h"
 
 // Sets default values for this component's properties
 UPC_BattleComponent::UPC_BattleComponent()
 {
-	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
-	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
-
-	// ...
-}
-
-
-// Called when the game starts
-void UPC_BattleComponent::BeginPlay()
-{
-	Super::BeginPlay();
-
-	// ...
 	TraceInterval = 0.01f;
 }
 
 
-// Called every frame
 void UPC_BattleComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	// ...
+	if (!bTracing)
+		return;
 
-	if(IsTracing)
+	TraceElapsedTime += DeltaTime;
+	if (TraceElapsedTime < TraceInterval)
+		return;
+
+	TraceElapsedTime = 0.f;
+
+	APC_BaseCharacter* ClassCharacter = Cast<APC_BaseCharacter>(GetOwner());
+	if (!ClassCharacter)
+		return;
+
+	const USkeletalMeshComponent* Mesh = ClassCharacter->GetMesh();
+	if (!Mesh)
+		return;
+
+	const UWorld* World = GetWorld();
+	if (!World)
+		return;
+
+	FVector CurStartBoneLocation = FVector::ZeroVector;
+	FVector CurEndBoneLocation = FVector::ZeroVector;
+
+	if (HasWeapon())
 	{
-		TraceElapsedTime += DeltaTime;
-		if(TraceElapsedTime > TraceInterval)
+		if (const IPC_PlayerCharacterInterface* Interface = Cast<IPC_PlayerCharacterInterface>(GetOwner()))
 		{
-			TraceElapsedTime = 0;
+			UStaticMeshComponent* WeaponMesh = Interface->GetWeaponStaticMeshComponent();
+			check(WeaponMesh);
 
-			APC_BaseCharacter* Character = Cast<APC_BaseCharacter>(GetOwner());
-			if(!Character)
-				return;
+			CurStartBoneLocation = WeaponMesh->GetSocketLocation(TraceStartBoneName);
+			CurEndBoneLocation = WeaponMesh->GetSocketLocation(TraceEndBoneName);
+		}
+	}
+	else
+	{
+		CurStartBoneLocation = Mesh->GetBoneLocation(TraceStartBoneName);
+		CurEndBoneLocation = Mesh->GetBoneLocation(TraceEndBoneName);
+	}
 
-			AController* Controller = Character->GetController();
-			if (!Controller)
-				return;
+	// Trace 할 라인들 모음
+	TArray<TPair<FVector, FVector>> TraceLines;
+	TraceLines.Emplace(PrevStartBoneLocation, CurStartBoneLocation);  
+	TraceLines.Emplace(PrevEndBoneLocation, CurEndBoneLocation);
+	TraceLines.Emplace(PrevStartBoneLocation, CurEndBoneLocation);    
+	TraceLines.Emplace(PrevEndBoneLocation, CurStartBoneLocation);    
+	TraceLines.Emplace(CurStartBoneLocation, CurEndBoneLocation);
 
-			USkeletalMeshComponent* SkeletalMeshComponent = Character->GetMesh();
-			if(!SkeletalMeshComponent)
-				return;
+	int32 SegmentCount = 3;
+	
+	// 💡 추가: 분할 점 기반 연결선
+	for (int32 i = 1; i < SegmentCount; ++i)
+	{
+		const float Alpha = static_cast<float>(i) / SegmentCount;
 
-			UWorld* World = GetWorld();
-			if(!World)
-				return;
+		const FVector PrevMid = FMath::Lerp(PrevStartBoneLocation, PrevEndBoneLocation, Alpha);
+		const FVector CurrMid = FMath::Lerp(CurStartBoneLocation, CurEndBoneLocation, Alpha);
 
-			const FVector CurrentLocation = SkeletalMeshComponent->GetSocketLocation(TraceBoneName);
-			const float Height = (PrevLocation - CurrentLocation).Length();
+		TraceLines.Emplace(PrevMid, CurrMid);
+	}
+	
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(GetOwner());
 
-			FRotator Rot = (PrevLocation - CurrentLocation).Rotation();
+	for (const auto& Line : TraceLines)
+	{
+		FHitResult HitResult;
+		ECollisionChannel CollisionChannel = ClassCharacter->CharacterType == EPC_CharacterType::Player?
+			ECC_GameTraceChannel2 : ECC_GameTraceChannel1;
+		
+		if (World->LineTraceSingleByChannel(HitResult, Line.Key, Line.Value, CollisionChannel, Params))
+		{
+			AActor* HitActor = HitResult.GetActor();
 
-			const FRotationMatrix Original(Rot);
-			const FVector RightVector = Original.GetUnitAxis(EAxis::Y);
-			const FQuat OffsetQuat = FQuat(RightVector, FMath::DegreesToRadians(90));
-
-			const FQuat NewQuat = OffsetQuat * Rot.Quaternion();
-
-			TArray<FHitResult> HitResults;
-
-			World->SweepMultiByChannel(HitResults, PrevLocation, CurrentLocation, NewQuat, ECC_GameTraceChannel1,
-	FCollisionShape::MakeCapsule(20.f, Height * 0.5f), FCollisionQueryParams::DefaultQueryParam);
-
-			DrawDebugCapsule(World, FMath::Lerp(CurrentLocation, PrevLocation, 0.5f), Height * 0.5f, 20.f, NewQuat,
-		FColor::Red, false, 3.f);
-
-			if (HitResults.Num() != 0 )
+			if (HitActor && !DamagedActor.Contains(HitActor))
 			{
-				for (FHitResult& Result : HitResults)
+				if (APC_BaseCharacter* HitCharacter = Cast<APC_BaseCharacter>(HitActor))
 				{
-					if (!DamageActors.Contains(Result.GetActor()))
-					{
-						UE_LOG(LogTemp, Log, TEXT("Hit!!"));
+					UE_LOG(LogPC, Log, TEXT("Hit!!"));
 
-						UGameplayStatics::ApplyDamage(Result.GetActor(), 10.f, Controller,
-							Character, UDamageType::StaticClass());
-						
-						DamageActors.Add(Result.GetActor());
-						SpawnEffect(Result.ImpactPoint);
-					}
+					DamagedActor.Add(HitActor);
+
+					const float Damage = ClassCharacter->StatComponent->GetTotalStat().Attack;
+
+					FDamageEvent DamageEvent;
+					HitActor->TakeDamage(Damage, DamageEvent, ClassCharacter->GetController(), ClassCharacter);
+
+					SpawnEffect(HitResult.ImpactPoint);
 				}
 			}
-
-			PrevLocation = CurrentLocation;
 		}
+		
+		DrawDebugLine(World, Line.Key, Line.Value, FColor::Red, false, 3.f, 0, 1.f);
+	}
+
+	// Prev 갱신
+	PrevStartBoneLocation = CurStartBoneLocation;
+	PrevEndBoneLocation = CurEndBoneLocation;
+}
+
+void UPC_BattleComponent::StartTraceWithWeapon()
+{
+	bTracing = true;
+	
+	TraceStartBoneName = CurrentWeaponTableRow->TraceStartSocketName;
+	TraceEndBoneName = CurrentWeaponTableRow->TraceEndSocketName;
+
+	if (const IPC_PlayerCharacterInterface* Interface = Cast<IPC_PlayerCharacterInterface>(GetOwner()))
+	{
+		UStaticMeshComponent* WeaponStaticMeshComponent = Interface->GetWeaponStaticMeshComponent();
+		check(WeaponStaticMeshComponent);
+
+		PrevStartBoneLocation = WeaponStaticMeshComponent->GetSocketLocation(TraceStartBoneName);
+		PrevEndBoneLocation = WeaponStaticMeshComponent->GetSocketLocation(TraceEndBoneName);
 	}
 }
-void UPC_BattleComponent::StartTrace(FName InTraceBoneName)
-{
-	TraceBoneName = InTraceBoneName;
-	IsTracing = true;
 
-	if(APC_BaseCharacter* Character = Cast<APC_BaseCharacter>(GetOwner()))
+void UPC_BattleComponent::StartTrace(FName InTraceStartBoneName, FName InTraceEndBoneName)
+{
+	bTracing = true;
+	
+	TraceStartBoneName = InTraceStartBoneName;
+	TraceEndBoneName = InTraceEndBoneName;
+	
+	const ACharacter* Character = CastChecked<ACharacter>(GetOwner());
+	const USkeletalMeshComponent* SkeletalMeshComponent = Character->GetMesh();
+	check(SkeletalMeshComponent);
+	
+	PrevStartBoneLocation = SkeletalMeshComponent->GetSocketLocation(TraceStartBoneName);
+	PrevEndBoneLocation = SkeletalMeshComponent->GetSocketLocation(TraceEndBoneName);
+}
+
+void UPC_BattleComponent::EquipWeapon(uint8 InWeaponId)
+{
+	CurrentWeaponTableRow = FPC_GameUtil::GetWeaponData(InWeaponId);
+	if (!CurrentWeaponTableRow)
 	{
-		if(USkeletalMeshComponent* SkeletalMeshComponent = Character->GetMesh())
-		{
-			//시작할때 본 위치 캐싱
-			PrevLocation = SkeletalMeshComponent->GetSocketLocation(InTraceBoneName);
-		}
+		UnEquipWeapon();
+		return;
 	}
+	
+	FName WeaponSocketName = NAME_None;
+	
+	if (const IPC_PlayerCharacterInterface* Interface = Cast<IPC_PlayerCharacterInterface>(GetOwner()))
+	{
+		UPC_PlayerDataAsset* PlayerData = Interface->GetPlayerData();
+		check(PlayerData);
+
+		WeaponSocketName = PlayerData->WeaponSocketName;
+
+		const ACharacter* Character = CastChecked<ACharacter>(GetOwner());
+		USkeletalMeshComponent* SkeletalMeshComponent = Character->GetMesh();
+		check(SkeletalMeshComponent);
+		
+		UStaticMeshComponent* WeaponStaticMeshComponent = Interface->GetWeaponStaticMeshComponent();
+		check(WeaponStaticMeshComponent);
+
+		WeaponStaticMeshComponent->DetachFromComponent(FDetachmentTransformRules::KeepRelativeTransform);
+		WeaponStaticMeshComponent->AttachToComponent(SkeletalMeshComponent, FAttachmentTransformRules::KeepRelativeTransform, WeaponSocketName);
+		
+		WeaponStaticMeshComponent->SetRelativeLocation(CurrentWeaponTableRow->RelativePos);
+		WeaponStaticMeshComponent->SetRelativeRotation(CurrentWeaponTableRow->RelativeRot);
+		
+		WeaponStaticMeshComponent->SetStaticMesh(CurrentWeaponTableRow->WeaponMesh);
+		WeaponStaticMeshComponent->SetVisibility(true);
+	}
+}
+
+void UPC_BattleComponent::UnEquipWeapon()
+{
+	CurrentWeaponTableRow = nullptr;
+
+	if (const IPC_PlayerCharacterInterface* Interface = Cast<IPC_PlayerCharacterInterface>(GetOwner()))
+	{
+		UStaticMeshComponent* WeaponStaticMeshComponent = Interface->GetWeaponStaticMeshComponent();
+		check(WeaponStaticMeshComponent);
+
+		WeaponStaticMeshComponent->SetStaticMesh(nullptr);
+		WeaponStaticMeshComponent->SetVisibility(false);
+	}
+}
+
+bool UPC_BattleComponent::HasWeapon()
+{
+	if (CurrentWeaponTableRow)
+		return true;
+
+	return false;
 }
 
 void UPC_BattleComponent::EndTrace()
 {
-	//초기화
-	DamageActors.Empty();
-	IsTracing = false;
+	DamagedActor.Empty();
+	bTracing = false;
 	TraceElapsedTime = 0.f;
 }
 
 void UPC_BattleComponent::SpawnEffect(FVector InHitLocation)
 {
-	//"/Game/ParagonCrunch/FX/Particles/Abilities/Hook/FX/P_Crunch_Hook_Impact.P_Crunch_Hook_Impact"
-UWorld* World = GetWorld();
-	if(!World)
+	UWorld* World = GetWorld();
+	if (!World)
 		return;
 
-	UParticleSystem* LoadParticle = Cast<UParticleSystem>(StaticLoadObject(UParticleSystem::StaticClass(),nullptr,
+	UParticleSystem* LoadedParticle = Cast<UParticleSystem>(StaticLoadObject(UParticleSystem::StaticClass(), nullptr,
 		TEXT("/Game/ParagonCrunch/FX/Particles/Abilities/Hook/FX/P_Crunch_Hook_Impact.P_Crunch_Hook_Impact")));
 
-	if(LoadParticle)
-	{
-		UGameplayStatics::SpawnEmitterAtLocation(World, LoadParticle, InHitLocation, FRotator::ZeroRotator);
-	}
+	if (LoadedParticle)
+		UGameplayStatics::SpawnEmitterAtLocation(World, LoadedParticle, InHitLocation, FRotator::ZeroRotator);
+	
 }
-

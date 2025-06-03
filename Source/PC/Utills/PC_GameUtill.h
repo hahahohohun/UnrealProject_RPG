@@ -3,13 +3,16 @@
 #include "PC/PC_Enum.h"
 #include "PC/Data/PC_TableRows.h"
 #include "PC/Subsystem/PC_DataSubsystem.h"
+#include "PC/Cometic/PC_LegacyCameraShake.h"
 
 class FPC_GameUtil
 {
 public:
 	static FPC_CharacterStatTableRow* GetCharacterStatData(EPC_CharacterType CharacterType);
 	static FPC_EnemyTableRow* GetEnemyData(EPC_CharacterType EnemyType);
+	static FPC_WeaponTableRow* GetWeaponData(uint8 WeaponId);
 
+	static void CameraShake();
 	template <typename T>
 	static TArray<T*> GetAllRows(EPC_DataTableType DataTableType);
 	
@@ -37,4 +40,3 @@ TArray<T*> FPC_GameUtil::GetAllRows(EPC_DataTableType CharacterType)
 
 	return TArray<T*>();
 }
-
