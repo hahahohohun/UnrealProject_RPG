@@ -7,8 +7,15 @@
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "PC/Character/PC_PlayableCharaceter.h"
 #include "PC/Data/PC_PlayerDataAsset.h"
 #include "PC/Interface/PC_PlayerCharacterInterface.h"
+#include "PC/SkillObject/PC_SkillObject.h"
+
+UPC_ActionComponent::UPC_ActionComponent()
+{
+	PrimaryComponentTick.bCanEverTick = true;
+}
 
 void UPC_ActionComponent::BeginPlay()
 {
@@ -17,11 +24,28 @@ void UPC_ActionComponent::BeginPlay()
 	OwnerCharacter = CastChecked<ACharacter>(GetOwner());
 }
 
+void UPC_ActionComponent::TickComponent(float DeltaTime, ELevelTick TickType,
+	FActorComponentTickFunction* ThisTickFunction)
+{
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	if (IsInSpecialAction && !OwnerCharacter->GetCharacterMovement()->GetCurrentAcceleration().IsNearlyZero())
+	{
+		FRotator LookAtRot = OwnerCharacter->GetBaseAimRotation();
+		LookAtRot.Pitch = 0.f; // 평면 회전만
+
+		const FRotator CurrentRot = OwnerCharacter->GetActorRotation();
+		const FRotator NewRot = FMath::RInterpTo(CurrentRot, LookAtRot, GetWorld()->GetDeltaSeconds(), 10.f);
+			 	
+		OwnerCharacter->SetActorRotation(NewRot);
+	}
+}
+
 void UPC_ActionComponent::Move(FVector2D MovementVector)
 {
 	if (!CanAction(EPC_ActionType::Move))
 		return;
-
+	
 	const IPC_PlayerCharacterInterface* Interface = CastChecked<IPC_PlayerCharacterInterface>(GetOwner());
 	const UPC_LockOnComponent* LockOnComponent = Interface->GetLockOnComponent();
 	check(LockOnComponent);
@@ -108,18 +132,22 @@ void UPC_ActionComponent::Attack(bool IsPressed)
 	}
 }
 
-void UPC_ActionComponent::Guard(bool bPressed)
+void UPC_ActionComponent::SpecialAction(bool bPressed)
 {
-	if (bPressed && !IsGuarding)
+	if (bPressed && !IsInSpecialAction)
 	{
 		if (!CanAction(EPC_ActionType::Guard))
 			return;
 		
-		IsGuarding = true;
+		IsInSpecialAction = true;
+
+		AddLock(EPC_LockCauseType::SpecialAction, EPC_ActionType::Run);
 	}
-	else if (!bPressed && IsGuarding)
+	else if (!bPressed && IsInSpecialAction)
 	{
-		IsGuarding = false;
+		IsInSpecialAction = false;
+
+		ForceReleaseLock(EPC_LockCauseType::SpecialAction);
 	}
 }
 
@@ -136,7 +164,7 @@ void UPC_ActionComponent::Run(bool bPressed)
 		
 		IsRunning = true;
 
-		OwnerCharacter->GetCharacterMovement()->MaxWalkSpeed = PlayerData->MovementSpeed_Run;
+		OwnerCharacter->GetCharacterMovement()->MaxWalkSpeed = PlayerData->MovementSpeed_Sprint;
 	}
 	else if (!bPressed && IsRunning)
 	{
@@ -189,6 +217,14 @@ void UPC_ActionComponent::Roll(bool bPressed)
 		
 		BattleComponent->EndTrace();
 	}
+}
+
+void UPC_ActionComponent::SwapWeapon(bool bPressed)
+{
+	const IPC_PlayerCharacterInterface* Interface = CastChecked<IPC_PlayerCharacterInterface>(GetOwner());
+	UPC_BattleComponent* BattleComponent = Interface->GetBattleComponent();
+	check(BattleComponent);
+	BattleComponent->SwapWeapon();
 }
 
 bool UPC_ActionComponent::CanAction(EPC_ActionType InActionType)

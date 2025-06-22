@@ -10,6 +10,7 @@
 #include "PC/Interface/PC_PlayerCharacterInterface.h"
 #include "PC_PlayableCharaceter.generated.h"
 
+class UPC_AimComponent;
 class UPC_InputDataAsset;
 class UPC_PlayerDataAsset;
 class UPC_ActionComponent;
@@ -33,25 +34,29 @@ protected:
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
 	void Jump(const FInputActionValue& Value);
+
 	void Attack(const FInputActionValue& Value);
-	void Guard(const FInputActionValue& Value);
+	void SpecialAction(const FInputActionValue& Value);
 	void Run(const FInputActionValue& Value);
 	void Roll(const FInputActionValue& Value);
+	void WeaponSwap(const FInputActionValue& Value);
 	void LockOn(const FInputActionValue& Value);
 
 public:
+
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void SetupHUDWidget(UPC_HUDWidget* InWidget) override;
-	
-	/** Returns CameraBoom subobject **/
-	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
-	/** Returns FollowCamera subobject **/
-	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 
+	void AdjustMovement(bool IsPressed);
+	void AdjustCamera(bool bIsPressed);
+	
 	void SetGenericTeamId(const FGenericTeamId& TeamID);
 	FGenericTeamId GetGenericTeamId() const;
 
 	virtual UStaticMeshComponent* GetWeaponStaticMeshComponent() const override { return WeaponStaticMeshComponent; }
+	virtual USpringArmComponent* GetSpringArmComponent() const override { return CameraBoom; }
+	virtual UCameraComponent* GetCameraComponent() const override { return FollowCamera; }
+
 	virtual UPC_ActionComponent* GetActionComponent() const override { return ActionComponent; }
 	virtual UPC_LockOnComponent* GetLockOnComponent() const override { return LockOnComponent; }
 	virtual UPC_BattleComponent* GetBattleComponent() const override { return BattleComponent; }
@@ -74,6 +79,9 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Component, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UPC_ActionComponent> ActionComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Component, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UPC_AimComponent> AimComponent;
 	
 	/** MappingContext */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
@@ -90,4 +98,7 @@ public:
 	
 	UPROPERTY()
 	FGenericTeamId GenericTeamId = 0;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AActor> ProjectileClass;
 };

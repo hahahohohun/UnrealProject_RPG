@@ -48,7 +48,7 @@ public:
 	
 	FOnCharacterLocked OnCharacterLocked;
 	
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<UPC_BattleComponent> BattleComponent = nullptr;
 	
 	UPROPERTY()

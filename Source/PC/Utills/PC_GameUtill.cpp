@@ -45,6 +45,23 @@ FPC_WeaponTableRow* FPC_GameUtil::GetWeaponData(uint8 WeaponId)
 	UE_LOG(LogPC, Error, TEXT("WeaponData is Invalid"));
 	return nullptr;
 }
+
+UPC_CameraDataAsset* FPC_GameUtil::GetCameraData(EPC_CameraType CameraType)
+{
+	if (GEngine)
+	{
+		if (UGameInstance* GameInstance = UGameplayStatics::GetGameInstance(GEngine->GetCurrentPlayWorld()))
+		{
+			if (UPC_DataSubsystem* DataSubsystem = GameInstance->GetSubsystem<UPC_DataSubsystem>())
+			{
+				return *DataSubsystem->CameraData.Find(CameraType);
+			}
+		}
+	}
+
+	return nullptr;
+}
+
 void FPC_GameUtil::CameraShake()
 {
 	if (APlayerController* PlayerController = UGameplayStatics::GetPlayerController(GEngine->GetCurrentPlayWorld(), 0))
@@ -52,3 +69,5 @@ void FPC_GameUtil::CameraShake()
 		PlayerController->ClientStartCameraShake(UPC_LegacyCameraShake::StaticClass());
 	}
 }
+
+

@@ -5,9 +5,40 @@
 
 UPC_LockOnComponent::UPC_LockOnComponent()
 {
+	PrimaryComponentTick.bCanEverTick = true;
+	
 	//락온 할 시야각
 	TargetDetectRadius = 1200.f;
 	TargetDetectAngle = 90.f;
+}
+
+void UPC_LockOnComponent::TickComponent(float DeltaTime, enum ELevelTick TickType,
+	FActorComponentTickFunction* ThisTickFunction)
+{
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	if(IsLockOnMode())
+	{
+		ACharacter* Owner = Cast<ACharacter>(GetOwner());
+		check(Owner);
+
+		APlayerController* PlayerController = Cast<APlayerController>(Owner->GetController());
+		check(PlayerController);
+
+		if(LockedTarget.Get())
+		{
+			const FVector LockTargetLocation = Owner->GetActorLocation();
+			const FVector OwnerLocation = GetOwner()->GetActorLocation();
+
+			const FRotator CurrentRotation = PlayerController->GetControlRotation();
+			const FRotator TargetRot = (LockTargetLocation - OwnerLocation).Rotation();
+
+			const FRotator NewRot = FMath::RInterpTo(CurrentRotation, TargetRot, DeltaTime, 10.f);
+
+			PlayerController->SetControlRotation(NewRot);
+		}
+	}
+	
 }
 
 void UPC_LockOnComponent::LockOn()

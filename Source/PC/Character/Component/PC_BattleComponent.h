@@ -20,16 +20,19 @@ public:
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-
+	virtual void BeginPlay() override;
 	void StartTraceWithWeapon();
 	void StartTrace(FName InTraceStartBoneName, FName InTraceEndBoneName);
 	void EndTrace();
 	
 	void SpawnEffect(FVector InHitLocation);
 
+	void SwapWeapon();
 	void EquipWeapon(uint8 InWeaponId);
 	void UnEquipWeapon();
 	bool HasWeapon();
+
+	void FireProjectile(bool IsPressed);
 	
 	bool bTracing = false;
 
@@ -43,8 +46,16 @@ public:
 	float TraceElapsedTime = 0.f;
 	
 	TArray<TWeakObjectPtr<AActor>> DamagedActor;
-	
+	TWeakObjectPtr<ACharacter> OwnerCharacter = nullptr;
+
 	FPC_WeaponTableRow* CurrentWeaponTableRow = nullptr;
+
+	UPROPERTY(BlueprintReadOnly)
+	EPC_CharacterStanceType CharacterStanceType;
+	
+	int32 CurWeaponIdx = 0;
+	TArray<UINT8> Weapons;
+	
 };
 
 

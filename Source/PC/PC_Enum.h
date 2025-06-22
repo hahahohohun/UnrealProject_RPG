@@ -53,14 +53,38 @@ enum class EPC_ActionType : uint8
 };
 
 UENUM(BlueprintType)
-enum class  EPC_LockCauseType: uint8
+enum class EPC_LockCauseType: uint8
 {
 	None = 0,
-Move = 1,
-Jump = 2,
-Attack =3,
-Run = 4,
-Roll= 5,
-Guard = 6,
-Num = 7,
+	Move = 1,
+	Jump = 2,
+	Attack = 3,
+	Run = 4,
+	Roll = 5,
+	SpecialAction = 6,
+	Num = 7,
+};
+
+UENUM(BlueprintType)
+enum class EPC_SkillObjectType :uint8
+{
+	None,
+	Projectile,
+	Num
+};
+
+UENUM(BlueprintType)
+enum class EPC_CharacterStanceType :uint8
+{
+	Sword = 0,
+	Staff = 1,
+};
+
+UENUM(BlueprintType)
+enum class EPC_CameraType : uint8
+{
+	None,
+	Normal,
+	Aim,
+	Num
 };

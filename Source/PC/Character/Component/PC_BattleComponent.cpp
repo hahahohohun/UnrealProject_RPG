@@ -10,8 +10,11 @@
 #include "Particles/ParticleSystem.h"
 #include "PC/PC.h"
 #include "PC/Character/PC_BaseCharacter.h"
+#include "PC/Character/PC_PlayableCharaceter.h"
+#include "PC/Character/Controller/PC_PlayerController.h"
 #include "PC/Data/PC_PlayerDataAsset.h"
 #include "PC/Interface/PC_PlayerCharacterInterface.h"
+#include "PC/SkillObject/PC_SkillObject.h"
 #include "PC/Utills/PC_GameUtill.h"
 
 // Sets default values for this component's properties
@@ -19,8 +22,8 @@ UPC_BattleComponent::UPC_BattleComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 	TraceInterval = 0.01f;
-}
 
+}
 
 void UPC_BattleComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
@@ -108,7 +111,7 @@ void UPC_BattleComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 					UE_LOG(LogPC, Log, TEXT("Hit!!"));
 
 					DamagedActor.Add(HitActor);
-
+					
 					const float Damage = ClassCharacter->StatComponent->GetTotalStat().Attack;
 
 					FDamageEvent DamageEvent;
@@ -125,6 +128,18 @@ void UPC_BattleComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 	// Prev 갱신
 	PrevStartBoneLocation = CurStartBoneLocation;
 	PrevEndBoneLocation = CurEndBoneLocation;
+}
+
+void UPC_BattleComponent::BeginPlay()
+{
+	Super::BeginPlay();
+
+	CurWeaponIdx = 0;
+	Weapons.Add(0);
+	Weapons.Add(1);
+
+	OwnerCharacter = CastChecked<ACharacter>(GetOwner());
+
 }
 
 void UPC_BattleComponent::StartTraceWithWeapon()
@@ -157,6 +172,24 @@ void UPC_BattleComponent::StartTrace(FName InTraceStartBoneName, FName InTraceEn
 	
 	PrevStartBoneLocation = SkeletalMeshComponent->GetSocketLocation(TraceStartBoneName);
 	PrevEndBoneLocation = SkeletalMeshComponent->GetSocketLocation(TraceEndBoneName);
+}
+
+
+void UPC_BattleComponent::SwapWeapon()
+{
+	CurWeaponIdx++;
+
+	int num = Weapons.Num();
+
+	if(CurWeaponIdx >= num)
+		CurWeaponIdx = 0;
+	
+	const uint8 weaponId = Weapons[CurWeaponIdx];
+
+	CharacterStanceType = static_cast<EPC_CharacterStanceType>(CurWeaponIdx); 
+
+	UnEquipWeapon();
+	EquipWeapon(weaponId);
 }
 
 void UPC_BattleComponent::EquipWeapon(uint8 InWeaponId)
@@ -215,6 +248,41 @@ bool UPC_BattleComponent::HasWeapon()
 		return true;
 
 	return false;
+}
+
+void UPC_BattleComponent::FireProjectile(bool IsPressed)
+{
+	if (!IsPressed)
+		return;
+	
+	if (CharacterStanceType == EPC_CharacterStanceType::Staff)
+	{
+		const APlayerController* PlayerController = CastChecked<APlayerController>(OwnerCharacter->GetController());
+	
+		USkeletalMeshComponent* SkeletalMeshComponent = OwnerCharacter->GetMesh();
+		check(SkeletalMeshComponent);
+
+		FVector Location = SkeletalMeshComponent->GetSocketLocation(TEXT("hand_l"));
+		FRotator Rotation = PlayerController->GetControlRotation();
+	
+		FTransform Transform;
+		Transform.SetLocation(Location);
+		Transform.SetRotation(Rotation.Quaternion());
+
+		//Beginplay 바로 호출
+		//GetWorld()->SpawnActor();
+
+		//BeginPlay 호출안함. spawn 완료 위해서는 명시적으로 FinishSpawning 함수 호출해줘야함
+		//GetWorld()->SpawnActorDeferred()
+		//FinishSpawning 함수 호출이 되면 그때 beginplay 가 호출이 됨
+
+		APC_PlayableCharaceter* PlayableCharacter = Cast<APC_PlayableCharaceter>(OwnerCharacter);
+		check(PlayableCharacter);
+	
+		APC_SkillObject* SkillObject = GetWorld()->SpawnActorDeferred<APC_SkillObject>(PlayableCharacter->ProjectileClass, Transform, GetOwner(), nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+		SkillObject->OwnerCharacter = OwnerCharacter.Get();
+		SkillObject->FinishSpawning(Transform);
+	}
 }
 
 void UPC_BattleComponent::EndTrace()

@@ -6,6 +6,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "Camera/CameraComponent.h"
 #include "Component/PC_ActionComponent.h"
+#include "Component/PC_AimComponent.h"
 #include "Component/PC_BattleComponent.h"
 #include "Component/PC_LockOnComponent.h"
 #include "Component/PC_StatComponent.h"
@@ -42,7 +43,9 @@ APC_PlayableCharaceter::APC_PlayableCharaceter()
 
 	WidgetComponent->SetRelativeLocation(FVector(0.0f, 0.0f, 200.0f));
 	LockOnComponent = CreateDefaultSubobject<UPC_LockOnComponent>(TEXT("LockOnComponent"));
-	ActionComponent = CreateDefaultSubobject<UPC_ActionComponent>(TEXT("ActionComponent")); 
+	ActionComponent = CreateDefaultSubobject<UPC_ActionComponent>(TEXT("ActionComponent"));
+	AimComponent = CreateDefaultSubobject<UPC_AimComponent>(TEXT("AimComponent"));
+
 }
 
 void APC_PlayableCharaceter::BeginPlay()
@@ -77,10 +80,12 @@ void APC_PlayableCharaceter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 		EnhancedInputComponent->BindAction(InputData->LookAction, ETriggerEvent::Triggered, this, &ThisClass::Look);
 		EnhancedInputComponent->BindAction(InputData->AttackAction, ETriggerEvent::Triggered, this, &ThisClass::Attack);
 
-		EnhancedInputComponent->BindAction(InputData->GuardAction, ETriggerEvent::Triggered, this, &ThisClass::Guard);
+		EnhancedInputComponent->BindAction(InputData->SpecialAction, ETriggerEvent::Triggered, this, &ThisClass::SpecialAction);
 		EnhancedInputComponent->BindAction(InputData->LockOnAction, ETriggerEvent::Triggered, this, &ThisClass::LockOn);
 		EnhancedInputComponent->BindAction(InputData->RunAction, ETriggerEvent::Triggered, this, &ThisClass::Run);
 		EnhancedInputComponent->BindAction(InputData->RollAction, ETriggerEvent::Triggered, this, &ThisClass::Roll);
+		//
+		EnhancedInputComponent->BindAction(InputData->WeaponSwapAction, ETriggerEvent::Triggered, this, &ThisClass::WeaponSwap);
 	}
 }
 
@@ -107,9 +112,12 @@ void APC_PlayableCharaceter::Look(const FInputActionValue& Value)
 
 	if (Controller != nullptr)
 	{
-		// add yaw and pitch input to controller
-		AddControllerYawInput(LookAxisVector.X);
-		AddControllerPitchInput(LookAxisVector.Y);	
+		if(!LockOnComponent->IsLockOnMode())
+		{
+			// add yaw and pitch input to controller
+			AddControllerYawInput(LookAxisVector.X);
+			AddControllerPitchInput(LookAxisVector.Y);	
+		}
 	}
 }
 
@@ -119,16 +127,29 @@ void APC_PlayableCharaceter::Attack(const FInputActionValue& Value)
 	const bool IsPressed = Value[0] != 0.f;
 	
 	check(ActionComponent);
-	ActionComponent->Attack(IsPressed);
+	check(BattleComponent)
+
+	if(BattleComponent->CharacterStanceType == EPC_CharacterStanceType::Staff
+		&& ActionComponent->IsInSpecialAction)
+	{
+		BattleComponent->FireProjectile(IsPressed);
+	}
+	else
+	{
+		ActionComponent->Attack(IsPressed);
+	}
+	
 }
 
 
-void APC_PlayableCharaceter::Guard(const FInputActionValue& Value)
+void APC_PlayableCharaceter::SpecialAction(const FInputActionValue& Value)
 {
 	const bool IsPressed = Value[0] != 0.f;
-	
+
 	check(ActionComponent);
-	ActionComponent->Guard(IsPressed);
+	AdjustMovement(IsPressed);
+	AdjustCamera(IsPressed);
+	ActionComponent->SpecialAction(IsPressed);
 }
 
 void APC_PlayableCharaceter::Run(const FInputActionValue& Value)
@@ -145,6 +166,14 @@ void APC_PlayableCharaceter::Roll(const FInputActionValue& Value)
 
 	check(ActionComponent);
 	ActionComponent->Roll(IsPressed);
+}
+
+void APC_PlayableCharaceter::WeaponSwap(const FInputActionValue& Value)
+{
+	const bool IsPressed = Value[0] != 0.f;
+
+	check(ActionComponent);
+	ActionComponent->SwapWeapon(IsPressed);
 }
 
 
@@ -172,6 +201,38 @@ void APC_PlayableCharaceter::SetupHUDWidget(UPC_HUDWidget* InWidget)
 	{
 		InWidget->UpdateStat(StatComponent->GetBaseStat(), StatComponent->GetModifierStat());
 		StatComponent->OnStatChangedDelegate.AddUObject(InWidget, &UPC_HUDWidget::UpdateStat);
+	}
+}
+
+void APC_PlayableCharaceter::AdjustMovement(bool IsPressed)
+{
+	if (IsPressed && !ActionComponent->IsInSpecialAction)
+	{
+		GetCharacterMovement()->MaxWalkSpeed = PlayerData->MovementSpeed_Walk;
+		GetCharacterMovement()->bOrientRotationToMovement = false;
+	}
+	else if (!IsPressed && ActionComponent->IsInSpecialAction)
+	{
+		GetCharacterMovement()->MaxWalkSpeed = PlayerData->MovementSpeed_Jog;
+		GetCharacterMovement()->bOrientRotationToMovement = true;
+	}
+}
+
+void APC_PlayableCharaceter::AdjustCamera(bool bIsPressed)
+{
+	if (bIsPressed && !ActionComponent->IsInSpecialAction)
+	{
+		if (BattleComponent->CharacterStanceType == EPC_CharacterStanceType::Staff && AimComponent->CurrentCameraType != EPC_CameraType::Aim)
+		{
+			AimComponent->SwitchCamera(EPC_CameraType::Aim);
+		}
+	}
+	else if (!bIsPressed && ActionComponent->IsInSpecialAction)
+	{
+		if (BattleComponent->CharacterStanceType == EPC_CharacterStanceType::Staff && AimComponent->CurrentCameraType != EPC_CameraType::Normal)
+		{
+			AimComponent->SwitchCamera(EPC_CameraType::Normal);
+		}
 	}
 }
 

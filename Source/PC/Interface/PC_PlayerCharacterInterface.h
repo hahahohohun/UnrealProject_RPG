@@ -6,6 +6,8 @@
 #include "UObject/Interface.h"
 #include "PC_PlayerCharacterInterface.generated.h"
 
+class UCameraComponent;
+class USpringArmComponent;
 class UPC_ActionComponent;
 class UPC_BattleComponent;
 class UPC_PlayerDataAsset;
@@ -23,6 +25,9 @@ class PC_API IPC_PlayerCharacterInterface
 
 public:
 	virtual UStaticMeshComponent* GetWeaponStaticMeshComponent() const = 0;
+	virtual USpringArmComponent* GetSpringArmComponent() const = 0;
+	virtual UCameraComponent* GetCameraComponent() const = 0;
+
 	virtual UPC_ActionComponent* GetActionComponent() const = 0;
 	virtual UPC_LockOnComponent* GetLockOnComponent() const = 0;
 	virtual UPC_BattleComponent* GetBattleComponent() const = 0;

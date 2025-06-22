@@ -5,12 +5,15 @@
 #include "PC/Subsystem/PC_DataSubsystem.h"
 #include "PC/Cometic/PC_LegacyCameraShake.h"
 
+class UPC_CameraDataAsset;
+
 class FPC_GameUtil
 {
 public:
 	static FPC_CharacterStatTableRow* GetCharacterStatData(EPC_CharacterType CharacterType);
 	static FPC_EnemyTableRow* GetEnemyData(EPC_CharacterType EnemyType);
 	static FPC_WeaponTableRow* GetWeaponData(uint8 WeaponId);
+	static UPC_CameraDataAsset* GetCameraData(EPC_CameraType CameraType);
 
 	static void CameraShake();
 	template <typename T>

@@ -25,18 +25,20 @@ UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PC_API UPC_ActionComponent : public UActorComponent
 {
 	GENERATED_BODY()
-
+	UPC_ActionComponent();
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 public:
 	void Move(FVector2D MovementVector);
 	void Jump(bool IsPressed);
 	void Attack(bool IsPressed);
-	void Guard(bool bPressed);
+	void SpecialAction(bool bPressed);
 	void Run(bool bPressed);
 	void Roll(bool bPressed);
+	void SwapWeapon(bool bPressed);
 
 	bool CanAction(EPC_ActionType InActionType);
 
@@ -64,8 +66,8 @@ public:
 	bool IsAttacking = false;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	bool IsGuarding = false;
-
+	bool IsInSpecialAction = false;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool IsRunning = false;
 

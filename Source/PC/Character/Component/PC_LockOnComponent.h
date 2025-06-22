@@ -15,7 +15,7 @@ class PC_API UPC_LockOnComponent : public UActorComponent
 public:	
 	// Sets default values for this component's properties
 	UPC_LockOnComponent();
-
+virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 public:
 	void LockOn();
 

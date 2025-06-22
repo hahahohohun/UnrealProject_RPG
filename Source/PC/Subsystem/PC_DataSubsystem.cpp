@@ -29,6 +29,24 @@ void UPC_DataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 			}
 		}
 	}
+
+	const FSoftObjectPath NormalCameraAssetObject(NormalCameraDataPath);
+	if (NormalCameraAssetObject.IsValid())
+	{
+		if (UPC_CameraDataAsset* DataAsset = Cast<UPC_CameraDataAsset>(NormalCameraAssetObject.TryLoad()))
+		{
+			CameraData.Add(EPC_CameraType::Normal, DataAsset);
+		}
+	}
+
+	const FSoftObjectPath AimCameraAssetObject(AimCameraDataPath);
+	if (AimCameraAssetObject.IsValid())
+	{
+		if (UPC_CameraDataAsset* DataAsset = Cast<UPC_CameraDataAsset>(AimCameraAssetObject.TryLoad()))
+		{
+			CameraData.Add(EPC_CameraType::Aim, DataAsset);
+		}
+	}
 }
 
 UDataTable* UPC_DataSubsystem::GetTable(EPC_DataTableType TableType)

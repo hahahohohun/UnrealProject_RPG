@@ -70,7 +70,7 @@ void APC_BaseCharacter::BeginPlay()
 float APC_BaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	StatComponent->ApplyDamage(DamageAmount);
-
+	
 	FPC_GameUtil::CameraShake();
 
 	return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
