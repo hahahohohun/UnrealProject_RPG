@@ -9,6 +9,7 @@
 #include "Component/PC_AimComponent.h"
 #include "Component/PC_BattleComponent.h"
 #include "Component/PC_LockOnComponent.h"
+#include "Component/PC_SkillComponent.h"
 #include "Component/PC_StatComponent.h"
 #include "Component/PC_WidgetComponent.h"
 #include "Controller/PC_PlayerController.h"
@@ -45,7 +46,7 @@ APC_PlayableCharaceter::APC_PlayableCharaceter()
 	LockOnComponent = CreateDefaultSubobject<UPC_LockOnComponent>(TEXT("LockOnComponent"));
 	ActionComponent = CreateDefaultSubobject<UPC_ActionComponent>(TEXT("ActionComponent"));
 	AimComponent = CreateDefaultSubobject<UPC_AimComponent>(TEXT("AimComponent"));
-
+	SkillComponent = CreateDefaultSubobject<UPC_SkillComponent>(TEXT("SkillComponent"));
 }
 
 void APC_PlayableCharaceter::BeginPlay()
@@ -86,6 +87,7 @@ void APC_PlayableCharaceter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 		EnhancedInputComponent->BindAction(InputData->RollAction, ETriggerEvent::Triggered, this, &ThisClass::Roll);
 		//
 		EnhancedInputComponent->BindAction(InputData->WeaponSwapAction, ETriggerEvent::Triggered, this, &ThisClass::WeaponSwap);
+		EnhancedInputComponent->BindAction(InputData->Num1Action, ETriggerEvent::Triggered, this, &ThisClass::Num1);
 	}
 }
 
@@ -187,6 +189,16 @@ void APC_PlayableCharaceter::LockOn(const FInputActionValue& Value)
 	LockOnComponent->LockOn();
 }
 
+void APC_PlayableCharaceter::Num1(const FInputActionValue& Value)
+{
+	const bool IsPressed = Value[0] != 0.f;
+	if (!IsPressed)
+		return;
+
+	check(SkillComponent);
+	SkillComponent->RequestPlaySkill(*PlayerData->SkillIds.Find(EPC_SkillSlotType::Num_1));
+}
+
 void APC_PlayableCharaceter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
@@ -204,6 +216,7 @@ void APC_PlayableCharaceter::SetupHUDWidget(UPC_HUDWidget* InWidget)
 	}
 }
 
+//bOrientRotationToMovement : true 가속을 받는 방향으로 캐릭터가 회전
 void APC_PlayableCharaceter::AdjustMovement(bool IsPressed)
 {
 	if (IsPressed && !ActionComponent->IsInSpecialAction)

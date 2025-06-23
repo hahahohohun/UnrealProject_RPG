@@ -7,6 +7,9 @@ enum class EPC_DataTableType : int32
 	CharacterStat,
 	Enemy,
 	Weapon,
+	Skill,
+	Exec,
+	SkillObject,
 	Num,
 };
 
@@ -87,4 +90,36 @@ enum class EPC_CameraType : uint8
 	Normal,
 	Aim,
 	Num
+};
+
+
+UENUM(BlueprintType)
+enum class EPC_SkillTargetingType : uint8
+{
+	None,
+	NoneTarget,
+	ChainAttack,
+	Multiple,
+	Num,
+};
+
+UENUM(BlueprintType)
+enum class EPC_ExecType : uint8
+{
+	None,
+	Dash,
+	Projectile,
+	Num,
+};
+
+UENUM(BlueprintType)
+enum class EPC_SkillSlotType : uint8
+{
+	None,
+	Num_1,
+	Num_2,
+	Num_3,
+	Num_4,
+	Num_5,
+	Num,
 };

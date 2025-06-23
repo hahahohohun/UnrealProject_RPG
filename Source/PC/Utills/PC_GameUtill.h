@@ -14,11 +14,13 @@ public:
 	static FPC_EnemyTableRow* GetEnemyData(EPC_CharacterType EnemyType);
 	static FPC_WeaponTableRow* GetWeaponData(uint8 WeaponId);
 	static UPC_CameraDataAsset* GetCameraData(EPC_CameraType CameraType);
+	static FPC_SkillTableRow* GetSkillData(uint32 Uint32);
+	static FPC_SkillObjectTableRow* GetSkillObjectData(uint32 Uint32);
+	static FPC_ExecTableRow* GetExecData(uint32 Uint32);
 
 	static void CameraShake();
 	template <typename T>
 	static TArray<T*> GetAllRows(EPC_DataTableType DataTableType);
-	
 };
 
 template <typename T>

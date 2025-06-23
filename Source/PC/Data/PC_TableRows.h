@@ -1,9 +1,23 @@
 ﻿#pragma once
 #include "CoreMinimal.h"
+#include "NiagaraSystem.h"
 #include "BehaviorTree/BlackboardData.h"
 #include "Engine/DataTable.h"
 #include "PC/PC_Enum.h"
 #include "PC_TableRows.generated.h"
+
+//에디터에서 셋팅하는 데이터
+USTRUCT(BlueprintType)
+struct FPC_ExecData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere)
+	float DelayTime = 0.0f;
+
+	UPROPERTY(EditAnywhere)
+	uint32 ExecDataId = 0;
+};
 
 USTRUCT(BlueprintType)
 struct FPC_CharacterStatTableRow : public FTableRowBase
@@ -121,4 +135,73 @@ struct FPC_WeaponTableRow : public FTableRowBase
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FRotator RelativeRot = FRotator::ZeroRotator;
+};
+
+USTRUCT(BlueprintType)
+struct FPC_SkillTableRow : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere)
+	uint32 DataId = 0;
+
+	UPROPERTY(EditAnywhere)
+	float CoolTime = 0.f;
+
+	UPROPERTY(EditAnywhere)
+	float SkillRange = 0.f;
+
+	UPROPERTY(EditAnywhere)
+	EPC_SkillTargetingType SkillTargetingType = EPC_SkillTargetingType::None;
+
+	UPROPERTY(EditAnywhere)
+	UNiagaraSystem* SkillActiveFx;
+
+	UPROPERTY(EditAnywhere)
+	TArray<FPC_ExecData> ExecDatas;
+};
+
+USTRUCT(BlueprintType)
+struct FPC_ExecTableRow : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere)
+	uint32 DataId = 0;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UAnimMontage> SkillAnim;
+
+	UPROPERTY(EditAnywhere)
+	float Duration = 0.f;
+
+	UPROPERTY(EditAnywhere)
+	EPC_ExecType ExecType = EPC_ExecType::None;
+
+	//EPC_ExecType에 따라 유동적으로 값에 의미가 바뀜
+	UPROPERTY(EditAnywhere)
+	float ExecProperty_0 = 0;
+
+	UPROPERTY(EditAnywhere)
+	float ExecProperty_1 = 0;
+
+	UPROPERTY(EditAnywhere)
+	float ExecProperty_2 = 0;
+	//
+	
+};
+
+USTRUCT(BlueprintType)
+struct FPC_SkillObjectTableRow : public  FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere)
+	uint32 DataId = 0;
+	
+	UPROPERTY(EditAnywhere)
+	EPC_SkillObjectType SkillObjectType = EPC_SkillObjectType::None;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AActor> SkillObjectActor;
 };

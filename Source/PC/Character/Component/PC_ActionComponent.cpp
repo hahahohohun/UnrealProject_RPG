@@ -29,6 +29,7 @@ void UPC_ActionComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
+	//가속을 주고 있으면 내가 바라보고 있는 방향으로 회전
 	if (IsInSpecialAction && !OwnerCharacter->GetCharacterMovement()->GetCurrentAcceleration().IsNearlyZero())
 	{
 		FRotator LookAtRot = OwnerCharacter->GetBaseAimRotation();

@@ -6,6 +6,7 @@
 #include "CoreMinimal.h"
 #include "InputActionValue.h"
 #include "PC_BaseCharacter.h"
+#include "Component/PC_SkillComponent.h"
 #include "PC/Interface/PC_CharacterHUDInterface.h"
 #include "PC/Interface/PC_PlayerCharacterInterface.h"
 #include "PC_PlayableCharaceter.generated.h"
@@ -41,6 +42,8 @@ protected:
 	void Roll(const FInputActionValue& Value);
 	void WeaponSwap(const FInputActionValue& Value);
 	void LockOn(const FInputActionValue& Value);
+
+	void Num1(const FInputActionValue& Value);
 
 public:
 
@@ -82,6 +85,9 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Component, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UPC_AimComponent> AimComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Component, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UPC_SkillComponent> SkillComponent;
 	
 	/** MappingContext */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))

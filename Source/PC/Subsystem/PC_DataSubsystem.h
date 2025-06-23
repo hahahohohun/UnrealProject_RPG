@@ -45,6 +45,15 @@ private:
 	FSoftObjectPath Weapon_DataTablePath;
 
 	UPROPERTY(Config)
+	FSoftObjectPath Skill_DataTablePath;
+
+	UPROPERTY(Config)
+	FSoftObjectPath Exec_DataTablePath;
+
+	UPROPERTY(Config)
+	FSoftObjectPath SkillObject_DataTablePath;
+	
+	UPROPERTY(Config)
 	FSoftObjectPath NormalCameraDataPath;
 	
 	UPROPERTY(config)

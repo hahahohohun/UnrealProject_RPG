@@ -62,6 +62,51 @@ UPC_CameraDataAsset* FPC_GameUtil::GetCameraData(EPC_CameraType CameraType)
 	return nullptr;
 }
 
+FPC_SkillTableRow* FPC_GameUtil::GetSkillData(uint32 Skillid)
+{
+	TArray<FPC_SkillTableRow*> EnemyTableRows = GetAllRows<FPC_SkillTableRow>(EPC_DataTableType::Skill);
+	if (FPC_SkillTableRow** FoundRow = EnemyTableRows.FindByPredicate([Skillid](const FPC_SkillTableRow* Row)
+	{
+		return Row->DataId == Skillid;
+	}))
+	{
+		return *FoundRow;
+	}
+	
+	UE_LOG(LogPC, Error, TEXT("Skill data is Invalid"));
+	return nullptr;
+}
+
+FPC_SkillObjectTableRow* FPC_GameUtil::GetSkillObjectData(uint32 Skillid)
+{
+	TArray<FPC_SkillObjectTableRow*> EnemyTableRows = GetAllRows<FPC_SkillObjectTableRow>(EPC_DataTableType::SkillObject);
+	if (FPC_SkillObjectTableRow** FoundRow = EnemyTableRows.FindByPredicate([Skillid](const FPC_SkillObjectTableRow* Row)
+	{
+		return Row->DataId == Skillid;
+	}))
+	{
+		return *FoundRow;
+	}
+	
+	UE_LOG(LogPC, Error, TEXT("skill object data is Invalid"));
+	return nullptr;
+}
+
+FPC_ExecTableRow* FPC_GameUtil::GetExecData(uint32 Uint32)
+{
+	TArray<FPC_ExecTableRow*> EnemyTableRows = GetAllRows<FPC_ExecTableRow>(EPC_DataTableType::Exec);
+	if (FPC_ExecTableRow** FoundRow = EnemyTableRows.FindByPredicate([Uint32](const FPC_ExecTableRow* Row)
+	{
+		return Row->DataId == Uint32;
+	}))
+	{
+		return *FoundRow;
+	}
+	
+	UE_LOG(LogPC, Error, TEXT("ExecData data is Invalid"));
+	return nullptr;
+}
+
 void FPC_GameUtil::CameraShake()
 {
 	if (APlayerController* PlayerController = UGameplayStatics::GetPlayerController(GEngine->GetCurrentPlayWorld(), 0))

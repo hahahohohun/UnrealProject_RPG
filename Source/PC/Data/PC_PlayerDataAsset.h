@@ -32,4 +32,7 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<USoundBase> JumpSound;
+
+	UPROPERTY(EditAnywhere)
+	TMap<EPC_SkillSlotType, uint32> SkillIds;
 };

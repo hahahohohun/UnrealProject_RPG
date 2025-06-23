@@ -18,6 +18,10 @@ void UPC_DataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	LoadList.Add(TPair<EPC_DataTableType, FSoftObjectPath>(EPC_DataTableType::Enemy, EnemyStat_DataTablePath));
 	LoadList.Add(TPair<EPC_DataTableType, FSoftObjectPath>(EPC_DataTableType::Weapon, Weapon_DataTablePath));
 
+	LoadList.Add(TPair<EPC_DataTableType, FSoftObjectPath>(EPC_DataTableType::Skill, Skill_DataTablePath));
+	LoadList.Add(TPair<EPC_DataTableType, FSoftObjectPath>(EPC_DataTableType::SkillObject, SkillObject_DataTablePath));
+	LoadList.Add(TPair<EPC_DataTableType, FSoftObjectPath>(EPC_DataTableType::Exec, Exec_DataTablePath));
+	
 	for (const auto& Element : LoadList)
 	{
 		const FSoftObjectPath DataTableAssetPath(Element.Value);
