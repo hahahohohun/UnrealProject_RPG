@@ -108,6 +108,7 @@ enum class EPC_ExecType : uint8
 {
 	None,
 	Dash,
+	DashToTarget,
 	Projectile,
 	Num,
 };
@@ -121,5 +122,15 @@ enum class EPC_SkillSlotType : uint8
 	Num_3,
 	Num_4,
 	Num_5,
+	Num,
+};
+
+UENUM(BlueprintType)
+enum class EPC_ExecCollisionType :uint8
+{
+	None,
+	Box,
+	Sphere,
+	Capsule,
 	Num,
 };

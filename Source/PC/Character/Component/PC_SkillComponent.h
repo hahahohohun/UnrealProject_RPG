@@ -14,10 +14,18 @@ struct FPC_ExecInfo
 
 	bool bAimStarted = false;
 	bool bExecStarted = false;
-
+	bool bExecFinished = false;
+	bool bExecCollisionSpawned = false; //한번 콜리전 관련 함수
+	
 	float AnimStartTime = 0.0f;
 	float ExecStartTime = 0.0f;
 	float EndTime = 0.f;
+
+	float ElapsedTime = 0.f;
+	uint32 ExecSequence = 0;
+	
+	FVector ExecStartPos = FVector::ZeroVector;
+	FRotator ExecStartRot  = FRotator::ZeroRotator;
 };
 
 struct FPC_SkillInfo
@@ -57,9 +65,14 @@ public:
 	void CalcSkillTime(uint32 SkillId, float& SkillLifeTime, TArray<FPC_ExecInfo>& ExecInfos);
 
 	//논타겟
-	void ProcessNonTargetSkill(float DeltaTime, FPC_SkillInfo& SkillInfo);
+	void ProcessSkill(float DeltaTime, FPC_SkillInfo& SkillInfo);
 	void ProcessNonTargetExec(float DeltaTime, FPC_ExecInfo& ExecInfo, FVector StartPos, FRotator StartRot);
+	void ProcessChainAttackExec(float DeltaTime, FPC_SkillInfo& SkillInfo, FPC_ExecInfo& ExecInfo, FVector StartPos, FRotator StartRot);
 
+	void SpawnExecCollsion(const FPC_ExecInfo& ExecInfo, FCollisionShape CollisionShape, const FVector& Vector, const FRotator& Rotator);
+	
+	void OnStartExec(FPC_SkillInfo& SkillInfo, FPC_ExecInfo& ExecInfo);
+	void OnEndExec(FPC_SkillInfo& SkillInfo, FPC_ExecInfo& ExecInfo);
 	
 public:
 	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;

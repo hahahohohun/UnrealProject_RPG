@@ -172,11 +172,21 @@ struct FPC_ExecTableRow : public FTableRowBase
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UAnimMontage> SkillAnim;
 
+	
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UCurveFloat> ExeCurve;
+	
 	UPROPERTY(EditAnywhere)
 	float Duration = 0.f;
+	
+	UPROPERTY(EditAnywhere)
+	float Damage = 0.f;
 
 	UPROPERTY(EditAnywhere)
 	EPC_ExecType ExecType = EPC_ExecType::None;
+
+	UPROPERTY(EditAnywhere)
+	EPC_ExecCollisionType ExecCollisionType = EPC_ExecCollisionType::None;
 
 	//EPC_ExecType에 따라 유동적으로 값에 의미가 바뀜
 	UPROPERTY(EditAnywhere)
@@ -188,7 +198,16 @@ struct FPC_ExecTableRow : public FTableRowBase
 	UPROPERTY(EditAnywhere)
 	float ExecProperty_2 = 0;
 	//
+
+	//콜리전 정보 ex) 높이 너비 길이
+	UPROPERTY(EditAnywhere)
+	float ExecCollisionProperty_0 = 0;
+
+	UPROPERTY(EditAnywhere)
+	float ExecCollisionProperty_1 = 0;
 	
+	UPROPERTY(EditAnywhere)
+	float ExecCollisionProperty_2 = 0;
 };
 
 USTRUCT(BlueprintType)
