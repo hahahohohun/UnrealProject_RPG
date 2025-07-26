@@ -4,9 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "GenericTeamAgentInterface.h"
+#include "Component/PC_BattleComponent.h"
 #include "GameFramework/Character.h"
 #include "PC/PC_Enum.h"
-#include "PC/Interface/PC_AnimationAttackInterface.h"
+#include "PC/Interface/PC_CharacterInterface.h"
 #include "PC/Interface/PC_CharacterWidgetInterface.h"
 #include "PC_BaseCharacter.generated.h"
 
@@ -18,46 +19,66 @@ class UPC_StatComponent;
 class UPC_BattleComponent;
 
 UCLASS(config=Game)
-class APC_BaseCharacter : public ACharacter, public IPC_AnimationAttackInterface , public IPC_CharacterWidgetInterface
+class APC_BaseCharacter : public ACharacter, public IPC_CharacterInterface, public IPC_CharacterWidgetInterface
 {
 	GENERATED_BODY()
-	
+
 public:
 	APC_BaseCharacter();
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void PostInitializeComponents() override;
-	
+
 	virtual void AttackTrace(bool bStart, FName TraceStartBoneName, FName TraceEndBoneName) override;
 	virtual void AttackTraceWithWeapon(bool bStart) override;
 	virtual bool HasWeapon() override;
-	
-	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
-	
+
+	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
+	                         AActor* DamageCauser) override;
+
 public:
 	void ApplyStat(const FPC_CharacterStatTableRow& BaseStat, const FPC_CharacterStatTableRow& ModifierStat);
 
 	virtual void SetupCharacterWidget(class UPC_UserWidget* InUserWidget) override;
 	virtual void SetupLockOnWidget(UPC_UserWidget* InUserWidget) override;
 	virtual void OnLocked(bool bLocked) override;
+	virtual void OnDead();
 	
-	
+	virtual bool IsDead() override;
+	virtual UStaticMeshComponent* GetWeaponStaticMeshComponent() override { return WeaponStaticMeshComponent; }
+	virtual UPC_CrowdControlComponent* GetCrowdControlComponent() override { return CrowdControlComponent; }
+	virtual TPair<FName, FName> GetWeaponTraceNames() override;
+	virtual UPC_CharacterDataAsset* GetCharacterDataAsset() override { return CharacterData ;}
+
+	UFUNCTION()
+	virtual void OnStartCrowdControl(EPC_CrowdControlType CrowdType, AActor* actor);
+
+	UFUNCTION()
+	virtual void OnEndCrowdControl(EPC_CrowdControlType CrowdType, AActor* actor);
+
+
 public:
 	UPROPERTY(EditAnywhere)
 	EPC_CharacterType CharacterType = EPC_CharacterType::None;
-	
+
 	FOnCharacterLocked OnCharacterLocked;
-	
+
 	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<UPC_BattleComponent> BattleComponent = nullptr;
-	
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta= (allowPrivateAccess=true))
+	TObjectPtr<UPC_CrowdControlComponent> CrowdControlComponent;
+
 	UPROPERTY()
 	TObjectPtr<UPC_StatComponent> StatComponent = nullptr;
 
 	UPROPERTY()
 	TObjectPtr<UPC_WidgetComponent> WidgetComponent = nullptr;
-	
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UStaticMeshComponent> WeaponStaticMeshComponent;
-};
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UPC_CharacterDataAsset> CharacterData;
+};

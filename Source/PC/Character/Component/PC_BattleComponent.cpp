@@ -122,7 +122,7 @@ void UPC_BattleComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 			}
 		}
 		
-		DrawDebugLine(World, Line.Key, Line.Value, FColor::Red, false, 3.f, 0, 1.f);
+		//DrawDebugLine(World, Line.Key, Line.Value, FColor::Red, false, 3.f, 0, 1.f);
 	}
 
 	// Prev 갱신

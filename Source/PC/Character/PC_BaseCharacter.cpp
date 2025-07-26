@@ -38,6 +38,7 @@ APC_BaseCharacter::APC_BaseCharacter()
 	GetCharacterMovement()->MinAnalogWalkSpeed = 20.f;
 	
 	BattleComponent = CreateDefaultSubobject<UPC_BattleComponent>(TEXT("BattleComponent"));
+	CrowdControlComponent = CreateDefaultSubobject<UPC_CrowdControlComponent>(TEXT("CrowdControlComponent"));
 	StatComponent = CreateDefaultSubobject<UPC_StatComponent>(TEXT("StatComponent"));
 	WeaponStaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponStaticComponent"));
 	WeaponStaticMeshComponent->SetupAttachment(GetMesh());
@@ -70,9 +71,6 @@ void APC_BaseCharacter::BeginPlay()
 float APC_BaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	StatComponent->ApplyDamage(DamageAmount);
-	
-	FPC_GameUtil::CameraShake();
-
 	return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 }
 
@@ -104,10 +102,42 @@ void APC_BaseCharacter::OnLocked(bool bLocked)
 	OnCharacterLocked.Broadcast(bLocked);
 }
 
+void APC_BaseCharacter::OnDead()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	check(AnimInstance);
+
+	AnimInstance->StopAllMontages(0.f);
+	
+	//GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	//GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_GameTraceChannel3, ECR_Ignore);
+	GetCapsuleComponent()->SetCollisionProfileName(EName::Pawn);
+}
+
+bool APC_BaseCharacter::IsDead()
+{
+	check(StatComponent);
+	return StatComponent->CurrentHp < KINDA_SMALL_NUMBER;
+}
+
+TPair<FName, FName> APC_BaseCharacter::GetWeaponTraceNames()
+{
+	return {BattleComponent->TraceEndBoneName, BattleComponent->TraceEndBoneName};
+}
+
+void APC_BaseCharacter::OnStartCrowdControl(EPC_CrowdControlType CrowdType, AActor* actor)
+{
+}
+
+void APC_BaseCharacter::OnEndCrowdControl(EPC_CrowdControlType CrowdType, AActor* actor)
+{
+}
+
 void APC_BaseCharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
-	
+
+	StatComponent->OnCharacterDieDelegate.AddUObject(this, &ThisClass::OnDead);
 	StatComponent->OnStatChangedDelegate.AddUObject(this, &ThisClass::ApplyStat);
 }
 

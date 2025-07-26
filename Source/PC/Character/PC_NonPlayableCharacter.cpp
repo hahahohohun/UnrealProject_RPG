@@ -1,5 +1,6 @@
 ﻿#include "PC_NonPlayableCharacter.h"
 
+#include "BehaviorTree/BehaviorTreeComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Component/PC_WidgetComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -66,7 +67,7 @@ void APC_NonPlayableCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (IsTurning)
+	if (IsTurning && EnemyState != EPC_EnemyStateType::CrowdControlled)
 	{
 		if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
 		{
@@ -184,6 +185,11 @@ void APC_NonPlayableCharacter::ResetState()
 
 void APC_NonPlayableCharacter::ChangeState(EPC_EnemyStateType StateType)
 {
+	if(StateType == EPC_EnemyStateType::Dead)
+	{
+		return;	
+	}
+	
 	EnemyState = StateType;
 
 	if (EnemyState == EPC_EnemyStateType::Patrol || EnemyState == EPC_EnemyStateType::Investigating )
@@ -199,6 +205,49 @@ void APC_NonPlayableCharacter::ChangeState(EPC_EnemyStateType StateType)
 	{
 		AIController->GetBlackboardComponent()->SetValueAsEnum(TEXT("State"), static_cast<uint8>(StateType));
 	}
+}
+
+void APC_NonPlayableCharacter::OnStartCrowdControl(EPC_CrowdControlType CrowdControlType, AActor* Causer)
+{
+	Super::OnStartCrowdControl(CrowdControlType, Causer);
+	ChangeState(EPC_EnemyStateType::CrowdControlled);
+}
+
+void APC_NonPlayableCharacter::OnEndCrowdControl(EPC_CrowdControlType CrowdControlType, AActor* Causer)
+{
+	Super::OnEndCrowdControl(CrowdControlType, Causer);
+	
+	if (!CrowdControlComponent->IsCrowdControlled())
+	{
+		if (AAIController* AIContoller = Cast<AAIController>(GetController()))
+		{
+			AIContoller->GetBlackboardComponent()->SetValueAsObject(TEXT("Target"), Causer);
+		}
+		
+		ChangeState(EPC_EnemyStateType::Battle);
+	}
+}
+
+void APC_NonPlayableCharacter::OnDead()
+{
+	Super::OnDead();
+
+	if (AAIController* AIContoller = Cast<AAIController>(GetController()))
+	{
+		UBehaviorTreeComponent* BTComponent = Cast<UBehaviorTreeComponent>(AIContoller->GetBrainComponent());
+		if (BTComponent)	
+		{
+			BTComponent->StopTree();
+		}
+	}
+	
+	check(CrowdControlComponent);
+	CrowdControlComponent->StopCC();
+
+	check(WidgetComponent);
+	WidgetComponent->SetVisibility(false);
+
+	ChangeState(EPC_EnemyStateType::Dead);
 }
 
 EPC_EnemyStateType APC_NonPlayableCharacter::GetState()

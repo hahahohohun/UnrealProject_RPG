@@ -5,6 +5,7 @@
 #include "Actor/PC_PatrolRoute.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
+#include "Navigation/PathFollowingComponent.h"
 
 #include "PC/Character/PC_NonPlayableCharacter.h"
 #include "PC/Utills/PC_GameUtill.h"
@@ -85,6 +86,15 @@ FPC_EnemyTableRow* APC_AIController::GetEnemyData()
 
 void APC_AIController::OnPerceptionUpdate(const TArray<AActor*>& UpdatedActors)
 {
+	IPC_CharacterInterface* CharacterInterface = Cast<IPC_CharacterInterface>(GetPawn());
+	ensure(CharacterInterface);
+
+	UPC_CrowdControlComponent* CrowdControlComponent = CharacterInterface->GetCrowdControlComponent();
+	check(CrowdControlComponent);
+
+	if (CrowdControlComponent->IsCrowdControlled())
+		return;
+	
 	for (AActor* UpdatedActor : UpdatedActors)
 	{
 		if (GetAIStimulus(UpdatedActor, EPC_AISenseType::Sight).WasSuccessfullySensed())
@@ -167,6 +177,15 @@ void APC_AIController::HandleLoseTarget(AActor* InActor)
 	IPC_CharacterAIInterface* AIPawn = Cast<IPC_CharacterAIInterface>(GetPawn());
 	ensure(AIPawn);
 
+	IPC_CharacterInterface* CharacterInterface = Cast<IPC_CharacterInterface>(GetPawn());
+	ensure(CharacterInterface);
+
+	UPC_CrowdControlComponent* CrowdControlComponent = CharacterInterface->GetCrowdControlComponent();
+	check(CrowdControlComponent);
+
+	if (CrowdControlComponent->IsCrowdControlled())
+		return;
+	
 	AIPawn->ChangeState(EPC_EnemyStateType::Patrol);
 	GetBlackboardComponent()->SetValueAsObject(TEXT("Target"), nullptr);
 }

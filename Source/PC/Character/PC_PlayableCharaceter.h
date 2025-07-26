@@ -44,6 +44,9 @@ protected:
 	void LockOn(const FInputActionValue& Value);
 
 	void Num1(const FInputActionValue& Value);
+	void Num2(const FInputActionValue& Value);
+	void Num3(const FInputActionValue& Value);
+	void Num4(const FInputActionValue& Value);
 
 public:
 

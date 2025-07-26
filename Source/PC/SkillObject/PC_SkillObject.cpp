@@ -7,6 +7,9 @@
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystem.h"
+#include "NiagaraFunctionLibrary.h"
+#include "Engine/DamageEvents.h"
+#include "GameFramework/Character.h"
 #include "PC/Utills/PC_GameUtill.h"
 
 // Sets default values
@@ -50,8 +53,6 @@ void APC_SkillObject::BeginPlay()
 
 	if (BounceCount > 0)
 		ProjectileMovementComponent->bShouldBounce = true;
-
-	PlaySound(true);
 }
 
 // Called every frame
@@ -62,18 +63,23 @@ void APC_SkillObject::Tick(float DeltaTime)
 	ElapsedTime += DeltaTime;
 	if (ElapsedTime > LifeTime)
 	{
-		PlaySound(false);
-		PlayFX(false, GetActorLocation());
-		Destroy();
+		ProcessDestroy();
 	}
 }
 
 void APC_SkillObject::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	PlaySound(false);
-	PlayFX(false, SweepResult.Location);
-	Destroy();
+	FPC_SkillObjectTableRow* SkillObjectTableRow = FPC_GameUtil::GetSkillObjectData(SkillObjectId);
+	check(SkillObjectTableRow);
+	
+	if (ACharacter* HitCharacter = Cast<ACharacter>(OtherActor))
+	{
+		FDamageEvent DamageEvent;
+		HitCharacter->TakeDamage(SkillObjectTableRow->Damage, DamageEvent, OwnerCharacter->GetController(), OwnerCharacter.Get());
+	}
+	
+	ProcessDestroy();
 }
 
 void APC_SkillObject::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
@@ -90,32 +96,36 @@ void APC_SkillObject::OnComponentHit(UPrimitiveComponent* HitComponent, AActor* 
 	}
 	else if (BounceCount == 0)
 	{
-		PlaySound(false);
-		PlayFX(false, Hit.Location);
-		Destroy();
+		ProcessDestroy();
 	}
 }
 
-void APC_SkillObject::PlaySound(bool bSpawn)
+void APC_SkillObject::PlaySound()
 {
 	FVector ActorLocation = GetActorLocation();
-
-	if (bSpawn)
-		UGameplayStatics::SpawnSoundAtLocation(GetWorld(), SpawnSound, ActorLocation);
-	else
-	{
-		UGameplayStatics::SpawnSoundAtLocation(GetWorld(), DeSpawnSound, ActorLocation);
-	}
+	UGameplayStatics::SpawnSoundAtLocation(GetWorld(), DeSpawnSound, ActorLocation);
 }
 
-void APC_SkillObject::PlayFX(bool bSpawn, FVector InHitLocation)
+void APC_SkillObject::PlayFX(FVector InHitLocation)
 {
-	UParticleSystem* LoadedParticle = Cast<UParticleSystem>(
-	StaticLoadObject(UParticleSystem::StaticClass(), nullptr, TEXT("/Game/ParagonCrunch/FX/Particles/Abilities/Hook/FX/P_Crunch_Hook_Impact.P_Crunch_Hook_Impact")));
-
-	if (LoadedParticle)
-		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), LoadedParticle, InHitLocation, FRotator::ZeroRotator);
-
+	UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), DespawnFX, GetActorLocation(), GetActorRotation());
 	FPC_GameUtil::CameraShake();
+}
+
+void APC_SkillObject::ProcessDestroy()
+{
+	TriggerCollision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Collision_Environment->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	ProjectileMovementComponent->Deactivate();
+	StaticMeshComponent->SetVisibility(false);
+	
+	PlaySound();
+	PlayFX(GetActorLocation());
+
+	FTimerHandle TimerHandle;
+	GetWorld()->GetTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([this]()
+	{
+		Destroy();
+	}), 0.5f, false);
 }
 

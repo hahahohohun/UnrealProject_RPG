@@ -68,6 +68,8 @@ void UPC_ActionComponent::Move(FVector2D MovementVector)
 		{
 			AnimInstance->StopAllMontages(0.1f);
 			ResetCombo();
+
+			
 		}
 	}
 }

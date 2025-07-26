@@ -168,10 +168,31 @@ struct FPC_ExecTableRow : public FTableRowBase
 
 	UPROPERTY(EditAnywhere)
 	uint32 DataId = 0;
-
+	
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UAnimMontage> SkillAnim;
 
+	UPROPERTY(EditAnywhere)
+	UNiagaraSystem* ExecFX_Niagara_Start = nullptr;
+	
+	UPROPERTY(EditAnywhere)
+	UParticleSystem* ExecFX_Cascade_Start = nullptr;
+
+	UPROPERTY(EditAnywhere)
+	UNiagaraSystem* ExecFX_Niagara_End = nullptr;
+	
+	UPROPERTY(EditAnywhere)
+	UParticleSystem* ExecFX_Cascade_End = nullptr;
+
+	//받았을때 데미지 이펙트
+	UPROPERTY(EditAnywhere)
+	UNiagaraSystem* HitFX_Niagara = nullptr;
+	
+	UPROPERTY(EditAnywhere)
+	UParticleSystem* HitFX_Cascade = nullptr;
+	//
+	UPROPERTY(EditAnywhere)
+	float HitEffectScale = 1.f;
 	
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UCurveFloat> ExeCurve;
@@ -208,6 +229,24 @@ struct FPC_ExecTableRow : public FTableRowBase
 	
 	UPROPERTY(EditAnywhere)
 	float ExecCollisionProperty_2 = 0;
+
+	UPROPERTY(EditAnywhere)
+	float CrowdControlId = INDEX_NONE;
+	
+	UPROPERTY(EditAnywhere)
+	bool bAttachFx = false;
+
+	UPROPERTY(EditAnywhere)
+	FName SkillPosBoneName = NAME_None;
+
+	UPROPERTY(EditAnywhere)
+	bool bPlayCameraShake = true;
+
+	UPROPERTY(EditAnywhere)
+	bool bSpawnCollision = true;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UMaterialInterface> MaterialInterface = nullptr;
 };
 
 USTRUCT(BlueprintType)
@@ -217,10 +256,43 @@ struct FPC_SkillObjectTableRow : public  FTableRowBase
 
 	UPROPERTY(EditAnywhere)
 	uint32 DataId = 0;
+
+	UPROPERTY(EditAnywhere)
+	float Damage = 0;
 	
 	UPROPERTY(EditAnywhere)
 	EPC_SkillObjectType SkillObjectType = EPC_SkillObjectType::None;
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AActor> SkillObjectActor;
+};
+
+USTRUCT()
+struct FPC_CrowdControlTableRow : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere)
+	uint32 DataId = 0;
+
+	UPROPERTY(EditAnywhere)
+	EPC_CrowdControlType CrowdControlType = EPC_CrowdControlType::None;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UNiagaraSystem> CrowdControlFX = nullptr;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UMaterialInstance> MaterialInstance = nullptr; //메테리얼중 가장 상위 클래스
+
+	UPROPERTY(EditAnywhere)
+	float Duration = 0.f;
+
+	UPROPERTY(EditAnywhere)
+	float Property_0 = 0.f;
+	UPROPERTY(EditAnywhere)
+	float Property_1 = 0.f;
+	UPROPERTY(EditAnywhere)
+	float Property_2 = 0.f;
+	
+	
 };

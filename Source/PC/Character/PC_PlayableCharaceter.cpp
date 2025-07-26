@@ -20,6 +20,7 @@
 #include "PC/Data/PC_InputDataAsset.h"
 #include "PC/Data/PC_PlayerDataAsset.h"
 #include "PC/UI/PC_HUDWidget.h"
+#include "PC/Utills/PC_GameUtill.h"
 #include "Perception/AIPerceptionStimuliSourceComponent.h"
 #include "Perception/AISense_Sight.h"
 
@@ -88,6 +89,9 @@ void APC_PlayableCharaceter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 		//
 		EnhancedInputComponent->BindAction(InputData->WeaponSwapAction, ETriggerEvent::Triggered, this, &ThisClass::WeaponSwap);
 		EnhancedInputComponent->BindAction(InputData->Num1Action, ETriggerEvent::Triggered, this, &ThisClass::Num1);
+		EnhancedInputComponent->BindAction(InputData->Num2Action, ETriggerEvent::Triggered, this, &ThisClass::Num2);
+		EnhancedInputComponent->BindAction(InputData->Num3Action, ETriggerEvent::Triggered, this, &ThisClass::Num3);
+		EnhancedInputComponent->BindAction(InputData->Num4Action, ETriggerEvent::Triggered, this, &ThisClass::Num4);
 	}
 }
 
@@ -194,9 +198,68 @@ void APC_PlayableCharaceter::Num1(const FInputActionValue& Value)
 	const bool IsPressed = Value[0] != 0.f;
 	if (!IsPressed)
 		return;
-
+	
 	check(SkillComponent);
-	SkillComponent->RequestPlaySkill(*PlayerData->SkillIds.Find(EPC_SkillSlotType::Num_1));
+	check(BattleComponent);
+	check(ActionComponent);
+	
+	const uint32 SkillId = FPC_GameUtil::GetSkillId(PlayerData,
+		EPC_SkillSlotType::Num_1,
+		BattleComponent->CharacterStanceType,
+		ActionComponent->IsInSpecialAction);
+	
+	SkillComponent->RequestPlaySkill(SkillId);
+}
+
+void APC_PlayableCharaceter::Num2(const FInputActionValue& Value)
+{	const bool IsPressed = Value[0] != 0.f;
+	if (!IsPressed)
+		return;
+	
+	check(SkillComponent);
+	check(BattleComponent);
+	check(ActionComponent);
+	
+	const uint32 SkillId = FPC_GameUtil::GetSkillId(PlayerData,
+		EPC_SkillSlotType::Num_2,
+		BattleComponent->CharacterStanceType,
+		ActionComponent->IsInSpecialAction);
+	
+	SkillComponent->RequestPlaySkill(SkillId);
+}
+
+void APC_PlayableCharaceter::Num3(const FInputActionValue& Value)
+{	const bool IsPressed = Value[0] != 0.f;
+	if (!IsPressed)
+		return;
+	
+	check(SkillComponent);
+	check(BattleComponent);
+	check(ActionComponent);
+	
+	const uint32 SkillId = FPC_GameUtil::GetSkillId(PlayerData,
+		EPC_SkillSlotType::Num_3,
+		BattleComponent->CharacterStanceType,
+		ActionComponent->IsInSpecialAction);
+	
+	SkillComponent->RequestPlaySkill(SkillId);
+}
+
+void APC_PlayableCharaceter::Num4(const FInputActionValue& Value)
+{	const bool IsPressed = Value[0] != 0.f;
+	if (!IsPressed)
+		return;
+	
+	check(SkillComponent);
+	check(BattleComponent);
+	check(ActionComponent);
+	
+	const uint32 SkillId = FPC_GameUtil::GetSkillId(PlayerData,
+		EPC_SkillSlotType::Num_4,
+		BattleComponent->CharacterStanceType,
+		ActionComponent->IsInSpecialAction);
+	
+	SkillComponent->RequestPlaySkill(SkillId);
 }
 
 void APC_PlayableCharaceter::PossessedBy(AController* NewController)

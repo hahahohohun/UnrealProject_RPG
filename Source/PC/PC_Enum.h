@@ -10,6 +10,7 @@ enum class EPC_DataTableType : int32
 	Skill,
 	Exec,
 	SkillObject,
+	CrowdControl,
 	Num,
 };
 
@@ -29,7 +30,9 @@ enum class EPC_EnemyStateType : uint8
 	Patrol = 1,
 	Battle = 2,
 	Investigating =3,
-	Num = 3,
+	CrowdControlled,
+	Dead,
+	Num
 };
 
 UENUM(BlueprintType)
@@ -110,6 +113,8 @@ enum class EPC_ExecType : uint8
 	Dash,
 	DashToTarget,
 	Projectile,
+	Dot,
+	Pushback,
 	Num,
 };
 
@@ -121,7 +126,6 @@ enum class EPC_SkillSlotType : uint8
 	Num_2,
 	Num_3,
 	Num_4,
-	Num_5,
 	Num,
 };
 
@@ -133,4 +137,14 @@ enum class EPC_ExecCollisionType :uint8
 	Sphere,
 	Capsule,
 	Num,
+};
+
+UENUM(BlueprintType)
+enum class EPC_CrowdControlType : uint8
+{
+	None,
+	Pushback,
+	Stun,
+	Freeze,
+	Num
 };

@@ -3,7 +3,7 @@
 
 #include "PC_AttackTraceNotify.h"
 
-#include "PC/Interface/PC_AnimationAttackInterface.h"
+#include "PC/Interface/PC_CharacterInterface.h"
 
 void UPC_AttackTraceNotify::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,
                                    const FAnimNotifyEventReference& EventReference)
@@ -12,7 +12,7 @@ void UPC_AttackTraceNotify::Notify(USkeletalMeshComponent* MeshComp, UAnimSequen
 
 	if(MeshComp)
 	{
-		if(IPC_AnimationAttackInterface* AttackInterface = Cast<IPC_AnimationAttackInterface>(MeshComp->GetOwner()))
+		if(IPC_CharacterInterface* AttackInterface = Cast<IPC_CharacterInterface>(MeshComp->GetOwner()))
 		{
 			AttackInterface->AttackTrace(isStart, TraceStartBoneName, TraceEndBoneName);
 		}

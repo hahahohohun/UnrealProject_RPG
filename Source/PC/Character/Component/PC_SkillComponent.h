@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "CoreMinimal.h"
+#include "NiagaraComponent.h"
 #include "PC_SkillComponent.generated.h"
 
 
@@ -22,10 +23,14 @@ struct FPC_ExecInfo
 	float EndTime = 0.f;
 
 	float ElapsedTime = 0.f;
+	float IntervalElapsedTime = 0.f;
+	
 	uint32 ExecSequence = 0;
 	
 	FVector ExecStartPos = FVector::ZeroVector;
 	FRotator ExecStartRot  = FRotator::ZeroRotator;
+
+	TObjectPtr<UNiagaraComponent> AttachedFx = nullptr;
 };
 
 struct FPC_SkillInfo
@@ -68,11 +73,12 @@ public:
 	void ProcessSkill(float DeltaTime, FPC_SkillInfo& SkillInfo);
 	void ProcessNonTargetExec(float DeltaTime, FPC_ExecInfo& ExecInfo, FVector StartPos, FRotator StartRot);
 	void ProcessChainAttackExec(float DeltaTime, FPC_SkillInfo& SkillInfo, FPC_ExecInfo& ExecInfo, FVector StartPos, FRotator StartRot);
+	void ProcessMultipleExec(float DeltaTime, FPC_SkillInfo& SkillInfo, FPC_ExecInfo& ExecInfo, FVector StartPos, FRotator StartRot);
 
-	void SpawnExecCollsion(const FPC_ExecInfo& ExecInfo, FCollisionShape CollisionShape, const FVector& Vector, const FRotator& Rotator);
-	
+	void CheckCollision(const FPC_ExecInfo& ExecInfo, FCollisionShape CollisionShape, const FVector& Vector, const FRotator& Rotator);
 	void OnStartExec(FPC_SkillInfo& SkillInfo, FPC_ExecInfo& ExecInfo);
 	void OnEndExec(FPC_SkillInfo& SkillInfo, FPC_ExecInfo& ExecInfo);
+
 	
 public:
 	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;

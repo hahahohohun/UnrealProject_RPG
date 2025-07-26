@@ -43,6 +43,11 @@ protected:
 	virtual void ResetState() override;
 	virtual void ChangeState(EPC_EnemyStateType StateType) override;
 
+	virtual void OnStartCrowdControl(EPC_CrowdControlType CrowdType, AActor* actor) override;
+	virtual void OnEndCrowdControl(EPC_CrowdControlType CrowdType, AActor* actor) override;
+
+	virtual void OnDead() override;
+	
 	UFUNCTION(BlueprintCallable)
 	virtual EPC_EnemyStateType GetState() override;
 

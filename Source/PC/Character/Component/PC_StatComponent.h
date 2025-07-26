@@ -7,9 +7,9 @@
 #include "PC/Data/PC_TableRows.h"
 #include "PC_StatComponent.generated.h"
 
-DECLARE_MULTICAST_DELEGATE_TwoParams(FOnHPChangedDelegate, float CurrentHP, float MaxHP);
-DECLARE_MULTICAST_DELEGATE(FOnCharacterDieDelegate);
-DECLARE_MULTICAST_DELEGATE_TwoParams(FOnSatChangedDelegate, const FPC_CharacterStatTableRow& BaseStat,
+DECLARE_MULTICAST_DELEGATE_TwoParams(FPC_OnHPChangedDelegate, float CurrentHP, float MaxHP);
+DECLARE_MULTICAST_DELEGATE(FPC_OnDeadDelegate);
+DECLARE_MULTICAST_DELEGATE_TwoParams(FPC_OnSatChangedDelegate, const FPC_CharacterStatTableRow& BaseStat,
                                      const FPC_CharacterStatTableRow& ModfierStat);
 
 
@@ -23,9 +23,9 @@ public:
 	// Sets default values for this component's properties
 	UPC_StatComponent();
 	virtual  void InitializeComponent() override;
-	FOnHPChangedDelegate OnHPChangedDelegate;
-	FOnSatChangedDelegate OnStatChangedDelegate;
-	FOnCharacterDieDelegate OnCharacterDieDelegate;
+	FPC_OnHPChangedDelegate OnHPChangedDelegate;
+	FPC_OnSatChangedDelegate OnStatChangedDelegate;
+	FPC_OnDeadDelegate OnCharacterDieDelegate;
 
 	void AddBaseStat(const FPC_CharacterStatTableRow& InAddBaseStat);
 	void SetBaseStat(const FPC_CharacterStatTableRow& InSetBaseStat);

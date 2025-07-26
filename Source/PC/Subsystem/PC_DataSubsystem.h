@@ -52,6 +52,9 @@ private:
 
 	UPROPERTY(Config)
 	FSoftObjectPath SkillObject_DataTablePath;
+
+	UPROPERTY(Config)
+	FSoftObjectPath CrowdControl_DataTablePath;
 	
 	UPROPERTY(Config)
 	FSoftObjectPath NormalCameraDataPath;

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "NiagaraSystem.h"
 #include "Components/SphereComponent.h"
 #include "GameFramework/Actor.h"
 #include "PC/PC_Enum.h"
@@ -36,10 +37,13 @@ public:
 	UFUNCTION()
 	void OnComponentHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 	
-	void PlaySound(bool bSpawn);
-	void PlayFX(bool bSpawn, FVector InHitLocation);
-
+	void PlaySound();
+	void PlayFX(FVector InHitLocation);
+	void ProcessDestroy();
 public:
+	UPROPERTY(EditAnywhere)
+
+	uint32 SkillObjectId = 0;
 	UPROPERTY(EditAnywhere)
 	EPC_SkillObjectType SkillObjectType = EPC_SkillObjectType::None;
 
@@ -59,14 +63,17 @@ public:
 	UProjectileMovementComponent* ProjectileMovementComponent;
 
 	UPROPERTY()
-	ACharacter* OwnerCharacter = nullptr;
+	TWeakObjectPtr<ACharacter>  OwnerCharacter = nullptr;
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<USoundBase> SpawnSound;
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<USoundBase> DeSpawnSound;
-
+	
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UNiagaraSystem> DespawnFX;
+	
 	UPROPERTY(EditAnywhere)
 	float LifeTime = 0.f;
 	float ElapsedTime = 0.f;
