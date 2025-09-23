@@ -13,7 +13,7 @@
 #include "Component/PC_StatComponent.h"
 #include "Component/PC_WidgetComponent.h"
 #include "Controller/PC_PlayerController.h"
-#include "Core/Tests/Containers/TestUtils.h"
+//#include "Core/Tests/Containers/TestUtils.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -45,9 +45,10 @@ APC_PlayableCharaceter::APC_PlayableCharaceter()
 
 	WidgetComponent->SetRelativeLocation(FVector(0.0f, 0.0f, 200.0f));
 	LockOnComponent = CreateDefaultSubobject<UPC_LockOnComponent>(TEXT("LockOnComponent"));
+	BackstabSystemComponent = CreateDefaultSubobject<UPC_BackstabSystemComponent>(TEXT("BackstabSystemComponent"));
 	ActionComponent = CreateDefaultSubobject<UPC_ActionComponent>(TEXT("ActionComponent"));
 	AimComponent = CreateDefaultSubobject<UPC_AimComponent>(TEXT("AimComponent"));
-	SkillComponent = CreateDefaultSubobject<UPC_SkillComponent>(TEXT("SkillComponent"));
+
 }
 
 void APC_PlayableCharaceter::BeginPlay()
@@ -62,9 +63,8 @@ void APC_PlayableCharaceter::BeginPlay()
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
 	}
+	
 
-	check(BattleComponent);
-	BattleComponent->EquipWeapon(0);
 }
 
 void APC_PlayableCharaceter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -84,6 +84,8 @@ void APC_PlayableCharaceter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 
 		EnhancedInputComponent->BindAction(InputData->SpecialAction, ETriggerEvent::Triggered, this, &ThisClass::SpecialAction);
 		EnhancedInputComponent->BindAction(InputData->LockOnAction, ETriggerEvent::Triggered, this, &ThisClass::LockOn);
+		EnhancedInputComponent->BindAction(InputData->BackstabOnAction, ETriggerEvent::Triggered, this, &ThisClass::BackstabOn);
+		
 		EnhancedInputComponent->BindAction(InputData->RunAction, ETriggerEvent::Triggered, this, &ThisClass::Run);
 		EnhancedInputComponent->BindAction(InputData->RollAction, ETriggerEvent::Triggered, this, &ThisClass::Roll);
 		//
@@ -193,6 +195,23 @@ void APC_PlayableCharaceter::LockOn(const FInputActionValue& Value)
 	LockOnComponent->LockOn();
 }
 
+void APC_PlayableCharaceter::BackstabOn(const FInputActionValue& Value)
+{
+	const bool IsPressed = Value[0] != 0.f;
+	if (!IsPressed)
+		return;
+	
+	//
+	check(BackstabSystemComponent);
+	BackstabSystemComponent->BackstabOn();
+
+	if(BackstabSystemComponent->IsBackstabOnMode())
+	{
+		check(ActionComponent);
+		ActionComponent->Backstab(IsPressed);
+	}
+}
+
 void APC_PlayableCharaceter::Num1(const FInputActionValue& Value)
 {
 	const bool IsPressed = Value[0] != 0.f;
@@ -275,7 +294,13 @@ void APC_PlayableCharaceter::SetupHUDWidget(UPC_HUDWidget* InWidget)
 	if (InWidget)
 	{
 		InWidget->UpdateStat(StatComponent->GetBaseStat(), StatComponent->GetModifierStat());
+		InWidget->SetOwningActor(this);
+		
 		StatComponent->OnStatChangedDelegate.AddUObject(InWidget, &UPC_HUDWidget::UpdateStat);
+		
+		StatComponent->OnHPChangedDelegate.AddUObject(InWidget, &UPC_HUDWidget::UpdateHPBar);
+		StatComponent->OnMPChangedDelegate.AddUObject(InWidget, &UPC_HUDWidget::UpdateMPBar);
+		StatComponent->OnStaminaChangedDelegate.AddUObject(InWidget, &UPC_HUDWidget::UpdateStaminaBar);
 	}
 }
 

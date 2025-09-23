@@ -17,10 +17,16 @@ class PC_API UPC_AttackTraceNotify : public UAnimNotify
 public:
 	virtual void Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,
 		const FAnimNotifyEventReference& EventReference) override;
-
+	
 	UPROPERTY(EditAnywhere)
-	bool isStart = false;
-
+	bool bStart = false;
+	
+	UPROPERTY(EditAnywhere)
+	bool bRigt = true;
+	
+	UPROPERTY(EditAnywhere)
+	bool bRight = true;
+	
 	UPROPERTY(EditAnywhere)
 	FName TraceStartBoneName;
 

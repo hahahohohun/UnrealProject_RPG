@@ -14,12 +14,6 @@ void UPC_HPBarWidget::NativeConstruct()
 	
 	ensure(PB_HP);
 	ensure(TB_HP);
-
-	IPC_CharacterWidgetInterface* CharacterWidget = Cast<IPC_CharacterWidgetInterface>(OwningActor);
-	if (CharacterWidget)
-	{
-		CharacterWidget->SetupCharacterWidget(this);
-	}
 }
 
 void UPC_HPBarWidget::UpdateHpBar(float NewCurrentHp, float NewMaxHp)

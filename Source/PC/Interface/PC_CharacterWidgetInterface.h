@@ -26,6 +26,8 @@ public:
 	//
 	virtual void SetupCharacterWidget(class UPC_UserWidget* InWidget) = 0;
 	virtual void SetupLockOnWidget(class UPC_UserWidget* InUserWidget) = 0;
+	virtual void SetupAttackIndicatorOnWidget(class UPC_UserWidget* InUserWidget) = 0; //뒷잡 암살
 
 	virtual void OnLocked(bool bLocked) = 0;
+	virtual void OnAttackIndicator(bool bAttackIndicator) = 0; //암살이 가능하면 UI ON
 };

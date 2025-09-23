@@ -71,6 +71,12 @@ void UPC_SkillComponent::FindTarget(uint32 SkillId, TArray<TWeakObjectPtr<AActor
 	{
 		if(Enemy != GetOwner())
 		{
+			if (IPC_CharacterInterface* CharacterInterface = Cast<IPC_CharacterInterface>(Enemy))
+			{
+				if (CharacterInterface->IsDead())
+					continue;
+			}
+			
 			if(FVector::Dist(OwnerCharacterPos, Enemy->GetActorLocation()) <= SkillRange)
 			{
 				Targets.Add(Enemy);
@@ -81,12 +87,20 @@ void UPC_SkillComponent::FindTarget(uint32 SkillId, TArray<TWeakObjectPtr<AActor
 
 bool UPC_SkillComponent::CanPlaySkill(uint32 SkillId)
 {
+	IPC_CharacterInterface* CharacterInterface = Cast<IPC_CharacterInterface>(OwnerCharacter);
+	check(CharacterInterface);
+
+	if (CharacterInterface->IsDead())
+		return false;
+	
 	return true;
 }
 
 void UPC_SkillComponent::PlaySkill(FPC_SkillInfo& SkillInfo)
 {
 	CurrentPlayingSkillInfos.Add(SkillInfo);
+
+	OnStartSkillDelegate.Broadcast(SkillInfo.SkillDataId);
 }
 
 void UPC_SkillComponent::InitSkillInfo(uint32 SkillId, TArray<TWeakObjectPtr<AActor>> Targets, FPC_SkillInfo& SkillInfo)
@@ -293,14 +307,12 @@ void UPC_SkillComponent::ProcessChainAttackExec(float DeltaTime, FPC_SkillInfo& 
 
 	if (ExecTableRow->ExecType == EPC_ExecType::DashToTarget)
 	{
-		FVector TargetPos = Target->GetActorLocation();
+		FVector TargetPos = ExecInfo.ExecEndPos;
 		FVector CurrentPos = OwnerCharacter->GetActorLocation();
 
 		FVector ToTargetVector = TargetPos - ExecInfo.ExecStartPos;
 		FVector ToTargetDir = ToTargetVector.GetSafeNormal();
-
-		TargetPos += ToTargetDir * 200.f;
-
+		
 		float ToTargetLength = (TargetPos - ExecInfo.ExecStartPos).Length();
 		float Duration = ExecTableRow->Duration;
 
@@ -392,13 +404,19 @@ void UPC_SkillComponent::CheckCollision(const FPC_ExecInfo& ExecInfo, FCollision
 	FPC_ExecTableRow* ExecTableRow = FPC_GameUtil::GetExecData(ExecInfo.ExecData->ExecDataId);
 	check(ExecTableRow);
 
+	if(ExecTableRow->bSpawnCollision == false)
+	{
+		return;
+	}
+	
 	TArray<FOverlapResult> OverlapResults;
 	UWorld* World = GetWorld();
 	FCollisionQueryParams QueryParams;
 	QueryParams.AddIgnoredActor(OwnerCharacter.Get());
 
 	DrawDebugBox(World, Pos, CollisionShape.GetExtent(), Rot.Quaternion(), FColor::Red, false);
-	
+
+	//todo 몬스터도 스킬을 사용하기 떄문에 처리 필요
 	if(World->OverlapMultiByProfile(OverlapResults, Pos, Rot.Quaternion(), TEXT("EnemyPreset"),
 		CollisionShape, QueryParams))
 	{
@@ -451,6 +469,32 @@ void UPC_SkillComponent::OnStartExec(FPC_SkillInfo& SkillInfo, FPC_ExecInfo& Exe
 		FPC_GameUtil::SpawnEffectAtLocation(GetWorld(), ExecTableRow->ExecFX_Niagara_Start, ExecInfo.ExecStartPos, ExecInfo.ExecStartRot);
 		FPC_GameUtil::SpawnEffectAtLocation(GetWorld(), ExecTableRow->ExecFX_Cascade_Start, ExecInfo.ExecStartPos, ExecInfo.ExecStartRot);
 	}
+
+	if(ExecTableRow->ExecType == EPC_ExecType::DashToTarget)
+	{
+		TArray<TWeakObjectPtr<AActor>>& Targets = SkillInfo.Targets;
+		if(Targets.IsEmpty())
+			return;
+
+		//TargetIndex가 시퀀스가 개수보다 안 크게
+		uint32 TargetIndex = ExecInfo.ExecSequence % Targets.Num();
+		TWeakObjectPtr<ACharacter> Target = Cast<ACharacter>(Targets[TargetIndex]);
+
+		if(!Target.IsValid())
+			return;
+
+		FVector TargetPos = Target->GetActorLocation();
+		
+		FVector ToTargetVector = TargetPos - ExecInfo.ExecStartPos;
+		FVector ToTargetDir = ToTargetVector.GetSafeNormal();
+
+		//얼만큼 지나쳐 도착할것인가.
+		float OverRunDistance = ExecTableRow->ExecProperty_0;
+		TargetPos += ToTargetDir * OverRunDistance;
+
+		ExecInfo.ExecEndPos = TargetPos;
+		ExecInfo.ExecEndRot = ToTargetDir.GetSafeNormal2D().Rotation();
+	}
 }
 
 void UPC_SkillComponent::OnEndExec(FPC_SkillInfo& SkillInfo, FPC_ExecInfo& ExecInfo)
@@ -494,6 +538,8 @@ void UPC_SkillComponent::Tick_PlaySkill(float DeltaTime)
 		if(SkillInfo.ElapsedTime > SkillInfo.LifeTime)
 		{
 			SkillToCoolDown.Add(SkillInfo);
+
+			OnEndSkillDelegate.Broadcast(SkillInfo.SkillDataId);
 		}
 	}
 

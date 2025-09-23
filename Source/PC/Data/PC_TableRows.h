@@ -26,10 +26,10 @@ struct FPC_CharacterStatTableRow : public FTableRowBase
 	
 	public:
 	FPC_CharacterStatTableRow() :MaxHp(0.0f), Attack(0.0f), MovementSpeed(0.0f){}
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Stat")
-	EPC_CharacterType CharacterType;
-
+	
+	UPROPERTY(EditAnywhere)
+	uint32 CharacterId;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Stat")
 	float MaxHp;
 
@@ -58,7 +58,7 @@ struct FPC_EnemyTableRow : public FTableRowBase
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Type)
-	EPC_CharacterType EnemyType;
+	int32 EnemyType;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	USkeletalMesh* SkeletalMesh = nullptr;
@@ -77,6 +77,9 @@ struct FPC_EnemyTableRow : public FTableRowBase
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float MovementSpeed_Run = 0.f;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float MovementSpeed_Strafe = 0.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float TurnSpeed = 0.f;
@@ -95,6 +98,9 @@ struct FPC_EnemyTableRow : public FTableRowBase
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UAnimMontage> AttackAnim = nullptr;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UAnimMontage> DashBackAnim = nullptr;
 	
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UAnimMontage> Left90TurnAnim = nullptr;
@@ -107,6 +113,15 @@ struct FPC_EnemyTableRow : public FTableRowBase
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UAnimMontage> Right180TurnAnim = nullptr;
+
+	UPROPERTY(EditAnywhere)
+	bool IsBoos = false;
+
+	UPROPERTY(EditAnywhere)
+	bool HasSuperAmor = false;
+
+	UPROPERTY(EditAnywhere)
+	FName Name = NAME_None;
 };
 
 
@@ -293,6 +308,30 @@ struct FPC_CrowdControlTableRow : public FTableRowBase
 	float Property_1 = 0.f;
 	UPROPERTY(EditAnywhere)
 	float Property_2 = 0.f;
-	
-	
 };
+
+USTRUCT(BlueprintType)
+struct FPC_AnimMontageRootMotionDistanceRow : public  FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Animation")
+	FSoftObjectPath MontagePath;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Animation")
+	float Distance = 0.f;
+};
+
+
+USTRUCT(BlueprintType)
+struct FPC_PhysicSkeletonBoneNameRow : public  FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Animation")
+	FSoftObjectPath PhysicAssetPath;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Animation")
+	float Distance = 0.f;
+};
+

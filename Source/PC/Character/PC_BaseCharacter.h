@@ -12,6 +12,8 @@
 #include "PC_BaseCharacter.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCharacterLocked, bool, bLocked);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAttackIndicatorChanged, bool, bLocked);
+
 
 class UPC_WidgetComponent;
 struct FPC_CharacterStatTableRow;
@@ -31,7 +33,7 @@ protected:
 	virtual void PostInitializeComponents() override;
 
 	virtual void AttackTrace(bool bStart, FName TraceStartBoneName, FName TraceEndBoneName) override;
-	virtual void AttackTraceWithWeapon(bool bStart) override;
+	virtual void AttackTraceWithWeapon(bool bStart, bool bRight) override;
 	virtual bool HasWeapon() override;
 
 	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
@@ -42,15 +44,28 @@ public:
 
 	virtual void SetupCharacterWidget(class UPC_UserWidget* InUserWidget) override;
 	virtual void SetupLockOnWidget(UPC_UserWidget* InUserWidget) override;
+	virtual void SetupAttackIndicatorOnWidget(class UPC_UserWidget* InUserWidget) override;
 	virtual void OnLocked(bool bLocked) override;
+	
+	virtual void OnAttackIndicator(bool bLocked) override;
 	virtual void OnDead();
 	
 	virtual bool IsDead() override;
-	virtual UStaticMeshComponent* GetWeaponStaticMeshComponent() override { return WeaponStaticMeshComponent; }
+
+	virtual UStaticMeshComponent* GetWeapon_L_StaticMeshComponent() override { return Weapon_L_StaticComponent; }
+	virtual UStaticMeshComponent* GetWeapon_R_StaticMeshComponent() override { return Weapon_R_StaticComponent; }
+	
 	virtual UPC_CrowdControlComponent* GetCrowdControlComponent() override { return CrowdControlComponent; }
-	virtual TPair<FName, FName> GetWeaponTraceNames() override;
+	virtual TPair<FName, FName> GetWeaponTraceNames(bool bRight) override;
 	virtual UPC_CharacterDataAsset* GetCharacterDataAsset() override { return CharacterData ;}
 
+	virtual  FPC_OnStartSkillDelegate& GetOnStartSkillDelegate() override;
+	virtual  FPC_OnEndSkillDelegate& GetOnEndSkillDelegate() override;
+	
+	virtual UPC_BattleComponent* GetBattleComponent() const override { return BattleComponent; }
+	virtual UPC_SkillComponent* GetSkillComponent() const override { return SkillComponent; }
+	
+	
 	UFUNCTION()
 	virtual void OnStartCrowdControl(EPC_CrowdControlType CrowdType, AActor* actor);
 
@@ -60,10 +75,11 @@ public:
 
 public:
 	UPROPERTY(EditAnywhere)
-	EPC_CharacterType CharacterType = EPC_CharacterType::None;
+	uint32 CharacterDataID = 0;
 
 	FOnCharacterLocked OnCharacterLocked;
-
+	FOnAttackIndicatorChanged OnAttackIndicatorChanged;
+	
 	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<UPC_BattleComponent> BattleComponent = nullptr;
 
@@ -77,8 +93,19 @@ public:
 	TObjectPtr<UPC_WidgetComponent> WidgetComponent = nullptr;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UStaticMeshComponent> WeaponStaticMeshComponent;
+	TObjectPtr<UStaticMeshComponent> Weapon_L_StaticMeshComponent;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UStaticMeshComponent> Weapon_R_StaticMeshComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Component, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UPC_SkillComponent> SkillComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UStaticMeshComponent> Weapon_L_StaticComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UStaticMeshComponent> Weapon_R_StaticComponent;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UPC_CharacterDataAsset> CharacterData;
 };

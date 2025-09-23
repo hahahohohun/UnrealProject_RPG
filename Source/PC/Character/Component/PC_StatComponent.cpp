@@ -21,7 +21,7 @@ void UPC_StatComponent::InitializeComponent()
 
 	if (APC_BaseCharacter* CharacterBase = Cast<APC_BaseCharacter>(GetOwner()))
 	{
-		if (FPC_CharacterStatTableRow* StatRow = FPC_GameUtil::GetCharacterStatData(CharacterBase->CharacterType))
+		if (FPC_CharacterStatTableRow* StatRow = FPC_GameUtil::GetCharacterStatData(CharacterBase->CharacterDataID))
 			BaseStat = *StatRow;
 	}
 	

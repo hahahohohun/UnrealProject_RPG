@@ -15,7 +15,5 @@ class PC_API UPC_WidgetComponent : public UWidgetComponent
 public:
 	// Sets default values for this component's properties
 	UPC_WidgetComponent();
-
-protected:
 	virtual void InitWidget() override;
 };

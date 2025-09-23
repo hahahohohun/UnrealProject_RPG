@@ -24,12 +24,19 @@ public:
 	template<typename T>
 	UPC_UserWidget* CreateUI(T* ClassType);
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<UPC_HUDWidget> HPBarWidgetClass;
+
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = HUD)
 	TSubclassOf<UPC_HUDWidget> HUDWidgetClass;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = HUD)
 	TObjectPtr<UPC_HUDWidget> HUDWidget;
+
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	//TSubclassOf<UPC_DamgeFloaterWidget> DamageFloaterWidgetClass;
+	
 };
 
 template <typename T>

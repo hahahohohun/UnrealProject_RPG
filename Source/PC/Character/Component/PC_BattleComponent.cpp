@@ -13,6 +13,7 @@
 #include "PC/Character/PC_PlayableCharaceter.h"
 #include "PC/Character/Controller/PC_PlayerController.h"
 #include "PC/Data/PC_PlayerDataAsset.h"
+#include "PC/Interface/PC_CharacterAIInterface.h"
 #include "PC/Interface/PC_PlayerCharacterInterface.h"
 #include "PC/SkillObject/PC_SkillObject.h"
 #include "PC/Utills/PC_GameUtill.h"
@@ -38,11 +39,11 @@ void UPC_BattleComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 
 	TraceElapsedTime = 0.f;
 
-	APC_BaseCharacter* ClassCharacter = Cast<APC_BaseCharacter>(GetOwner());
-	if (!ClassCharacter)
+	APC_BaseCharacter* Character = Cast<APC_BaseCharacter>(GetOwner());
+	if (!Character)
 		return;
 
-	const USkeletalMeshComponent* Mesh = ClassCharacter->GetMesh();
+	const USkeletalMeshComponent* Mesh = Character->GetMesh();
 	if (!Mesh)
 		return;
 
@@ -52,12 +53,12 @@ void UPC_BattleComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 
 	FVector CurStartBoneLocation = FVector::ZeroVector;
 	FVector CurEndBoneLocation = FVector::ZeroVector;
-
+	//1:28
 	if (HasWeapon())
 	{
-		if (const IPC_PlayerCharacterInterface* Interface = Cast<IPC_PlayerCharacterInterface>(GetOwner()))
+		if (IPC_CharacterInterface * Interface = Cast<IPC_CharacterInterface>(GetOwner()))
 		{
-			UStaticMeshComponent* WeaponMesh = Interface->GetWeaponStaticMeshComponent();
+			UStaticMeshComponent* WeaponMesh = bTraceRightWeapon? Interface->GetWeapon_R_StaticMeshComponent() : Interface->GetWeapon_L_StaticMeshComponent();
 			check(WeaponMesh);
 
 			CurStartBoneLocation = WeaponMesh->GetSocketLocation(TraceStartBoneName);
@@ -97,8 +98,7 @@ void UPC_BattleComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 	for (const auto& Line : TraceLines)
 	{
 		FHitResult HitResult;
-		ECollisionChannel CollisionChannel = ClassCharacter->CharacterType == EPC_CharacterType::Player?
-			ECC_GameTraceChannel2 : ECC_GameTraceChannel1;
+		ECollisionChannel CollisionChannel = FPC_GameUtil::GetAttackCollisionChannel(Character->CharacterDataID);
 		
 		if (World->LineTraceSingleByChannel(HitResult, Line.Key, Line.Value, CollisionChannel, Params))
 		{
@@ -112,10 +112,10 @@ void UPC_BattleComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 
 					DamagedActor.Add(HitActor);
 					
-					const float Damage = ClassCharacter->StatComponent->GetTotalStat().Attack;
+					const float Damage = Character->StatComponent->GetTotalStat().Attack;
 
 					FDamageEvent DamageEvent;
-					HitActor->TakeDamage(Damage, DamageEvent, ClassCharacter->GetController(), ClassCharacter);
+					HitActor->TakeDamage(Damage, DamageEvent, Character->GetController(), Character);
 
 					SpawnEffect(HitResult.ImpactPoint);
 				}
@@ -133,29 +133,47 @@ void UPC_BattleComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 void UPC_BattleComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
-	CurWeaponIdx = 0;
-	Weapons.Add(0);
-	Weapons.Add(1);
-
+	
 	OwnerCharacter = CastChecked<ACharacter>(GetOwner());
 
+	IPC_CharacterInterface* CharacterInterface = Cast<IPC_CharacterInterface>(OwnerCharacter);
+	check(CharacterInterface);
+
+	UPC_CharacterDataAsset* CharacterData = CharacterInterface->GetCharacterDataAsset();
+	check(CharacterData);
+
+	TArray<FPC_WeaponData>& WeaponDatas = CharacterData->WeaponIds;
+
+	for(int32 i = 0; i< WeaponDatas.Num(); ++i)
+	{
+		Weapons.Add(WeaponDatas[i]);
+	}
+
+	CurWeaponIdx = -1;
+	SwapWeapon();
 }
 
-void UPC_BattleComponent::StartTraceWithWeapon()
+void UPC_BattleComponent::StartTraceWithWeapon(bool bRight)
 {
 	bTracing = true;
+	bTraceRightWeapon = bRight;
+
+	FPC_WeaponTableRow* WeaponTableRow = bRight ? Weapon_R_TableRow : Weapon_L_TableRow;
+	if(!WeaponTableRow)
+		return;
 	
-	TraceStartBoneName = CurrentWeaponTableRow->TraceStartSocketName;
-	TraceEndBoneName = CurrentWeaponTableRow->TraceEndSocketName;
+	TraceStartBoneName = WeaponTableRow->TraceStartSocketName;
+	TraceEndBoneName = WeaponTableRow->TraceEndSocketName;
 
-	if (const IPC_PlayerCharacterInterface* Interface = Cast<IPC_PlayerCharacterInterface>(GetOwner()))
+	if (IPC_CharacterInterface* Interface = Cast<IPC_CharacterInterface>(GetOwner()))
 	{
-		UStaticMeshComponent* WeaponStaticMeshComponent = Interface->GetWeaponStaticMeshComponent();
-		check(WeaponStaticMeshComponent);
+		UStaticMeshComponent* WeaponMesh = bTraceRightWeapon? Interface->GetWeapon_R_StaticMeshComponent()
+		: Interface->GetWeapon_L_StaticMeshComponent();
+		
+		check(WeaponMesh);
 
-		PrevStartBoneLocation = WeaponStaticMeshComponent->GetSocketLocation(TraceStartBoneName);
-		PrevEndBoneLocation = WeaponStaticMeshComponent->GetSocketLocation(TraceEndBoneName);
+		PrevStartBoneLocation = WeaponMesh->GetSocketLocation(TraceStartBoneName);
+		PrevEndBoneLocation = WeaponMesh->GetSocketLocation(TraceEndBoneName);
 	}
 }
 
@@ -177,74 +195,99 @@ void UPC_BattleComponent::StartTrace(FName InTraceStartBoneName, FName InTraceEn
 
 void UPC_BattleComponent::SwapWeapon()
 {
+	if(!CanSwapWeapon())
+		return;
+	
 	CurWeaponIdx++;
 
-	int num = Weapons.Num();
+	const int32  num = Weapons.Num();
 
 	if(CurWeaponIdx >= num)
 		CurWeaponIdx = 0;
 	
-	const uint8 weaponId = Weapons[CurWeaponIdx];
+	const FPC_WeaponData& weaponIds = Weapons[CurWeaponIdx];
 
 	CharacterStanceType = static_cast<EPC_CharacterStanceType>(CurWeaponIdx); 
 
 	UnEquipWeapon();
-	EquipWeapon(weaponId);
+	EquipWeapon(weaponIds.WeaponId_L, false);
+	EquipWeapon(weaponIds.WeaponId_R, true);
 }
 
-void UPC_BattleComponent::EquipWeapon(uint8 InWeaponId)
+bool UPC_BattleComponent::CanSwapWeapon()
 {
-	CurrentWeaponTableRow = FPC_GameUtil::GetWeaponData(InWeaponId);
-	if (!CurrentWeaponTableRow)
+	//TODO SKILL, Special Action
+	return true;
+}
+
+void UPC_BattleComponent::EquipWeapon(uint8 InWeaponId, bool bRightHand)
+{
+	if (bRightHand)
+	{
+		Weapon_R_TableRow = FPC_GameUtil::GetWeaponData(InWeaponId);
+	}
+	else
+	{
+		Weapon_L_TableRow = FPC_GameUtil::GetWeaponData(InWeaponId);
+	}
+
+	if((bRightHand && !Weapon_R_TableRow) || !bRightHand && !Weapon_L_TableRow)
 	{
 		UnEquipWeapon();
 		return;
 	}
 	
-	FName WeaponSocketName = NAME_None;
-	
-	if (const IPC_PlayerCharacterInterface* Interface = Cast<IPC_PlayerCharacterInterface>(GetOwner()))
+	if (IPC_CharacterInterface* Interface = Cast<IPC_CharacterInterface>(GetOwner()))
 	{
-		UPC_PlayerDataAsset* PlayerData = Interface->GetPlayerData();
-		check(PlayerData);
+		UPC_CharacterDataAsset* CharacterData = Interface->GetCharacterDataAsset();
+		check(CharacterData);
 
-		WeaponSocketName = PlayerData->WeaponSocketName;
+		FPC_WeaponTableRow* WeaponTableRow = bRightHand ? Weapon_R_TableRow : Weapon_L_TableRow;
+		FName WeaponSocketName = bRightHand ? CharacterData->WeaponSocketName_R : CharacterData->WeaponSocketName_L;
 
 		const ACharacter* Character = CastChecked<ACharacter>(GetOwner());
 		USkeletalMeshComponent* SkeletalMeshComponent = Character->GetMesh();
 		check(SkeletalMeshComponent);
 		
-		UStaticMeshComponent* WeaponStaticMeshComponent = Interface->GetWeaponStaticMeshComponent();
+		UStaticMeshComponent* WeaponStaticMeshComponent = bRightHand? Interface->GetWeapon_R_StaticMeshComponent() :
+		Interface->GetWeapon_L_StaticMeshComponent();
 		check(WeaponStaticMeshComponent);
 
 		WeaponStaticMeshComponent->DetachFromComponent(FDetachmentTransformRules::KeepRelativeTransform);
 		WeaponStaticMeshComponent->AttachToComponent(SkeletalMeshComponent, FAttachmentTransformRules::KeepRelativeTransform, WeaponSocketName);
 		
-		WeaponStaticMeshComponent->SetRelativeLocation(CurrentWeaponTableRow->RelativePos);
-		WeaponStaticMeshComponent->SetRelativeRotation(CurrentWeaponTableRow->RelativeRot);
+		WeaponStaticMeshComponent->SetRelativeLocation(WeaponTableRow->RelativePos);
+		WeaponStaticMeshComponent->SetRelativeRotation(WeaponTableRow->RelativeRot);
 		
-		WeaponStaticMeshComponent->SetStaticMesh(CurrentWeaponTableRow->WeaponMesh);
+		WeaponStaticMeshComponent->SetStaticMesh(WeaponTableRow->WeaponMesh);
 		WeaponStaticMeshComponent->SetVisibility(true);
 	}
 }
 
 void UPC_BattleComponent::UnEquipWeapon()
 {
-	CurrentWeaponTableRow = nullptr;
+	Weapon_L_TableRow = nullptr;
+	Weapon_R_TableRow = nullptr;
 
-	if (const IPC_PlayerCharacterInterface* Interface = Cast<IPC_PlayerCharacterInterface>(GetOwner()))
+	if(IPC_CharacterInterface* Interface = Cast<IPC_CharacterInterface>(GetOwner()))
 	{
-		UStaticMeshComponent* WeaponStaticMeshComponent = Interface->GetWeaponStaticMeshComponent();
-		check(WeaponStaticMeshComponent);
+		UStaticMeshComponent* Weapon_L_StaticMeshComponent = Interface->GetWeapon_L_StaticMeshComponent();
+		check(Weapon_L_StaticMeshComponent);
 
-		WeaponStaticMeshComponent->SetStaticMesh(nullptr);
-		WeaponStaticMeshComponent->SetVisibility(false);
+		UStaticMeshComponent* Weapon_R_StaticMeshComponent = Interface->GetWeapon_R_StaticMeshComponent();
+		check(Weapon_R_StaticMeshComponent);
+
+		Weapon_L_StaticMeshComponent->SetStaticMesh(nullptr);
+		Weapon_L_StaticMeshComponent->SetVisibility(false);
+
+		Weapon_R_StaticMeshComponent->SetStaticMesh(nullptr);
+		Weapon_R_StaticMeshComponent->SetVisibility(false);
 	}
 }
 
 bool UPC_BattleComponent::HasWeapon()
 {
-	if (CurrentWeaponTableRow)
+	if (Weapon_L_TableRow || Weapon_R_TableRow)
 		return true;
 
 	return false;
@@ -285,6 +328,19 @@ void UPC_BattleComponent::FireProjectile(bool IsPressed)
 	}
 }
 
+void UPC_BattleComponent::SetTargetDamage(AActor* HitTarget, float Damage)
+{
+	if(HitTarget)
+	{
+		if(ACharacter* Character = Cast<ACharacter>(HitTarget))
+		{
+			FDamageEvent DamageEvent;
+			Character->TakeDamage(Damage, DamageEvent, OwnerCharacter->GetController(),
+				OwnerCharacter.Get());
+		}
+	}
+}
+
 void UPC_BattleComponent::EndTrace()
 {
 	DamagedActor.Empty();
@@ -297,11 +353,5 @@ void UPC_BattleComponent::SpawnEffect(FVector InHitLocation)
 	UWorld* World = GetWorld();
 	if (!World)
 		return;
-
-	UParticleSystem* LoadedParticle = Cast<UParticleSystem>(StaticLoadObject(UParticleSystem::StaticClass(), nullptr,
-		TEXT("/Game/ParagonCrunch/FX/Particles/Abilities/Hook/FX/P_Crunch_Hook_Impact.P_Crunch_Hook_Impact")));
-
-	if (LoadedParticle)
-		UGameplayStatics::SpawnEmitterAtLocation(World, LoadedParticle, InHitLocation, FRotator::ZeroRotator);
 	
 }

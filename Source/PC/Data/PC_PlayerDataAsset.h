@@ -2,10 +2,11 @@
 
 #pragma once
 
+
 #include "CoreMinimal.h"
+#include "PC/PC_Enum.h"
 #include "Engine/DataAsset.h"
 #include "PC_PlayerDataAsset.generated.h"
-
 
 USTRUCT(BlueprintType)
 struct FPC_SkillSlotData
@@ -82,4 +83,7 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	TArray<FPC_SkillEntry> SkillSlotDatas;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UAnimMontage> BackstabMontage;
 };

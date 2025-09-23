@@ -94,9 +94,31 @@ void APC_AIController::OnPerceptionUpdate(const TArray<AActor*>& UpdatedActors)
 
 	if (CrowdControlComponent->IsCrowdControlled())
 		return;
+
+	const EPC_EnemyStateType EnemyState = static_cast<EPC_EnemyStateType>(GetBlackboardComponent()->GetValueAsEnum("State"));
+	if(EnemyState == EPC_EnemyStateType::Dead)
+		return;
+	
+	if(AActor* TargetActor = Cast<AActor>(GetBlackboardComponent()->GetValueAsObject(TEXT("Target"))))
+	{
+		if(IPC_CharacterInterface* TargetCharacter = Cast<IPC_CharacterInterface>(TargetActor))
+		{
+			if(TargetCharacter->IsDead())
+			{
+				HandleLoseTarget(TargetActor);
+				return;
+			}
+		}
+	}
 	
 	for (AActor* UpdatedActor : UpdatedActors)
 	{
+		if(IPC_CharacterInterface* TargetCharacter = Cast<IPC_CharacterInterface>(UpdatedActor))
+		{
+			if(TargetCharacter->IsDead())
+				continue;
+		}
+		
 		if (GetAIStimulus(UpdatedActor, EPC_AISenseType::Sight).WasSuccessfullySensed())
 		{
 			HandleSensedSight(UpdatedActor);
@@ -117,6 +139,16 @@ void APC_AIController::OnPerceptionUpdate(const TArray<AActor*>& UpdatedActors)
 			break;
 		}
 	}
+
+	if (AActor* Target = Cast<AActor>(GetBlackboardComponent()->GetValueAsObject(TEXT("Target"))))
+	{
+		const bool bAware = IsAwareOf(Target);
+		GetBlackboardComponent()->SetValueAsBool(TEXT("bIsAware"), bAware);
+	}
+	else
+	{
+		GetBlackboardComponent()->SetValueAsBool(TEXT("bIsAware"), false);
+	}
 }
 
 void APC_AIController::SetupSenseConfig()
@@ -127,7 +159,8 @@ void APC_AIController::SetupSenseConfig()
 	SightSense->SightRadius = EnemyTableRow->SightRadius;
 	SightSense->LoseSightRadius = EnemyTableRow->LoseSightRadius;
 	SightSense->PeripheralVisionAngleDegrees = EnemyTableRow->SightAngle;
-	SightSense->SetMaxAge(5.f);
+	//얼마나 기억할건지
+	SightSense->SetMaxAge(20.f);
 	SightSense->DetectionByAffiliation.bDetectEnemies = true;
 
 	HearingSense->HearingRange = 1500.f;
@@ -148,7 +181,8 @@ void APC_AIController::HandleSensedSight(AActor* InActor)
 	ensure(AIPawn);
 
 	AIPawn->ChangeState(EPC_EnemyStateType::Battle);
-	GetBlackboardComponent()->SetValueAsObject(TEXT("Target"), InActor); 
+	GetBlackboardComponent()->SetValueAsObject(TEXT("Target"), InActor);
+	GetBlackboardComponent()->SetValueAsBool(TEXT("bIsAware"), true);
 }
 
 void APC_AIController::HandleSensedHearing(AActor* InActor, FVector InLocation)
@@ -169,7 +203,9 @@ void APC_AIController::HandleSensedDamage(AActor* InActor)
 	ensure(AIPawn);
 
 	AIPawn->ChangeState(EPC_EnemyStateType::Battle);
+	
 	GetBlackboardComponent()->SetValueAsObject(TEXT("Target"), InActor);
+	GetBlackboardComponent()->SetValueAsBool(TEXT("bIsAware"), true);
 }
 
 void APC_AIController::HandleLoseTarget(AActor* InActor)
@@ -185,9 +221,30 @@ void APC_AIController::HandleLoseTarget(AActor* InActor)
 
 	if (CrowdControlComponent->IsCrowdControlled())
 		return;
-	
+
 	AIPawn->ChangeState(EPC_EnemyStateType::Patrol);
 	GetBlackboardComponent()->SetValueAsObject(TEXT("Target"), nullptr);
+	GetBlackboardComponent()->SetValueAsBool(TEXT("bIsAware"), false);
+}
+
+bool APC_AIController::IsAwareOf(AActor* Target)
+{
+	if (!Target) return false;
+
+	// 최근 시야/피해 자극을 가져온다 (네가 만든 헬퍼 재사용)
+	const FAIStimulus SightStimulus  = GetAIStimulus(Target, EPC_AISenseType::Sight);
+	const FAIStimulus DamageStimulus = GetAIStimulus(Target, EPC_AISenseType::Damage);
+
+	// '완전히' 시야를 잃은 상태: 마지막 시야 자극이 성공이 아니고, 그 기억마저 만료됨
+	const bool bLostSight = !SightStimulus.WasSuccessfullySensed() && SightStimulus.IsExpired();
+
+	// 피해 자극이 없거나(무효) 이미 만료됨
+	const bool bDamageExpired = !DamageStimulus.IsValid() || DamageStimulus.IsExpired();
+
+	// 인지 여부: 둘 다 만족해야만 false, 그 외엔 true
+	//  - 시야 메모리(MaxAge) 동안은 인지 유지
+	//  - 최근 피해를 받은 직후(Damage MaxAge)에도 인지 유지
+	return !(bLostSight && bDamageExpired);
 }
 
 FAIStimulus APC_AIController::GetAIStimulus(AActor* Actor, EPC_AISenseType AIPerceptionSense)
@@ -249,7 +306,7 @@ void APC_AIController::OnPossess(APawn* Possessed)
 
 	if (APC_NonPlayableCharacter* NonPlayableCharacter = Cast<APC_NonPlayableCharacter>(GetPawn()))
 	{
-		if (const FPC_EnemyTableRow* EnemyTableRow = FPC_GameUtil::GetEnemyData(NonPlayableCharacter->CharacterType))
+		if (const FPC_EnemyTableRow* EnemyTableRow = FPC_GameUtil::GetEnemyData(NonPlayableCharacter->CharacterDataID))
 		{
 			BBAsset = EnemyTableRow->BlackBoard;
 			BTAsset = EnemyTableRow->BehaviorTree;

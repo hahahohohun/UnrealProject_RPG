@@ -12,15 +12,20 @@ class UPC_CameraDataAsset;
 class FPC_GameUtil
 {
 public:
-	static FPC_CharacterStatTableRow* GetCharacterStatData(EPC_CharacterType CharacterType);
-	static FPC_EnemyTableRow* GetEnemyData(EPC_CharacterType EnemyType);
+	static FPC_CharacterStatTableRow* GetCharacterStatData(uint32 CharacterType);
+	static FPC_EnemyTableRow* GetEnemyData(uint32 EnemyType);
+	
 	static FPC_WeaponTableRow* GetWeaponData(uint32 WeaponId);
 	static UPC_CameraDataAsset* GetCameraData(EPC_CameraType CameraType);
 	static FPC_SkillTableRow* GetSkillData(uint32 skillId);
 	static FPC_SkillObjectTableRow* GetSkillObjectData(uint32 skillObjectId);
 	static FPC_ExecTableRow* GetExecData(uint32 execId);
 	static FPC_CrowdControlTableRow* GetCrowdControlData(uint32 crowdId);
+	static float GetRootMotionDistanceData(FSoftObjectPath& ObjectPath);
+	static float CalculateRootMotionDistance(UAnimMontage* AnimMontage);
 
+	static ECollisionChannel GetAttackCollisionChannel(uint32 Dataid);
+	
 	static uint32 GetSkillId(UPC_PlayerDataAsset* PlayerDataAsset, EPC_SkillSlotType SlotType, EPC_CharacterStanceType CharacterStance
 	,bool bInSpecialAttack);
 	

@@ -17,6 +17,7 @@ class PC_API APC_NonPlayableCharacter : public APC_BaseCharacter, public IPC_Cha
 public:
 	// Sets default values for this character's properties
 	APC_NonPlayableCharacter();
+	virtual void SetDeadType(EPC_DeadType NewDeadType) override;
 
 protected:
 	virtual void BeginPlay() override;
@@ -31,32 +32,42 @@ protected:
 	virtual FPC_EnemyTableRow* GetEnemyData() override;;
 
 	virtual void SetAIAttackFinishDelegate(const FAICharacterAttackFinished& InOnAttackFinished) override;
+	virtual void SetAIMoveMontageFinishedDelegate(const FAICharacterMoveMontageFinished& InOnMoveMontageFinished) override;
 	virtual void Attack() override;
-	virtual void OnMontageEnd(UAnimMontage* Montage, bool bInterrupted);
-
+	virtual void OnAttackMontageEnd(UAnimMontage* Montage, bool bInterrupted);
+	virtual void OnDashBackMontageEnd(UAnimMontage* Montage, bool bInterrupted);
+	
 	virtual void SetAITurnFinishDelegate(const FAICharacterTurnFinished& InOnTurnFinished) override;
 	virtual void TurnInPlace(float TurnAnimDegree) override;
-
+	virtual  void DashBack() override;
 	virtual AActor* GetPatrolRoute() override;
 	virtual void IncrementPatrolIndex() override;
 
 	virtual void ResetState() override;
 	virtual void ChangeState(EPC_EnemyStateType StateType) override;
-
+	
 	virtual void OnStartCrowdControl(EPC_CrowdControlType CrowdType, AActor* actor) override;
 	virtual void OnEndCrowdControl(EPC_CrowdControlType CrowdType, AActor* actor) override;
 
 	virtual void OnDead() override;
+	virtual void SetupCharacterWidget(class UPC_UserWidget* InWidget) override;
 	
 	UFUNCTION(BlueprintCallable)
 	virtual EPC_EnemyStateType GetState() override;
+
+	UFUNCTION(BlueprintCallable)
+	virtual EPC_DeadType GetDeadType() override;
 
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = camera, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UPC_WidgetComponent> LockOnWidgetComponent;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = camera, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UPC_WidgetComponent> AttackIndicatorWidgetComponent;
+	
 	FAICharacterAttackFinished OnAttackFinished;
 	FAICharacterTurnFinished OnTurnFinished;
+	FAICharacterMoveMontageFinished OnMoveMontageFinished;
 
 	FPC_EnemyTableRow* EnemyTableRow = nullptr;
 
@@ -68,9 +79,23 @@ private:
 	TObjectPtr<UAnimMontage> TurnAnimMontage = nullptr;
 
 	UPROPERTY(EditAnywhere)
+	TObjectPtr<UAnimMontage> DashBackAnimMontage = nullptr;
+
+	UPROPERTY(EditAnywhere)
 	TObjectPtr<AActor> PatrolRoute = nullptr;
 
+	UPROPERTY(EditAnywhere)
+	bool HasSuperArmor = false; //CC공격 무시
+	
+	UPROPERTY(EditAnywhere)
+	bool IsBossMonster = false;
+
+	UPROPERTY(EditAnywhere)
+	FName Name = NAME_None;
+	
 	EPC_EnemyStateType EnemyState = EPC_EnemyStateType::None;
+	
+	EPC_DeadType DeadType = EPC_DeadType::None;
 
 	bool IsTurning = false;
 

@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "PC/Data//PC_TableRows.h"
+#include "PC/Data/PC_CharacterDataAsset.h"
 #include "PC_BattleComponent.generated.h"
 
 
@@ -21,21 +22,25 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	virtual void BeginPlay() override;
-	void StartTraceWithWeapon();
+	void StartTraceWithWeapon(bool bRight);
 	void StartTrace(FName InTraceStartBoneName, FName InTraceEndBoneName);
 	void EndTrace();
 	
 	void SpawnEffect(FVector InHitLocation);
 
 	void SwapWeapon();
-	void EquipWeapon(uint8 InWeaponId);
+	bool CanSwapWeapon();
+	
+	void EquipWeapon(uint8 InWeaponId, bool bRightHand);
 	void UnEquipWeapon();
 	bool HasWeapon();
 
 	void FireProjectile(bool IsPressed);
+	void SetTargetDamage(AActor* HitTarget, float Damage);
 	
 	bool bTracing = false;
-
+	bool bTraceRightWeapon = false;
+	
 	FName TraceStartBoneName;
 	FName TraceEndBoneName;
 
@@ -47,14 +52,16 @@ public:
 	
 	TArray<TWeakObjectPtr<AActor>> DamagedActor;
 	TWeakObjectPtr<ACharacter> OwnerCharacter = nullptr;
-
-	FPC_WeaponTableRow* CurrentWeaponTableRow = nullptr;
-
+	
+	// Weapon ----------------------
+	FPC_WeaponTableRow* Weapon_L_TableRow = nullptr;
+	FPC_WeaponTableRow* Weapon_R_TableRow = nullptr;
+	
 	UPROPERTY(BlueprintReadOnly)
 	EPC_CharacterStanceType CharacterStanceType;
 	
 	int32 CurWeaponIdx = 0;
-	TArray<UINT8> Weapons;
+	TArray<FPC_WeaponData> Weapons;
 	
 };
 

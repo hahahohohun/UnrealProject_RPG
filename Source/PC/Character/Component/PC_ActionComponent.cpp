@@ -9,8 +9,10 @@
 #include "Kismet/GameplayStatics.h"
 #include "PC/Character/PC_PlayableCharaceter.h"
 #include "PC/Data/PC_PlayerDataAsset.h"
+#include "PC/Interface/PC_CharacterAIInterface.h"
 #include "PC/Interface/PC_PlayerCharacterInterface.h"
 #include "PC/SkillObject/PC_SkillObject.h"
+#include "PC/Utills/PC_GameUtill.h"
 
 UPC_ActionComponent::UPC_ActionComponent()
 {
@@ -230,6 +232,55 @@ void UPC_ActionComponent::SwapWeapon(bool bPressed)
 	BattleComponent->SwapWeapon();
 }
 
+void UPC_ActionComponent::Backstab(bool IsPressed)
+{
+	if (!IsPressed)
+		return;
+
+	if (!CanAction(EPC_ActionType::Backstab))
+		return;
+
+	const IPC_PlayerCharacterInterface* Interface = CastChecked<IPC_PlayerCharacterInterface>(GetOwner());
+	check(Interface);
+	
+	UPC_PlayerDataAsset* PlayerData = Interface->GetPlayerData();
+	check(PlayerData);
+	
+	AddLock(EPC_LockCauseType::Backstab, EPC_ActionType::Move);
+	AddLock(EPC_LockCauseType::Backstab, EPC_ActionType::Jump);
+
+	UAnimInstance* AnimInstance = OwnerCharacter->GetMesh()->GetAnimInstance();
+	check(AnimInstance);
+	
+	AnimInstance->StopAllMontages(0.1f);
+	OwnerCharacter->PlayAnimMontage(PlayerData->BackstabMontage);
+	FOnMontageEnded EndDelegate = FOnMontageEnded::CreateUObject(this, &ThisClass::OnMontageEnd);
+	AnimInstance->Montage_SetEndDelegate(EndDelegate);
+
+	UPC_BattleComponent* BattleComponent = Interface->GetBattleComponent();
+	check(BattleComponent);
+
+	UPC_BackstabSystemComponent* BackstabSystemComponent = Interface->GetBackstabSystemComponent();
+	check(BackstabSystemComponent);
+
+	if(BackstabSystemComponent->ExecuteBackstab())
+	{
+		if(APawn* BackstabTarget = BackstabSystemComponent->GetBackstabTarget())
+		{
+			if(BackstabTarget)
+			{
+				if (APC_BaseCharacter* CharacterBase = Cast<APC_BaseCharacter>(BackstabTarget))
+				{
+					if (FPC_CharacterStatTableRow* StatRow = FPC_GameUtil::GetCharacterStatData(CharacterBase->CharacterDataID))
+					{
+						BattleComponent->SetTargetDamage(BackstabTarget, StatRow->MaxHp);
+					}
+				}
+			}
+		}
+	}
+}
+
 bool UPC_ActionComponent::CanAction(EPC_ActionType InActionType)
 {
 	if (IsLocked(InActionType))
@@ -341,6 +392,12 @@ void UPC_ActionComponent::OnMontageEnd(UAnimMontage* Montage, bool bInterrupted)
 		ForceReleaseLock(EPC_LockCauseType::Roll);
 		ForceReleaseLock(EPC_LockCauseType::Attack);
 	}
+
+	if(Montage == PlayerData->BackstabMontage)
+	{
+		ForceReleaseLock(EPC_LockCauseType::Backstab);
+	}
+	
 	//if (Montage == CurrentAttackMontage)
 	//{
 	//	BattleComponent->EndTrace();

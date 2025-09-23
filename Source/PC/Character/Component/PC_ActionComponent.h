@@ -39,6 +39,7 @@ public:
 	void Run(bool bPressed);
 	void Roll(bool bPressed);
 	void SwapWeapon(bool bPressed);
+	void Backstab(bool bPressed); //뒷잡 암살
 
 	bool CanAction(EPC_ActionType InActionType);
 

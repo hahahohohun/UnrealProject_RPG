@@ -10,11 +10,18 @@ void UPC_AttackTraceNotify::Notify(USkeletalMeshComponent* MeshComp, UAnimSequen
 {
 	Super::Notify(MeshComp, Animation, EventReference);
 
-	if(MeshComp)
+	if (MeshComp)
 	{
-		if(IPC_CharacterInterface* AttackInterface = Cast<IPC_CharacterInterface>(MeshComp->GetOwner()))
+		if (IPC_CharacterInterface* AttackCharacter = Cast<IPC_CharacterInterface>(MeshComp->GetOwner()))
 		{
-			AttackInterface->AttackTrace(isStart, TraceStartBoneName, TraceEndBoneName);
+			if (AttackCharacter->HasWeapon())
+			{
+				AttackCharacter->AttackTraceWithWeapon(bStart, bRight);
+			}
+			else
+			{
+				AttackCharacter->AttackTrace(bStart, TraceStartBoneName, TraceEndBoneName);
+			}
 		}
 	}
 }

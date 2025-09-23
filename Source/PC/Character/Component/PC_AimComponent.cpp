@@ -61,7 +61,7 @@ void UPC_AimComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 
 		// 보간 처리
 		const FVector NewOffset = FMath::VInterpTo(SpringArmComponent->SocketOffset, TargetOffset, DeltaTime, 30.f);
-		const FRotator NewRot = FMath::RInterpTo(SpringArmComponent->GetRelativeRotation(), TargetArmRotation, DeltaTime, 30.f);
+		const FRotator NewRot = FMath::RInterpTo(CameraComponent->GetRelativeRotation(), TargetArmRotation, DeltaTime, 30.f);
 		const float NewLen = FMath::FInterpTo(SpringArmComponent->TargetArmLength, TargetArmLength, DeltaTime, 30.f);
 		const float NewFOV = FMath::FInterpTo(CameraComponent->FieldOfView, TargetFOV, DeltaTime, 30.f);
 		

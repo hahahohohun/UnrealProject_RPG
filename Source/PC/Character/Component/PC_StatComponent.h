@@ -8,9 +8,13 @@
 #include "PC_StatComponent.generated.h"
 
 DECLARE_MULTICAST_DELEGATE_TwoParams(FPC_OnHPChangedDelegate, float CurrentHP, float MaxHP);
+DECLARE_MULTICAST_DELEGATE_TwoParams(FPC_OnMPChangedDelegate, float CurrentMP, float MaxMP);
+DECLARE_MULTICAST_DELEGATE_TwoParams(FPC_OnStaminaChangedDelegate, float CurrentStamina, float MaxStamina);
+
 DECLARE_MULTICAST_DELEGATE(FPC_OnDeadDelegate);
-DECLARE_MULTICAST_DELEGATE_TwoParams(FPC_OnSatChangedDelegate, const FPC_CharacterStatTableRow& BaseStat,
-                                     const FPC_CharacterStatTableRow& ModfierStat);
+//DECLARE_MULTICAST_DELEGATE_OneParam(FPC_OnDeadDelegate, EPC_DeadType DeadType);
+
+DECLARE_MULTICAST_DELEGATE_TwoParams(FPC_OnSatChangedDelegate, const FPC_CharacterStatTableRow& BaseStat, const FPC_CharacterStatTableRow& ModfierStat);
 
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
@@ -23,7 +27,11 @@ public:
 	// Sets default values for this component's properties
 	UPC_StatComponent();
 	virtual  void InitializeComponent() override;
+	
 	FPC_OnHPChangedDelegate OnHPChangedDelegate;
+	FPC_OnMPChangedDelegate OnMPChangedDelegate;
+	FPC_OnStaminaChangedDelegate OnStaminaChangedDelegate;
+	
 	FPC_OnSatChangedDelegate OnStatChangedDelegate;
 	FPC_OnDeadDelegate OnCharacterDieDelegate;
 

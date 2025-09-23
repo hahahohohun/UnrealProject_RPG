@@ -12,6 +12,7 @@ class UPC_ActionComponent;
 class UPC_BattleComponent;
 class UPC_PlayerDataAsset;
 class UPC_LockOnComponent;
+class UPC_BackstabSystemComponent;
 
 UINTERFACE(MinimalAPI)
 class UPC_PlayerCharacterInterface : public UInterface
@@ -24,12 +25,14 @@ class PC_API IPC_PlayerCharacterInterface
 	GENERATED_BODY()
 
 public:
-	virtual UStaticMeshComponent* GetWeaponStaticMeshComponent() const = 0;
+	
 	virtual USpringArmComponent* GetSpringArmComponent() const = 0;
 	virtual UCameraComponent* GetCameraComponent() const = 0;
 
 	virtual UPC_ActionComponent* GetActionComponent() const = 0;
 	virtual UPC_LockOnComponent* GetLockOnComponent() const = 0;
+	virtual UPC_BackstabSystemComponent* GetBackstabSystemComponent() const = 0;
+
 	virtual UPC_BattleComponent* GetBattleComponent() const = 0;
 	virtual UPC_PlayerDataAsset* GetPlayerData() const = 0;
 };

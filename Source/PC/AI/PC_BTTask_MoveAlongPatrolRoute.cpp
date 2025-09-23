@@ -2,6 +2,7 @@
 
 #include "PC_AIController.h"
 #include "Actor/PC_PatrolRoute.h"
+#include "Navigation/PathFollowingComponent.h"
 #include "PC/PC.h"
 #include "PC/Interface/PC_CharacterAIInterface.h"
 

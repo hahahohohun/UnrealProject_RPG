@@ -5,6 +5,8 @@
 #include "NiagaraComponent.h"
 #include "PC_SkillComponent.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPC_OnStartSkillDelegate, uint32, SkillId);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPC_OnEndSkillDelegate, uint32, SkillId);
 
 struct FPC_ExecData;
 
@@ -30,6 +32,9 @@ struct FPC_ExecInfo
 	FVector ExecStartPos = FVector::ZeroVector;
 	FRotator ExecStartRot  = FRotator::ZeroRotator;
 
+	FVector ExecEndPos = FVector::ZeroVector;
+	FRotator ExecEndRot  = FRotator::ZeroRotator;
+	
 	TObjectPtr<UNiagaraComponent> AttachedFx = nullptr;
 };
 
@@ -89,5 +94,8 @@ public:
 	TArray<FPC_SkillInfo> CoolDownSkillInfos;
 	
 	TWeakObjectPtr<ACharacter> OwnerCharacter = nullptr;
+
+	FPC_OnStartSkillDelegate OnStartSkillDelegate;
+	FPC_OnEndSkillDelegate OnEndSkillDelegate;
 };
 

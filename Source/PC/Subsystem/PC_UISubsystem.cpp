@@ -3,6 +3,7 @@
 
 #include "PC/Subsystem/PC_UISubsystem.h"
 
+#include "PC/UI/PC_HPBarWidget.h"
 #include "PC/UI/PC_HUDWidget.h"
 
 UPC_UISubsystem::UPC_UISubsystem()
@@ -12,6 +13,14 @@ UPC_UISubsystem::UPC_UISubsystem()
 	{
 		HUDWidgetClass = HUDWidgetAsset.Class;
 	}
+
+	static ConstructorHelpers::FClassFinder<UPC_HPBarWidget> HPBarWidgetAsset(TEXT("/Game/ProjectClass/UI/WBP_HPBar.WBP_HPBar_C"));
+	if(HPBarWidgetAsset.Succeeded())
+	{
+		HPBarWidgetClass = HPBarWidgetAsset.Class;
+	}
+	
+	//static ConstructorHelpers::FClassFinder<upc_dam>
 }
 
 void UPC_UISubsystem::Initialize(FSubsystemCollectionBase& Collection)

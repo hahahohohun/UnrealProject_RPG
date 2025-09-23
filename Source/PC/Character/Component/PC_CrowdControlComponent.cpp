@@ -133,17 +133,17 @@ void UPC_CrowdControlComponent::OnStartCC()
 
 	if(UPC_CharacterDataAsset* CharacterDataAsset = CharacterInterface->GetCharacterDataAsset())
 	{
-		if(TObjectPtr<UAnimMontage> AnimMontage = CharacterDataAsset->KnockbackAnim)
-		{
-			USkeletalMeshComponent* SkeletalMeshComponent = OwnerCharacter->GetMesh();
-			check(SkeletalMeshComponent);
-	
-			UAnimInstance* AnimInstance = SkeletalMeshComponent->GetAnimInstance();
-			check(AnimInstance);
-	
-			AnimInstance->StopAllMontages(0.2f);
-			AnimInstance->Montage_Play(AnimMontage);
-		}
+		//if(TObjectPtr<UAnimMontage> AnimMontage = CharacterDataAsset->KnockbackAnim)
+		//{
+		//	USkeletalMeshComponent* SkeletalMeshComponent = OwnerCharacter->GetMesh();
+		//	check(SkeletalMeshComponent);
+	    //
+		//	UAnimInstance* AnimInstance = SkeletalMeshComponent->GetAnimInstance();
+		//	check(AnimInstance);
+	    //
+		//	AnimInstance->StopAllMontages(0.2f);
+		//	AnimInstance->Montage_Play(AnimMontage);
+		//}
 	}
 
 	if(CrowdControlInfo.CrowdControlType == EPC_CrowdControlType::Pushback)
@@ -176,6 +176,17 @@ void UPC_CrowdControlComponent::OnStopCC()
 		check(SkeletalMeshComponent);
 
 		SkeletalMeshComponent->SetOverlayMaterial(nullptr);
+
+		if (IPC_CharacterInterface* CharacterInterface = Cast<IPC_CharacterInterface>(OwnerCharacter))
+		{
+			UStaticMeshComponent* Weapon_L = CharacterInterface->GetWeapon_L_StaticMeshComponent();
+			check(Weapon_L);
+			Weapon_L->SetOverlayMaterial(nullptr);
+			
+			UStaticMeshComponent* Weapon_R = CharacterInterface->GetWeapon_R_StaticMeshComponent();
+			check(Weapon_R);
+			Weapon_R->SetOverlayMaterial(nullptr);
+		}
 	}
 
 	if(CrowdControlInfo.CrowdControlType == EPC_CrowdControlType::Freeze)
@@ -206,6 +217,18 @@ void UPC_CrowdControlComponent::PlayFX(FPC_CrowdControlInfo& Info)
 		check(SkeletalMeshComponent);
 
 		SkeletalMeshComponent->SetOverlayMaterial(CrowdControlTableRow->MaterialInstance);
+		//TODO Weapon Mesh에도 메테리얼 변경 필요
+		if (IPC_CharacterInterface* CharacterInterface = Cast<IPC_CharacterInterface>(OwnerCharacter))
+		{
+			UStaticMeshComponent* Weapon_L = CharacterInterface->GetWeapon_L_StaticMeshComponent();
+			check(Weapon_L);
+			Weapon_L->SetOverlayMaterial(CrowdControlTableRow->MaterialInstance);
+			
+			UStaticMeshComponent* Weapon_R = CharacterInterface->GetWeapon_R_StaticMeshComponent();
+			check(Weapon_R);
+
+			Weapon_R->SetOverlayMaterial(CrowdControlTableRow->MaterialInstance);
+		}
 	}
 }
 

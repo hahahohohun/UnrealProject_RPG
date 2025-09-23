@@ -1,6 +1,7 @@
 #include "PC_LockOnComponent.h"
 
 #include "GameFramework/Character.h"
+#include "PC/Interface/PC_CharacterInterface.h"
 #include "PC/Interface/PC_CharacterWidgetInterface.h"
 
 UPC_LockOnComponent::UPC_LockOnComponent()
@@ -80,6 +81,12 @@ APawn* UPC_LockOnComponent::FindTarget()
 		APawn* ResultPawn = Cast<APawn>(Result.GetActor());
 		if (!ResultPawn)
 			continue;
+		
+		IPC_CharacterInterface* CharacterInterface = Cast<IPC_CharacterInterface>(ResultPawn);
+		check(ResultPawn);
+
+		if (CharacterInterface->IsDead())
+			continue;;
 		
 		FVector ToTargetDir = (Result.GetActor()->GetActorLocation() - OwnerLocation).GetSafeNormal();
 		float OffsetAngle = FMath::RadiansToDegrees(FMath::Acos(ToTargetDir.Dot(CameraForward)));

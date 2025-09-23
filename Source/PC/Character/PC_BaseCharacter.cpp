@@ -8,7 +8,9 @@
 #include "Component/PC_StatComponent.h"
 #include "Component/PC_WidgetComponent.h"
 #include "Component/PC_BattleComponent.h"
+#include "Component/PC_SkillComponent.h"
 #include "PC/PC.h"
+#include "PC/UI/PC_AttackIndicatorWidget.h"
 #include "PC/UI/PC_LockOnWidget.h"
 #include "PC/UI/PC_HPBarWidget.h"
 #include "PC/Utills/PC_GameUtill.h"
@@ -40,26 +42,15 @@ APC_BaseCharacter::APC_BaseCharacter()
 	BattleComponent = CreateDefaultSubobject<UPC_BattleComponent>(TEXT("BattleComponent"));
 	CrowdControlComponent = CreateDefaultSubobject<UPC_CrowdControlComponent>(TEXT("CrowdControlComponent"));
 	StatComponent = CreateDefaultSubobject<UPC_StatComponent>(TEXT("StatComponent"));
-	WeaponStaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponStaticComponent"));
-	WeaponStaticMeshComponent->SetupAttachment(GetMesh());
 	
+	Weapon_L_StaticComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Weapon_L_StaticComponent"));
+	Weapon_L_StaticComponent->SetupAttachment(GetMesh());
+	Weapon_R_StaticComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Weapon_R_StaticComponent"));
+	Weapon_R_StaticComponent->SetupAttachment(GetMesh());
+
+	SkillComponent = CreateDefaultSubobject<UPC_SkillComponent>(TEXT("SkillComponent"));
 	WidgetComponent = CreateDefaultSubobject<UPC_WidgetComponent>(TEXT("WidgetComponent"));
 	WidgetComponent->SetupAttachment(GetMesh());
-	
-
-	//TODO 데이터 분리 필요
-	static ConstructorHelpers::FClassFinder<UUserWidget> HpBarWidgetRef(TEXT("/Game/ProjectClass/UI/WBP_HPBar.WBP_HPBar_C"));
-	if (HpBarWidgetRef.Class)
-	{
-		WidgetComponent->SetWidgetClass(HpBarWidgetRef.Class);
-		WidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
-		WidgetComponent->SetDrawSize(FVector2D(150.0f, 15.0f));
-		WidgetComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	}
-		
-	UE_LOG(LogPC, Log, TEXT(" Constructor"));
-	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
-	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
 }
 
 void APC_BaseCharacter::BeginPlay()
@@ -82,11 +73,7 @@ void APC_BaseCharacter::ApplyStat(const FPC_CharacterStatTableRow& BaseStat, con
 
 void APC_BaseCharacter::SetupCharacterWidget(UPC_UserWidget* InWidget)
 {
-	if (UPC_HPBarWidget* HpBarWidget = Cast<UPC_HPBarWidget>(InWidget))
-	{
-		HpBarWidget->UpdateHpBar(StatComponent->GetCurrentHp(), StatComponent->GetMaxHp());
-		StatComponent->OnHPChangedDelegate.AddUObject(HpBarWidget, &UPC_HPBarWidget::UpdateHpBar);
-	}
+
 }
 
 void APC_BaseCharacter::SetupLockOnWidget(UPC_UserWidget* InUserWidget)
@@ -97,9 +84,22 @@ void APC_BaseCharacter::SetupLockOnWidget(UPC_UserWidget* InUserWidget)
 	}
 }
 
+void APC_BaseCharacter::SetupAttackIndicatorOnWidget(class UPC_UserWidget* InUserWidget)
+{
+	if (UPC_AttackIndicatorWidget* OnWidget = Cast<UPC_AttackIndicatorWidget>(InUserWidget))
+	{
+		OnAttackIndicatorChanged.AddDynamic(OnWidget, &UPC_AttackIndicatorWidget::ToggleActivation);
+	}
+}
+
 void APC_BaseCharacter::OnLocked(bool bLocked)
 {
 	OnCharacterLocked.Broadcast(bLocked);
+}
+
+void APC_BaseCharacter::OnAttackIndicator(bool bAttackIndicator)
+{
+	OnAttackIndicatorChanged.Broadcast(bAttackIndicator);
 }
 
 void APC_BaseCharacter::OnDead()
@@ -120,9 +120,21 @@ bool APC_BaseCharacter::IsDead()
 	return StatComponent->CurrentHp < KINDA_SMALL_NUMBER;
 }
 
-TPair<FName, FName> APC_BaseCharacter::GetWeaponTraceNames()
+TPair<FName, FName> APC_BaseCharacter::GetWeaponTraceNames(bool bRight)
 {
 	return {BattleComponent->TraceEndBoneName, BattleComponent->TraceEndBoneName};
+}
+
+FPC_OnStartSkillDelegate& APC_BaseCharacter::GetOnStartSkillDelegate()
+{
+	check(SkillComponent);
+	return SkillComponent->OnStartSkillDelegate;
+}
+
+FPC_OnEndSkillDelegate& APC_BaseCharacter::GetOnEndSkillDelegate()
+{
+	check(SkillComponent);
+	return SkillComponent->OnEndSkillDelegate;
 }
 
 void APC_BaseCharacter::OnStartCrowdControl(EPC_CrowdControlType CrowdType, AActor* actor)
@@ -151,10 +163,10 @@ void APC_BaseCharacter::AttackTrace(bool bStart, FName TraceStartBoneName, FName
 		BattleComponent->EndTrace();
 }
 
-void APC_BaseCharacter::AttackTraceWithWeapon(bool bStart)
+void APC_BaseCharacter::AttackTraceWithWeapon(bool bStart, bool bRight)
 {
 	if (bStart)
-		BattleComponent->StartTraceWithWeapon();
+		BattleComponent->StartTraceWithWeapon(bRight);
 	else
 		BattleComponent->EndTrace();
 }

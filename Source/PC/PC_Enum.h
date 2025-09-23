@@ -11,16 +11,8 @@ enum class EPC_DataTableType : int32
 	Exec,
 	SkillObject,
 	CrowdControl,
+	RootMotionDistance,
 	Num,
-};
-
-UENUM()
-enum class EPC_CharacterType : int32
-{
-	None,
-	Player,
-	Kallari,
-	Num
 };
 
 UENUM(BlueprintType)
@@ -30,8 +22,17 @@ enum class EPC_EnemyStateType : uint8
 	Patrol = 1,
 	Battle = 2,
 	Investigating =3,
-	CrowdControlled,
-	Dead,
+	CrowdControlled = 4,
+	Dead = 5,
+	Num
+};
+
+UENUM(BlueprintType)
+enum class EPC_DeadType : uint8
+{
+	None = 0,
+	Normal = 1,
+	Backstab, //암살로 죽음
 	Num
 };
 
@@ -55,7 +56,8 @@ enum class EPC_ActionType : uint8
 	Run = 4,
 	Roll= 5,
 	Guard = 6,
-	Num = 7,
+	Backstab = 7,
+	Num,
 };
 
 UENUM(BlueprintType)
@@ -68,7 +70,8 @@ enum class EPC_LockCauseType: uint8
 	Run = 4,
 	Roll = 5,
 	SpecialAction = 6,
-	Num = 7,
+	Backstab = 7,
+	Num,
 };
 
 UENUM(BlueprintType)
@@ -147,4 +150,14 @@ enum class EPC_CrowdControlType : uint8
 	Stun,
 	Freeze,
 	Num
+};
+
+UENUM(BlueprintType)
+enum class EPC_MovementType : uint8
+{
+	None,
+	Walk,
+	Strafe,
+	Run,
+	Num,
 };

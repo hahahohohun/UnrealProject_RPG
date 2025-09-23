@@ -10,12 +10,12 @@
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/Character.h"
 
-FPC_CharacterStatTableRow* FPC_GameUtil::GetCharacterStatData(EPC_CharacterType CharacterType)
+FPC_CharacterStatTableRow* FPC_GameUtil::GetCharacterStatData(uint32 CharacterId)
 {
 	TArray<FPC_CharacterStatTableRow*> CharacterTableRows = GetAllRows<FPC_CharacterStatTableRow>(EPC_DataTableType::CharacterStat);
-	if (FPC_CharacterStatTableRow** FoundRow = CharacterTableRows.FindByPredicate([CharacterType](const FPC_CharacterStatTableRow* Row)
+	if (FPC_CharacterStatTableRow** FoundRow = CharacterTableRows.FindByPredicate([CharacterId](const FPC_CharacterStatTableRow* Row)
 	{
-		return Row->CharacterType == CharacterType;
+		return Row->CharacterId == CharacterId;
 	}))
 	{
 		return *FoundRow;
@@ -24,7 +24,7 @@ FPC_CharacterStatTableRow* FPC_GameUtil::GetCharacterStatData(EPC_CharacterType 
 	return nullptr;
 }
 
-FPC_EnemyTableRow* FPC_GameUtil::GetEnemyData(EPC_CharacterType CharacterType)
+FPC_EnemyTableRow* FPC_GameUtil::GetEnemyData(uint32 CharacterType)
 {
 	TArray<FPC_EnemyTableRow*> CharacterTableRows = GetAllRows<FPC_EnemyTableRow>(EPC_DataTableType::Enemy);
 	if (FPC_EnemyTableRow** FoundRow = CharacterTableRows.FindByPredicate([CharacterType](const FPC_EnemyTableRow* Row)
@@ -127,6 +127,80 @@ FPC_CrowdControlTableRow* FPC_GameUtil::GetCrowdControlData(uint32 crowdId)
 	
 	UE_LOG(LogPC, Error, TEXT("crowdId object data is Invalid"));
 	return nullptr;
+}
+
+float FPC_GameUtil::GetRootMotionDistanceData(FSoftObjectPath& ObjectPath)
+{
+	TArray<FPC_AnimMontageRootMotionDistanceRow*> RootMotionDistanceRows = GetAllRows<FPC_AnimMontageRootMotionDistanceRow>(EPC_DataTableType::RootMotionDistance);
+	
+	if (FPC_AnimMontageRootMotionDistanceRow** FoundRow = RootMotionDistanceRows.FindByPredicate([&ObjectPath](
+		const FPC_AnimMontageRootMotionDistanceRow* Row)
+	{
+		  return Row->MontagePath == ObjectPath;
+	}))
+	{
+		return (*FoundRow)->Distance;
+	}
+	
+	UE_LOG(LogPC, Error, TEXT("RootMotionDistance object data is Invalid"));
+	return 0.f;
+}
+
+float FPC_GameUtil::CalculateRootMotionDistance(UAnimMontage* AnimMontage)
+{
+	if(!AnimMontage)
+	{
+		return 0.f;
+	}
+
+	float TotalDistance = 0.f;
+
+	for(const FSlotAnimationTrack& SlotTrack : AnimMontage->SlotAnimTracks)
+	{
+		for (const FAnimSegment& Segment : SlotTrack.AnimTrack.AnimSegments)
+		{
+			if(UAnimSequence* AnimSequence = Cast<UAnimSequence>(Segment.AnimReference))
+			{
+				if(!AnimSequence->bEnableRootMotion)
+				{
+					continue;
+				}
+
+				const float SequenceLength = AnimSequence->GetPlayLength();
+				const float DeltaTime = 0.01f;
+
+				float CurrentTime = 0.01f;
+				FTransform CurrentAccumulatedTransform = FTransform::Identity;
+
+				while (CurrentTime < SequenceLength)
+				{
+					float NextTime = FMath::Min(CurrentTime + DeltaTime, SequenceLength);
+
+					const FTransform SegmentDeltaTransform = AnimSequence->ExtractRootMotionFromRange(CurrentTime, NextTime);
+					CurrentAccumulatedTransform.Accumulate(SegmentDeltaTransform);
+
+					CurrentTime = NextTime;
+				}
+
+				TotalDistance += CurrentAccumulatedTransform.GetTranslation().Size();
+			}	
+		}
+	}
+
+	return  TotalDistance;
+}
+
+
+
+
+ECollisionChannel FPC_GameUtil::GetAttackCollisionChannel(uint32 DataId)
+{
+	if(DataId == 0)
+	{
+		return ECC_GameTraceChannel3;
+	}
+
+	return  ECC_GameTraceChannel4;
 }
 
 uint32 FPC_GameUtil::GetSkillId(UPC_PlayerDataAsset* PlayerDataAsset, EPC_SkillSlotType SkillSlotType,
