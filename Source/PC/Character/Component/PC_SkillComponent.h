@@ -28,6 +28,7 @@ struct FPC_ExecInfo
 	float IntervalElapsedTime = 0.f;
 	
 	uint32 ExecSequence = 0;
+	uint32 SpawnedCount = 0;
 	
 	FVector ExecStartPos = FVector::ZeroVector;
 	FRotator ExecStartRot  = FRotator::ZeroRotator;
@@ -79,7 +80,8 @@ public:
 	void ProcessNonTargetExec(float DeltaTime, FPC_ExecInfo& ExecInfo, FVector StartPos, FRotator StartRot);
 	void ProcessChainAttackExec(float DeltaTime, FPC_SkillInfo& SkillInfo, FPC_ExecInfo& ExecInfo, FVector StartPos, FRotator StartRot);
 	void ProcessMultipleExec(float DeltaTime, FPC_SkillInfo& SkillInfo, FPC_ExecInfo& ExecInfo, FVector StartPos, FRotator StartRot);
-
+	void ProcessTargetPlayerExec(float DeltaTime, FPC_SkillInfo& SkillInfo, FPC_ExecInfo& ExecInfo, FVector StartPos, FRotator StartRot);
+	
 	void CheckCollision(const FPC_ExecInfo& ExecInfo, FCollisionShape CollisionShape, const FVector& Vector, const FRotator& Rotator);
 	void OnStartExec(FPC_SkillInfo& SkillInfo, FPC_ExecInfo& ExecInfo);
 	void OnEndExec(FPC_SkillInfo& SkillInfo, FPC_ExecInfo& ExecInfo);

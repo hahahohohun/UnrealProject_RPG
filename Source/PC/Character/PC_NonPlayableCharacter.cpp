@@ -152,16 +152,8 @@ FPC_EnemyTableRow* APC_NonPlayableCharacter::GetEnemyData()
 
 void APC_NonPlayableCharacter::OnAttackMontageEnd(UAnimMontage* Montage, bool bInterrupted)
 {
-	if (Montage == AttackAnim)
-	{
-		OnAttackFinished.ExecuteIfBound();
-	}
-	else if (Montage == TurnAnimMontage)
-	{
-		OnTurnFinished.ExecuteIfBound();
-		TurnAnimMontage = nullptr;
-		IsTurning = false;
-	}
+	OnAttackFinished.ExecuteIfBound();
+	bLastAttacking = false;
 }
 
 void APC_NonPlayableCharacter::OnDashBackMontageEnd(UAnimMontage* Montage, bool bInterrupted)
@@ -176,27 +168,27 @@ void APC_NonPlayableCharacter::SetAITurnFinishDelegate(const FAICharacterTurnFin
 
 void APC_NonPlayableCharacter::TurnInPlace(float TurnAnimDegree)
 {
-	check(EnemyTableRow);
-	if (TurnAnimDegree == 90.f)
-		TurnAnimMontage = EnemyTableRow->Left90TurnAnim;
-	else if (TurnAnimDegree == 180.f)
-		TurnAnimMontage = EnemyTableRow->Left180TurnAnim;
-	else if (TurnAnimDegree == -90.f)
-		TurnAnimMontage = EnemyTableRow->Right90TurnAnim;
-	else if (TurnAnimDegree == -180.f)
-		TurnAnimMontage = EnemyTableRow->Right180TurnAnim;
-
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	check(AnimInstance);
-
-	IsTurning = true;
-	TurnStartYaw = GetActorRotation().Yaw;
-	TurnDegree = TurnAnimDegree;
-
-	PlayAnimMontage(TurnAnimMontage);
-
-	FOnMontageEnded EndDelegate = FOnMontageEnded::CreateUObject(this, &ThisClass::OnAttackMontageEnd);
-	GetMesh()->GetAnimInstance()->Montage_SetEndDelegate(EndDelegate);
+	//check(EnemyTableRow);
+	//if (TurnAnimDegree == 90.f)
+	//	TurnAnimMontage = EnemyTableRow->Left90TurnAnim;
+	//else if (TurnAnimDegree == 180.f)
+	//	TurnAnimMontage = EnemyTableRow->Left180TurnAnim;
+	//else if (TurnAnimDegree == -90.f)
+	//	TurnAnimMontage = EnemyTableRow->Right90TurnAnim;
+	//else if (TurnAnimDegree == -180.f)
+	//	TurnAnimMontage = EnemyTableRow->Right180TurnAnim;
+	//
+	//UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	//check(AnimInstance);
+	//
+	//IsTurning = true;
+	//TurnStartYaw = GetActorRotation().Yaw;
+	//TurnDegree = TurnAnimDegree;
+	//
+	//PlayAnimMontage(TurnAnimMontage);
+	//
+	//FOnMontageEnded EndDelegate = FOnMontageEnded::CreateUObject(this, &ThisClass::OnAttackMontageEnd);
+	//GetMesh()->GetAnimInstance()->Montage_SetEndDelegate(EndDelegate);
 }
 
 void APC_NonPlayableCharacter::DashBack()
@@ -217,11 +209,26 @@ void APC_NonPlayableCharacter::SetAIMoveMontageFinishedDelegate(const FAICharact
 	OnMoveMontageFinished = InOnMoveMontageFinished;
 }
 
-void APC_NonPlayableCharacter::Attack()
+void APC_NonPlayableCharacter::Attack(bool bLastAttack)
 {
-	check(EnemyTableRow->AttackAnim);
-	PlayAnimMontage(EnemyTableRow->AttackAnim);
-	AttackAnim = EnemyTableRow->AttackAnim;
+	check(EnemyTableRow);
+	TArray<TObjectPtr<UAnimMontage>>& AttackAnims = EnemyTableRow->AttackAnims;
+
+	AAIController* AIController = Cast<AAIController>(GetController());
+	check(AIController);
+
+	AActor* TargetActor = Cast<AAIController>(GetController());
+	check(TargetActor);
+
+	UAnimMontage* Montage = FPC_GameUtil::GetProperAttackMontage(AttackAnims, AlreadyPlayedAttackMontages,
+		this, TargetActor->GetActorLocation() );
+	
+	check(Montage);
+	
+	bLastAttacking = bLastAttack;
+	
+	PlayAnimMontage(Montage);
+
 
 	FOnMontageEnded EndDelegate = FOnMontageEnded::CreateUObject(this, &ThisClass::OnAttackMontageEnd);
 	GetMesh()->GetAnimInstance()->Montage_SetEndDelegate(EndDelegate);
@@ -248,6 +255,7 @@ void APC_NonPlayableCharacter::ChangeState(EPC_EnemyStateType StateType)
 	}
 
 	EnemyState = StateType;
+	AlreadyPlayedAttackMontages.Empty();
 	
 	if (EnemyState == EPC_EnemyStateType::Patrol || EnemyState == EPC_EnemyStateType::Investigating )
 	{
@@ -347,6 +355,21 @@ EPC_EnemyStateType APC_NonPlayableCharacter::GetState()
 EPC_DeadType APC_NonPlayableCharacter::GetDeadType()
 {
 	return DeadType;
+}
+
+void APC_NonPlayableCharacter::JumpToNextAttackMontage()
+{
+	//마지막 공격이 아니라면
+	//해당 몽타주 종료시키기
+	if(!bLastAttacking)
+	{
+		GetMesh()->GetAnimInstance()->StopAllMontages(0.1f);
+	}
+}
+
+void APC_NonPlayableCharacter::ResetUsedMontage()
+{
+	AlreadyPlayedAttackMontages.Empty();
 }
 
 AActor* APC_NonPlayableCharacter::GetPatrolRoute()

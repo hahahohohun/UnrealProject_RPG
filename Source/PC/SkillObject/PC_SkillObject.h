@@ -39,6 +39,9 @@ public:
 	
 	void PlaySound();
 	void PlayFX(FVector InHitLocation);
+
+	void PlayImpactPointDecal();
+	
 	void ProcessDestroy();
 public:
 	UPROPERTY(EditAnywhere)
@@ -73,6 +76,12 @@ public:
 	
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UNiagaraSystem> DespawnFX;
+
+	UPROPERTY(EditAnywhere)
+	bool ShowImpactPointDecal = false;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UMaterialInterface> ImpactPointDecalMaterial = nullptr;
 	
 	UPROPERTY(EditAnywhere)
 	float LifeTime = 0.f;

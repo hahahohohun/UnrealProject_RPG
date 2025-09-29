@@ -67,22 +67,17 @@ void UPC_HUDWidget::UpdateMPBar(float NewCurrentMP, float NewMaxMP)
 
 void UPC_HUDWidget::OnEnCounterBossMonster(ACharacter* InCharacter)
 {
-	if(InCharacter)
+	if(BossHPBar)
 	{
-		if(BossHPBar)
+		if(InCharacter)
 		{
-			BossHPBar->SetVisibility(ESlateVisibility::HitTestInvisible); //보이지만 입력안받음
+			BossHPBar->SetVisibility(ESlateVisibility::SelfHitTestInvisible); //보이지만 입력안받음
 			//character -> boss
 			BossHPBar->Init(InCharacter);
 		}
 		else
 		{
-			if(BossHPBar)
-			{
-				BossHPBar->SetVisibility(ESlateVisibility::Collapsed);
-				//character -> boss
-				BossHPBar->Init(InCharacter);
-			}
+			BossHPBar->SetVisibility(ESlateVisibility::Collapsed);
 		}
 	}
 }

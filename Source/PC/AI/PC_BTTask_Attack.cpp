@@ -3,6 +3,7 @@
 
 #include "PC_BTTask_Attack.h"
 #include "AIController.h"
+#include "BehaviorTree/BlackboardComponent.h"
 #include "PC/Interface/PC_CharacterAIInterface.h"
 
 UPC_BTTask_Attack::UPC_BTTask_Attack()
@@ -33,8 +34,20 @@ EBTNodeResult::Type UPC_BTTask_Attack::ExecuteTask(UBehaviorTreeComponent& Owner
 		FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
 	}
 	);
-	
+
+	const APawn* Target = Cast<APawn>(OwnerComp.GetBlackboardComponent()->GetValueAsObject(TEXT("Target")));
+	if (!Target)
+		return EBTNodeResult::Failed;
+
+	FVector TargetLocation = Target->GetActorLocation();
+	FVector Location = Pawn->GetActorLocation();
+
+	FVector ToTargetDir = (TargetLocation - Location).GetSafeNormal2D();
+
+	Pawn->SetActorRotation(ToTargetDir.Rotation());
+
 	AIPawn->SetAIAttackFinishDelegate(OnAttackFinished);
-	AIPawn->Attack();
+	AIPawn->Attack(bLastAttacking);
+	
 	return EBTNodeResult::InProgress;
 }

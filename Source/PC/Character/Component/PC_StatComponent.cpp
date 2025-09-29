@@ -12,7 +12,7 @@
 UPC_StatComponent::UPC_StatComponent()
 {
 	bWantsInitializeComponent = true;
-
+	
 }
 
 void UPC_StatComponent::InitializeComponent()

@@ -33,7 +33,7 @@ protected:
 
 	virtual void SetAIAttackFinishDelegate(const FAICharacterAttackFinished& InOnAttackFinished) override;
 	virtual void SetAIMoveMontageFinishedDelegate(const FAICharacterMoveMontageFinished& InOnMoveMontageFinished) override;
-	virtual void Attack() override;
+	virtual void Attack(bool bLastAttack) override;
 	virtual void OnAttackMontageEnd(UAnimMontage* Montage, bool bInterrupted);
 	virtual void OnDashBackMontageEnd(UAnimMontage* Montage, bool bInterrupted);
 	
@@ -58,6 +58,9 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	virtual EPC_DeadType GetDeadType() override;
 
+	virtual void JumpToNextAttackMontage() override;
+	virtual void ResetUsedMontage() override;
+
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = camera, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UPC_WidgetComponent> LockOnWidgetComponent;
@@ -70,13 +73,6 @@ private:
 	FAICharacterMoveMontageFinished OnMoveMontageFinished;
 
 	FPC_EnemyTableRow* EnemyTableRow = nullptr;
-
-	UPROPERTY(EditAnywhere)
-	TObjectPtr<UAnimMontage> AttackAnim = nullptr;
-
-	//Turn 상태
-	UPROPERTY(EditAnywhere)
-	TObjectPtr<UAnimMontage> TurnAnimMontage = nullptr;
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UAnimMontage> DashBackAnimMontage = nullptr;
@@ -101,4 +97,7 @@ private:
 
 	float TurnStartYaw = 0.0f;
 	float TurnDegree = 0.0f;
+
+	TArray<TObjectPtr<UAnimMontage>> AlreadyPlayedAttackMontages;
+	bool bLastAttacking; //마지막 공격
 };

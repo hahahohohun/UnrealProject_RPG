@@ -40,19 +40,30 @@ APC_SkillObject::APC_SkillObject()
 void APC_SkillObject::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	if (!TriggerCollision->OnComponentBeginOverlap.IsAlreadyBound(this, &ThisClass::OnBeginOverlap))
-		TriggerCollision->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnBeginOverlap);
 
-	check(Collision_Environment);
-	Collision_Environment->SetCollisionProfileName(TEXT("SkillObject_Environment"));
-	Collision_Environment->SetSphereRadius(1.f);
+	FPC_SkillObjectTableRow* SkillObjectTableRow = FPC_GameUtil::GetSkillObjectData(SkillObjectId);
+	check(SkillObjectTableRow);
 
-	if (!Collision_Environment->OnComponentHit.IsAlreadyBound(this, &ThisClass::OnComponentHit))
-		Collision_Environment->OnComponentHit.AddDynamic(this, &ThisClass::OnComponentHit);
+	if(SkillObjectTableRow->SkillObjectType ==  EPC_SkillObjectType::Projectile)
+	{
+		if (!TriggerCollision->OnComponentBeginOverlap.IsAlreadyBound(this, &ThisClass::OnBeginOverlap))
+			TriggerCollision->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnBeginOverlap);
 
-	if (BounceCount > 0)
-		ProjectileMovementComponent->bShouldBounce = true;
+		check(Collision_Environment);
+		Collision_Environment->SetCollisionProfileName(TEXT("SkillObject_Environment"));
+		Collision_Environment->SetSphereRadius(1.f);
+
+		if (!Collision_Environment->OnComponentHit.IsAlreadyBound(this, &ThisClass::OnComponentHit))
+			Collision_Environment->OnComponentHit.AddDynamic(this, &ThisClass::OnComponentHit);
+
+		if (BounceCount > 0)
+			ProjectileMovementComponent->bShouldBounce = true;
+
+		if(ShowImpactPointDecal)
+		{
+			PlayImpactPointDecal();
+		}
+	}
 }
 
 // Called every frame
@@ -110,6 +121,37 @@ void APC_SkillObject::PlayFX(FVector InHitLocation)
 {
 	UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), DespawnFX, GetActorLocation(), GetActorRotation());
 	FPC_GameUtil::CameraShake();
+}
+
+void APC_SkillObject::PlayImpactPointDecal()
+{
+	FVector StartLoc = GetActorLocation();
+	FVector LaunchVel = GetActorForwardVector() * ProjectileMovementComponent->MaxSpeed;
+
+	FPredictProjectilePathParams Params;
+	Params.StartLocation = StartLoc;
+	Params.LaunchVelocity = LaunchVel;
+	Params.bTraceWithCollision = true;
+	Params.SimFrequency = 1.f; //값이 낮을 수록 정교
+	Params.TraceChannel = ECC_Visibility;
+
+	FPredictProjectilePathResult Result;
+	if(UGameplayStatics::PredictProjectilePath(this,Params,Result))
+	{
+		const FHitResult& Hit = Result.HitResult;
+		
+		FVector DecalSize(60.f);
+		FRotator DecalRotation = FVector::UpVector.Rotation();
+
+		UGameplayStatics::SpawnDecalAtLocation(
+			GetWorld(),
+			ImpactPointDecalMaterial,
+			DecalSize,
+			Hit.ImpactPoint,
+			DecalRotation,
+			2.0f);
+	}
+	
 }
 
 void APC_SkillObject::ProcessDestroy()

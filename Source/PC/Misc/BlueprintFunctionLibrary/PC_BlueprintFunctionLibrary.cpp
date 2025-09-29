@@ -109,7 +109,7 @@ bool UPC_BlueprintFunctionLibrary::FillDataTableWithRmDistances(UDataTable* Data
 		FString PathStr = Montage->GetPathName();
 		FSoftObjectPath SoftObjectPath(PathStr);
 
-		const float Distance = FPC_GameUtil::CalculateRootMotionDistance(Montage);
+		const float Distance = FPC_GameUtil::CalculateRootMotionDistance_Internal(Montage);
 
 		if(TArray<FName>* FoundRows = PathToRowNames.Find(PathStr))
 		{

@@ -31,23 +31,25 @@ void UPC_SkillComponent::BeginPlay()
 
 void UPC_SkillComponent::RequestPlaySkill(uint32 SkillId)
 {
-	if(!CanPlaySkill(SkillId))
+	if (!CanPlaySkill(SkillId))
 		return;
 
 	TArray<TWeakObjectPtr<AActor>> Targets;
+	
 	FindTarget(SkillId, Targets);
-
+	//TODO Target이 없었을때도 예외 처리
+	
 	FPC_SkillTableRow* SkillTableRow = FPC_GameUtil::GetSkillData(SkillId);
-	if(!SkillTableRow)
+	if (!SkillTableRow)
 		return;
-	
+
 	check(SkillTableRow);
-	
-	if(!Targets.IsEmpty() || SkillTableRow->SkillTargetingType == EPC_SkillTargetingType::NoneTarget)
+
+	if (!Targets.IsEmpty() || SkillTableRow->SkillTargetingType == EPC_SkillTargetingType::NoneTarget)
 	{
 		FPC_SkillInfo SkillInfo;
 		InitSkillInfo(SkillId, Targets, SkillInfo);
-		
+
 		PlaySkill(SkillInfo);
 	}
 }
@@ -59,25 +61,35 @@ void UPC_SkillComponent::FindTarget(uint32 SkillId, TArray<TWeakObjectPtr<AActor
 
 	FPC_SkillTableRow* SkillTableRow = FPC_GameUtil::GetSkillData(SkillId);
 
-	if(!SkillTableRow)
+	if (!SkillTableRow)
 	{
 		return;
 	}
-	
+
 	const float SkillRange = SkillTableRow->SkillRange;
 	const FVector OwnerCharacterPos = OwnerCharacter->GetActorLocation();
 
 	for (AActor* Enemy : Enemys)
 	{
-		if(Enemy != GetOwner())
+		if (Enemy != GetOwner())
 		{
 			if (IPC_CharacterInterface* CharacterInterface = Cast<IPC_CharacterInterface>(Enemy))
 			{
 				if (CharacterInterface->IsDead())
 					continue;
 			}
-			
-			if(FVector::Dist(OwnerCharacterPos, Enemy->GetActorLocation()) <= SkillRange)
+
+			//스킬 발동자가 Player가 아니면 => 몹이 썼다면
+			if (!OwnerCharacter->Implements<UPC_PlayerCharacterInterface>())
+			{
+				//타겟이 Player가아니면 통과~ 
+				if (!Enemy->Implements<UPC_PlayerCharacterInterface>())
+				{
+					continue;
+				}
+			}
+
+			if (FVector::Dist(OwnerCharacterPos, Enemy->GetActorLocation()) <= SkillRange)
 			{
 				Targets.Add(Enemy);
 			}
@@ -92,7 +104,7 @@ bool UPC_SkillComponent::CanPlaySkill(uint32 SkillId)
 
 	if (CharacterInterface->IsDead())
 		return false;
-	
+
 	return true;
 }
 
@@ -114,7 +126,7 @@ void UPC_SkillComponent::InitSkillInfo(uint32 SkillId, TArray<TWeakObjectPtr<AAc
 	TArray<FPC_ExecInfo> ExecInfos;
 	//미리 초기화 갯수 셋팅
 	ExecInfos.AddDefaulted(FPC_GameUtil::GetSkillData(SkillId)->ExecDatas.Num());
-	
+
 	CalcSkillTime(SkillId, SkillLifeTime, ExecInfos);
 
 	SkillInfo.LifeTime = SkillLifeTime;
@@ -125,13 +137,13 @@ void UPC_SkillComponent::InitSkillInfo(uint32 SkillId, TArray<TWeakObjectPtr<AAc
 void UPC_SkillComponent::CalcSkillTime(uint32 SkillId, float& SkillLifeTime, TArray<FPC_ExecInfo>& ExecInfos)
 {
 	//
-	for(int32 i = 0; i < ExecInfos.Num(); i++)
+	for (int32 i = 0; i < ExecInfos.Num(); i++)
 	{
 		FPC_ExecData& ExecData = FPC_GameUtil::GetSkillData(SkillId)->ExecDatas[i];
 		FPC_ExecInfo& ExecInfo = ExecInfos[i];
 		ExecInfo.ExecData = &ExecData;
 		ExecInfo.ExecSequence = i;
-		
+
 		//인덱스 0은 즉시 실행
 		ExecInfo.AnimStartTime = SkillLifeTime;
 		ExecInfo.ExecStartTime = SkillLifeTime + ExecData.DelayTime;
@@ -140,25 +152,24 @@ void UPC_SkillComponent::CalcSkillTime(uint32 SkillId, float& SkillLifeTime, TAr
 		//Delay + 스킬 Duration
 		SkillLifeTime += ExecData.DelayTime + FPC_GameUtil::GetExecData(ExecData.ExecDataId)->Duration;
 	}
-	
 }
 
 void UPC_SkillComponent::ProcessSkill(float DeltaTime, FPC_SkillInfo& SkillInfo)
 {
 	float ElapsedTime = SkillInfo.ElapsedTime;
-	for(FPC_ExecInfo& ExecInfo : SkillInfo.ExecInfos)
+	for (FPC_ExecInfo& ExecInfo : SkillInfo.ExecInfos)
 	{
-		if(ExecInfo.bExecFinished)
+		if (ExecInfo.bExecFinished)
 			continue;
-		
+
 		FPC_SkillTableRow* SkillTableRow = FPC_GameUtil::GetSkillData(SkillInfo.SkillDataId);
 		check(SkillTableRow);
-		
+
 		FPC_ExecTableRow* ExecTableRow = FPC_GameUtil::GetExecData(ExecInfo.ExecData->ExecDataId);
 		check(ExecTableRow);
 
 		//아직 시작하지 않은 스킬이면
-		if(ElapsedTime > ExecInfo.AnimStartTime && !ExecInfo.bAimStarted)
+		if (ElapsedTime > ExecInfo.AnimStartTime && !ExecInfo.bAimStarted)
 		{
 			UAnimInstance* AnimInstance = OwnerCharacter->GetMesh()->GetAnimInstance();
 			check(AnimInstance);
@@ -169,31 +180,35 @@ void UPC_SkillComponent::ProcessSkill(float DeltaTime, FPC_SkillInfo& SkillInfo)
 			AnimInstance->Montage_Play(ExecTableRow->SkillAnim);
 		}
 
-		if(ElapsedTime >= ExecInfo.ExecStartTime && ElapsedTime < ExecInfo.EndTime)
+		if (ElapsedTime >= ExecInfo.ExecStartTime && ElapsedTime < ExecInfo.EndTime)
 		{
 			ExecInfo.ElapsedTime += DeltaTime;
-		
-			if(!ExecInfo.bExecStarted)
+
+			if (!ExecInfo.bExecStarted)
 			{
 				ExecInfo.bExecStarted = true;
 				OnStartExec(SkillInfo, ExecInfo);
 			}
 
-			if(SkillTableRow->SkillTargetingType == EPC_SkillTargetingType::NoneTarget)
+			if (SkillTableRow->SkillTargetingType == EPC_SkillTargetingType::NoneTarget)
 			{
-				ProcessNonTargetExec(DeltaTime, ExecInfo, SkillInfo.SkillStartPos, SkillInfo.SkillStartRot);	
+				ProcessNonTargetExec(DeltaTime, ExecInfo, SkillInfo.SkillStartPos, SkillInfo.SkillStartRot);
 			}
-			else if(SkillTableRow->SkillTargetingType == EPC_SkillTargetingType::ChainAttack)
+			else if (SkillTableRow->SkillTargetingType == EPC_SkillTargetingType::ChainAttack)
 			{
 				ProcessChainAttackExec(DeltaTime, SkillInfo, ExecInfo, SkillInfo.SkillStartPos, SkillInfo.SkillStartRot);
 			}
-			else if(SkillTableRow->SkillTargetingType == EPC_SkillTargetingType::Multiple)
+			else if (SkillTableRow->SkillTargetingType == EPC_SkillTargetingType::Multiple)
 			{
-				ProcessMultipleExec(DeltaTime, SkillInfo, ExecInfo, SkillInfo.SkillStartPos, SkillInfo.SkillStartRot);	
+				ProcessMultipleExec(DeltaTime, SkillInfo, ExecInfo, SkillInfo.SkillStartPos, SkillInfo.SkillStartRot);
+			}
+			else if(SkillTableRow->SkillTargetingType == EPC_SkillTargetingType::TargetPlayer)
+			{
+				ProcessTargetPlayerExec(DeltaTime, SkillInfo, ExecInfo, SkillInfo.SkillStartPos, SkillInfo.SkillStartRot);
 			}
 		}
 
-		if(ExecInfo.EndTime <= ElapsedTime)
+		if (ExecInfo.EndTime <= ElapsedTime)
 		{
 			ExecInfo.bExecFinished = true;
 			OnEndExec(SkillInfo, ExecInfo);
@@ -202,19 +217,19 @@ void UPC_SkillComponent::ProcessSkill(float DeltaTime, FPC_SkillInfo& SkillInfo)
 }
 
 void UPC_SkillComponent::ProcessNonTargetExec(float DeltaTime, FPC_ExecInfo& ExecInfo, FVector StartPos,
-	FRotator StartRot)
+                                              FRotator StartRot)
 {
 	FPC_ExecTableRow* ExecTableRow = FPC_GameUtil::GetExecData(ExecInfo.ExecData->ExecDataId);
 	check(ExecTableRow);
 
-	if(ExecTableRow->ExecType == EPC_ExecType::Dash)
+	if (ExecTableRow->ExecType == EPC_ExecType::Dash)
 	{
 		float DashRange = ExecTableRow->ExecProperty_0; //Range
 		float Duration = ExecTableRow->Duration;
 
 		float CurveAlpha = ExecInfo.ElapsedTime / Duration;
 		float PosAlpha = ExecTableRow->ExeCurve->GetFloatValue(CurveAlpha);
-		
+
 		//float Speed =  DashRange / Duration;
 
 		FVector CurrentPos = OwnerCharacter->GetActorLocation();
@@ -231,7 +246,7 @@ void UPC_SkillComponent::ProcessNonTargetExec(float DeltaTime, FPC_ExecInfo& Exe
 		{
 			USkeletalMeshComponent* SkeletalMeshComponent = OwnerCharacter->GetMesh();
 			check(SkeletalMeshComponent);
-	
+
 			CurrentPos = SkeletalMeshComponent->GetSocketLocation(ExecTableRow->SkillPosBoneName);
 		}
 		else
@@ -244,28 +259,29 @@ void UPC_SkillComponent::ProcessNonTargetExec(float DeltaTime, FPC_ExecInfo& Exe
 
 		float Interval = ExecTableRow->ExecProperty_0;
 
-		if (ExecTableRow->bSpawnCollision && ExecInfo.IntervalElapsedTime >= Interval && !ExecInfo.bExecCollisionSpawned)
+		if (ExecTableRow->bSpawnCollision && ExecInfo.IntervalElapsedTime >= Interval && !ExecInfo.
+			bExecCollisionSpawned)
 		{
 			ExecInfo.IntervalElapsedTime = 0.f;
 
 			FVector ExecCollisionPos = CurrentPos + DotDir.Vector() * ExecTableRow->ExecCollisionProperty_2;
 			FRotator ExecCollisionRot = DotDir;
-			
+
 			EPC_ExecCollisionType CollisionType = ExecTableRow->ExecCollisionType;
 			if (CollisionType == EPC_ExecCollisionType::Box)
 			{
 				float BoxHeight = ExecTableRow->ExecCollisionProperty_0;
 				float BoxWidth = ExecTableRow->ExecCollisionProperty_1;
 				float BoxLength = ExecTableRow->ExecCollisionProperty_2;
-				
+
 				FCollisionShape CollisionShape = FCollisionShape::MakeBox(FVector(BoxLength, BoxWidth, BoxHeight));
 				CheckCollision(ExecInfo, CollisionShape, ExecCollisionPos, ExecCollisionRot);
 			}
 		}
 	}
-	else if(ExecTableRow->ExecType == EPC_ExecType::Pushback)
+	else if (ExecTableRow->ExecType == EPC_ExecType::Pushback)
 	{
-		if(ExecTableRow->bSpawnCollision && !ExecInfo.bExecCollisionSpawned)
+		if (ExecTableRow->bSpawnCollision && !ExecInfo.bExecCollisionSpawned)
 		{
 			ExecInfo.bExecCollisionSpawned = true;
 
@@ -282,16 +298,70 @@ void UPC_SkillComponent::ProcessNonTargetExec(float DeltaTime, FPC_ExecInfo& Exe
 			QueryParams.AddIgnoredActor(OwnerCharacter.Get());
 
 			EPC_ExecCollisionType CollisionType = ExecTableRow->ExecCollisionType;
-			if(CollisionType == EPC_ExecCollisionType::Sphere)
+			if (CollisionType == EPC_ExecCollisionType::Sphere)
 			{
 				CheckCollision(ExecInfo, CollisionShape, ExecCollisionPos, ExecCollisionRot);
 			}
 		}
 	}
+	else if(ExecTableRow->ExecType == EPC_ExecType::FireCircularRain)
+	{
+		float GrowthUp  = ExecInfo.ExecSequence *  100.f;//적당하게
+		float Radius = ExecTableRow->ExecProperty_1 + GrowthUp;
+		float SpawnCount = ExecTableRow->ExecProperty_2;
+		float IntervalTime = ExecTableRow->Duration / SpawnCount;
+
+		const float SpawnHeight = ExecTableRow->ExecCollisionProperty_0; // 공중 높이
+		const float StartAngleDeg = ExecTableRow->ExecCollisionProperty_1; //첫 projectile 각도
+		bool bClockwise = true;
+		
+		ExecInfo.IntervalElapsedTime += DeltaTime;
+		if (ExecInfo.IntervalElapsedTime >= IntervalTime)
+		{
+			ExecInfo.IntervalElapsedTime = 0.f;
+			
+			uint32 StepIndex = ExecInfo.SpawnedCount;
+			const float AngleStepDeg = 360.f / SpawnCount;    // 각도 분할
+			float AngleDeg = StartAngleDeg + (bClockwise ? -1.f : +1.f) * (AngleStepDeg * StepIndex);
+
+			const FVector Center = OwnerCharacter->GetActorLocation();
+			const float Rad = FMath::DegreesToRadians(AngleDeg);
+			const FVector2D Unit2D = FVector2D(FMath::Cos(Rad), FMath::Sin(Rad));
+			FVector Location = Center + FVector(Unit2D.X * Radius, Unit2D.Y * Radius,
+								 OwnerCharacter->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + SpawnHeight);
+
+			//땅을 바라보게
+			const FRotator Rotation = FRotationMatrix::MakeFromX(FVector::DownVector).Rotator();
+
+			FPC_SkillObjectTableRow* SkillObjectTableRow = FPC_GameUtil::GetSkillObjectData(ExecTableRow->ExecProperty_0);
+			check(SkillObjectTableRow);
+
+			UClass* SkillObjectClass = SkillObjectTableRow->SkillObjectActor;
+			check(SkillObjectClass);
+
+			FTransform Transform;
+			Transform.SetLocation(Location);
+			Transform.SetRotation(Rotation.Quaternion());
+
+			APC_SkillObject* SkillObject = GetWorld()->SpawnActorDeferred<APC_SkillObject>(SkillObjectClass, Transform, GetOwner(),
+				nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+
+			SkillObject->OwnerCharacter = OwnerCharacter.Get();
+			SkillObject->SkillObjectId = ExecTableRow->ExecProperty_0;
+			SkillObject->FinishSpawning(Transform);
+
+			// 다음 각도로 진행
+			ExecInfo.SpawnedCount++;
+			if (ExecInfo.SpawnedCount >= SpawnCount)
+			{
+				ExecInfo.bExecFinished = true;
+			}
+		} 
+	}
 }
 
 void UPC_SkillComponent::ProcessChainAttackExec(float DeltaTime, FPC_SkillInfo& SkillInfo, FPC_ExecInfo& ExecInfo,
-	FVector StartPos, FRotator StartRot)
+                                                FVector StartPos, FRotator StartRot)
 {
 	FPC_ExecTableRow* ExecTableRow = FPC_GameUtil::GetExecData(ExecInfo.ExecData->ExecDataId);
 	check(ExecTableRow);
@@ -312,7 +382,7 @@ void UPC_SkillComponent::ProcessChainAttackExec(float DeltaTime, FPC_SkillInfo& 
 
 		FVector ToTargetVector = TargetPos - ExecInfo.ExecStartPos;
 		FVector ToTargetDir = ToTargetVector.GetSafeNormal();
-		
+
 		float ToTargetLength = (TargetPos - ExecInfo.ExecStartPos).Length();
 		float Duration = ExecTableRow->Duration;
 
@@ -321,9 +391,9 @@ void UPC_SkillComponent::ProcessChainAttackExec(float DeltaTime, FPC_SkillInfo& 
 
 		FVector NewPos = ExecInfo.ExecStartPos + ToTargetDir * ToTargetLength * PosAlpha;
 		NewPos.Z = CurrentPos.Z;
-		
+
 		NewPos = FPC_GameUtil::FindSurfacePos(OwnerCharacter.Get(), NewPos);
-		
+
 		OwnerCharacter->SetActorLocation(NewPos);
 		OwnerCharacter->SetActorRotation(ToTargetDir.GetSafeNormal2D().Rotation());
 
@@ -331,7 +401,7 @@ void UPC_SkillComponent::ProcessChainAttackExec(float DeltaTime, FPC_SkillInfo& 
 		{
 			FVector ExecCollisionPos = ExecInfo.ExecStartPos + ToTargetDir * ToTargetLength / 2.f;
 			FRotator ExecCollisionRot = ToTargetDir.Rotation();
-			
+
 			EPC_ExecCollisionType CollisionType = ExecTableRow->ExecCollisionType;
 			if (CollisionType == EPC_ExecCollisionType::Box)
 			{
@@ -347,7 +417,7 @@ void UPC_SkillComponent::ProcessChainAttackExec(float DeltaTime, FPC_SkillInfo& 
 }
 
 void UPC_SkillComponent::ProcessMultipleExec(float DeltaTime, FPC_SkillInfo& SkillInfo, FPC_ExecInfo& ExecInfo,
-	FVector StartPos, FRotator StartRot)
+                                             FVector StartPos, FRotator StartRot)
 {
 	FPC_ExecTableRow* ExecTableRow = FPC_GameUtil::GetExecData(ExecInfo.ExecData->ExecDataId);
 	check(ExecTableRow);
@@ -358,7 +428,8 @@ void UPC_SkillComponent::ProcessMultipleExec(float DeltaTime, FPC_SkillInfo& Ski
 		{
 			ExecInfo.bExecCollisionSpawned = true;
 
-			FPC_SkillObjectTableRow* SkillObjectTableRow = FPC_GameUtil::GetSkillObjectData(ExecTableRow->ExecProperty_0);
+			FPC_SkillObjectTableRow* SkillObjectTableRow = FPC_GameUtil::GetSkillObjectData(
+				ExecTableRow->ExecProperty_0);
 			check(SkillObjectTableRow);
 
 			UClass* SkillObjectClass = SkillObjectTableRow->SkillObjectActor;
@@ -369,7 +440,7 @@ void UPC_SkillComponent::ProcessMultipleExec(float DeltaTime, FPC_SkillInfo& Ski
 			for (TWeakObjectPtr<AActor> Actor : Targets)
 			{
 				FVector TargetLocation = Actor->GetActorLocation();
-			
+
 				USkeletalMeshComponent* SkeletalMeshComponent = OwnerCharacter->GetMesh();
 				check(SkeletalMeshComponent);
 
@@ -382,14 +453,15 @@ void UPC_SkillComponent::ProcessMultipleExec(float DeltaTime, FPC_SkillInfo& Ski
 				{
 					Location = OwnerCharacter->GetActorLocation();
 				}
-	
+
 				FRotator Rotation = (TargetLocation - Location).Rotation();
 
 				FTransform Transform;
 				Transform.SetLocation(Location);
 				Transform.SetRotation(Rotation.Quaternion());
 
-				APC_SkillObject* SkillObject = GetWorld()->SpawnActorDeferred<APC_SkillObject>(SkillObjectClass, Transform, GetOwner(), nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+				APC_SkillObject* SkillObject = GetWorld()->SpawnActorDeferred<APC_SkillObject>(
+					SkillObjectClass, Transform, GetOwner(), nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
 				SkillObject->OwnerCharacter = OwnerCharacter.Get();
 				SkillObject->SkillObjectId = ExecTableRow->ExecProperty_0;
 				SkillObject->FinishSpawning(Transform);
@@ -398,48 +470,135 @@ void UPC_SkillComponent::ProcessMultipleExec(float DeltaTime, FPC_SkillInfo& Ski
 	}
 }
 
+void UPC_SkillComponent::ProcessTargetPlayerExec(float DeltaTime, FPC_SkillInfo& SkillInfo, FPC_ExecInfo& ExecInfo,
+                                                 FVector StartPos, FRotator StartRot)
+{
+	FPC_ExecTableRow* ExecTableRow = FPC_GameUtil::GetExecData(ExecInfo.ExecData->ExecDataId);
+	check(ExecTableRow);
+	
+	if (ExecTableRow->ExecType == EPC_ExecType::FireMultipleProjectile)
+	{
+		float LoopCount = ExecTableRow->ExecProperty_1;
+		float IntervalTime = ExecTableRow->Duration / LoopCount;
+
+		ExecInfo.IntervalElapsedTime += DeltaTime;
+		if (ExecInfo.IntervalElapsedTime >= IntervalTime)
+		{
+			ExecInfo.IntervalElapsedTime = 0.f;
+
+			FPC_SkillObjectTableRow* SkillObjectTableRow = FPC_GameUtil::GetSkillObjectData(
+				ExecTableRow->ExecProperty_0);
+			check(SkillObjectTableRow);
+
+			UClass* SkillObjectClass = SkillObjectTableRow->SkillObjectActor;
+			check(SkillObjectClass);
+
+			TArray<TWeakObjectPtr<AActor>>& Targets = SkillInfo.Targets;
+			if (Targets.IsEmpty())
+				return;
+
+			//해당 스킬은 몬스터가 쓰는 스킬로
+			//인덱스 0번이 Player로 보장
+			TWeakObjectPtr<AActor> PlayerActor = Targets[0];
+			ACharacter* PlayerCharacter = Cast<ACharacter>(PlayerActor.Get());
+			if (!PlayerCharacter->Implements<UPC_PlayerCharacterInterface>())
+				return;
+
+			FVector TargetLocation = PlayerCharacter->GetActorLocation();
+
+			USkeletalMeshComponent* SkeletalMeshComponent = OwnerCharacter->GetMesh();
+			check(SkeletalMeshComponent);
+
+			float RandomRadius = ExecTableRow->ExecCollisionProperty_0;
+			float SpawnHeight = ExecTableRow->ExecCollisionProperty_1;
+			FVector Location = FVector::ZeroVector;
+
+			if (RandomRadius > 0.f)
+			{
+				//RandPointInBox 
+				const FVector RnadPos = FMath::RandPointInBox(FBox(FVector(RandomRadius / 2.f),
+				                                                   FVector(RandomRadius / 2.f)));
+
+				//머리 꼭대기에서 얼만큼 위로
+				Location = OwnerCharacter->GetActorLocation() + FVector(0.f, 0.f,
+				                                                        OwnerCharacter->GetCapsuleComponent()->
+				                                                        GetScaledCapsuleHalfHeight() + SpawnHeight);
+				Location += RnadPos;
+			}
+			else
+			{
+				//랜덤 요소가 없다면
+				//스킬 본에서 발사!
+				if (ExecTableRow->SkillPosBoneName != NAME_None)
+				{
+					Location = SkeletalMeshComponent->GetSocketLocation(ExecTableRow->SkillPosBoneName);
+				}
+				else
+				{
+					Location = OwnerCharacter->GetActorLocation();
+				}
+			}
+			
+			FRotator Rotation = (TargetLocation - Location).Rotation();
+
+			FTransform Transform;
+			Transform.SetLocation(Location);
+			Transform.SetRotation(Rotation.Quaternion());
+
+			APC_SkillObject* SkillObject = GetWorld()->SpawnActorDeferred<APC_SkillObject>(
+					SkillObjectClass, Transform, GetOwner(), nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+
+			SkillObject->OwnerCharacter = OwnerCharacter.Get();
+			SkillObject->SkillObjectId = ExecTableRow->ExecProperty_0;
+			SkillObject->FinishSpawning(Transform);
+			
+		}
+	}
+}
+
 void UPC_SkillComponent::CheckCollision(const FPC_ExecInfo& ExecInfo, FCollisionShape CollisionShape,
-                                           const FVector& Pos, const FRotator& Rot)
+                                        const FVector& Pos, const FRotator& Rot)
 {
 	FPC_ExecTableRow* ExecTableRow = FPC_GameUtil::GetExecData(ExecInfo.ExecData->ExecDataId);
 	check(ExecTableRow);
 
-	if(ExecTableRow->bSpawnCollision == false)
+	if (ExecTableRow->bSpawnCollision == false)
 	{
 		return;
 	}
-	
+
 	TArray<FOverlapResult> OverlapResults;
 	UWorld* World = GetWorld();
 	FCollisionQueryParams QueryParams;
 	QueryParams.AddIgnoredActor(OwnerCharacter.Get());
 
-	DrawDebugBox(World, Pos, CollisionShape.GetExtent(), Rot.Quaternion(), FColor::Red, false);
+	if (FPC_GameUtil::IsDebugDrawing(OwnerCharacter.Get()))
+		DrawDebugBox(World, Pos, CollisionShape.GetExtent(), Rot.Quaternion(), FColor::Red, false);
 
 	//todo 몬스터도 스킬을 사용하기 떄문에 처리 필요
-	if(World->OverlapMultiByProfile(OverlapResults, Pos, Rot.Quaternion(), TEXT("EnemyPreset"),
-		CollisionShape, QueryParams))
+	if (World->OverlapMultiByProfile(OverlapResults, Pos, Rot.Quaternion(), TEXT("EnemyPreset"),
+	                                 CollisionShape, QueryParams))
 	{
-		for(FOverlapResult& OverlapResult : OverlapResults)
+		for (FOverlapResult& OverlapResult : OverlapResults)
 		{
-			if(ACharacter* HitCharacter = Cast<ACharacter>(OverlapResult.GetActor()))
+			if (ACharacter* HitCharacter = Cast<ACharacter>(OverlapResult.GetActor()))
 			{
 				FDamageEvent DamageEvent;
 				HitCharacter->TakeDamage(ExecTableRow->Damage, DamageEvent,
-					OwnerCharacter->GetController(), OwnerCharacter.Get());
+				                         OwnerCharacter->GetController(), OwnerCharacter.Get());
 
-				if(ExecTableRow->bPlayCameraShake)
+				if (ExecTableRow->bPlayCameraShake)
 				{
 					FPC_GameUtil::CameraShake();
 				}
-				
-				if(IPC_CharacterInterface* CharacterInterface = Cast<IPC_CharacterInterface>(OverlapResult.GetActor()))
+
+				if (IPC_CharacterInterface* CharacterInterface = Cast<IPC_CharacterInterface>(OverlapResult.GetActor()))
 				{
 					UPC_CrowdControlComponent* CrowdControlComponent = CharacterInterface->GetCrowdControlComponent();
 					check(CrowdControlComponent);
 
 					const float CrowdControlId = ExecTableRow->CrowdControlId;
-					if(CrowdControlId > INDEX_NONE)
+					if (CrowdControlId > INDEX_NONE)
 					{
 						CrowdControlComponent->RequestPlayerCC(CrowdControlId, GetOwner());
 					}
@@ -456,35 +615,40 @@ void UPC_SkillComponent::OnStartExec(FPC_SkillInfo& SkillInfo, FPC_ExecInfo& Exe
 
 	USkeletalMeshComponent* SkeletalMesh = OwnerCharacter->GetMesh();
 	check(SkeletalMesh);
-	
+
 	ExecInfo.ExecStartPos = OwnerCharacter->GetActorLocation();
 	ExecInfo.ExecStartRot = OwnerCharacter->GetActorRotation();
-	
+
 	if (ExecTableRow->bAttachFx)
 	{
-		ExecInfo.AttachedFx = FPC_GameUtil::SpawnEffectAttached(ExecTableRow->ExecFX_Niagara_Start, SkeletalMesh, ExecTableRow->SkillPosBoneName, FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::SnapToTarget, false);
+		ExecInfo.AttachedFx = FPC_GameUtil::SpawnEffectAttached(ExecTableRow->ExecFX_Niagara_Start, SkeletalMesh,
+		                                                        ExecTableRow->SkillPosBoneName, FVector::ZeroVector,
+		                                                        FRotator::ZeroRotator, EAttachLocation::SnapToTarget,
+		                                                        false);
 	}
 	else
 	{
-		FPC_GameUtil::SpawnEffectAtLocation(GetWorld(), ExecTableRow->ExecFX_Niagara_Start, ExecInfo.ExecStartPos, ExecInfo.ExecStartRot);
-		FPC_GameUtil::SpawnEffectAtLocation(GetWorld(), ExecTableRow->ExecFX_Cascade_Start, ExecInfo.ExecStartPos, ExecInfo.ExecStartRot);
+		FPC_GameUtil::SpawnEffectAtLocation(GetWorld(), ExecTableRow->ExecFX_Niagara_Start, ExecInfo.ExecStartPos,
+		                                    ExecInfo.ExecStartRot);
+		FPC_GameUtil::SpawnEffectAtLocation(GetWorld(), ExecTableRow->ExecFX_Cascade_Start, ExecInfo.ExecStartPos,
+		                                    ExecInfo.ExecStartRot);
 	}
 
-	if(ExecTableRow->ExecType == EPC_ExecType::DashToTarget)
+	if (ExecTableRow->ExecType == EPC_ExecType::DashToTarget)
 	{
 		TArray<TWeakObjectPtr<AActor>>& Targets = SkillInfo.Targets;
-		if(Targets.IsEmpty())
+		if (Targets.IsEmpty())
 			return;
 
 		//TargetIndex가 시퀀스가 개수보다 안 크게
 		uint32 TargetIndex = ExecInfo.ExecSequence % Targets.Num();
 		TWeakObjectPtr<ACharacter> Target = Cast<ACharacter>(Targets[TargetIndex]);
 
-		if(!Target.IsValid())
+		if (!Target.IsValid())
 			return;
 
 		FVector TargetPos = Target->GetActorLocation();
-		
+
 		FVector ToTargetVector = TargetPos - ExecInfo.ExecStartPos;
 		FVector ToTargetDir = ToTargetVector.GetSafeNormal();
 
@@ -504,13 +668,13 @@ void UPC_SkillComponent::OnEndExec(FPC_SkillInfo& SkillInfo, FPC_ExecInfo& ExecI
 
 	USkeletalMeshComponent* SkeletalMesh = OwnerCharacter->GetMesh();
 	check(SkeletalMesh);
-	
+
 	const FVector Location = OwnerCharacter->GetActorLocation();
 	const FRotator Rotation = OwnerCharacter->GetActorRotation();
-	
+
 	FPC_GameUtil::SpawnEffectAtLocation(GetWorld(), ExecTableRow->ExecFX_Niagara_End, Location, Rotation);
 	FPC_GameUtil::SpawnEffectAtLocation(GetWorld(), ExecTableRow->ExecFX_Cascade_End, Location, Rotation);
-	
+
 	if (ExecInfo.AttachedFx)
 	{
 		ExecInfo.AttachedFx->Deactivate(); //Deactivate : 
@@ -527,7 +691,7 @@ void UPC_SkillComponent::TickComponent(float DeltaTime, enum ELevelTick TickType
 void UPC_SkillComponent::Tick_PlaySkill(float DeltaTime)
 {
 	TArray<FPC_SkillInfo> SkillToCoolDown;
-	for(FPC_SkillInfo& SkillInfo : CurrentPlayingSkillInfos)
+	for (FPC_SkillInfo& SkillInfo : CurrentPlayingSkillInfos)
 	{
 		FPC_SkillTableRow* SkillTableRow = FPC_GameUtil::GetSkillData(SkillInfo.SkillDataId);
 		check(SkillTableRow);
@@ -535,7 +699,7 @@ void UPC_SkillComponent::Tick_PlaySkill(float DeltaTime)
 		SkillInfo.ElapsedTime += DeltaTime;
 		ProcessSkill(DeltaTime, SkillInfo);
 
-		if(SkillInfo.ElapsedTime > SkillInfo.LifeTime)
+		if (SkillInfo.ElapsedTime > SkillInfo.LifeTime)
 		{
 			SkillToCoolDown.Add(SkillInfo);
 
@@ -544,7 +708,7 @@ void UPC_SkillComponent::Tick_PlaySkill(float DeltaTime)
 	}
 
 	//쿨다운 스킬 add
-	for(FPC_SkillInfo& SkillInfo : SkillToCoolDown)
+	for (FPC_SkillInfo& SkillInfo : SkillToCoolDown)
 	{
 		CoolDownSkillInfos.Add(SkillInfo);
 	}
@@ -554,4 +718,3 @@ void UPC_SkillComponent::Tick_PlaySkill(float DeltaTime)
 		return SkillInfo.ElapsedTime > SkillInfo.LifeTime;
 	});
 }
-

@@ -22,8 +22,10 @@ public:
 	static FPC_ExecTableRow* GetExecData(uint32 execId);
 	static FPC_CrowdControlTableRow* GetCrowdControlData(uint32 crowdId);
 	static float GetRootMotionDistanceData(FSoftObjectPath& ObjectPath);
-	static float CalculateRootMotionDistance(UAnimMontage* AnimMontage);
+	static float CalculateRootMotionDistance_Internal(UAnimMontage* AnimMontage);
 
+	static UAnimMontage* GetProperAttackMontage(TArray<TObjectPtr<UAnimMontage>>& AnimMontages, TArray<TObjectPtr<UAnimMontage>>& AlreadyPlayedMontage,
+		AActor* AttackActor, FVector TargetPos);
 	static ECollisionChannel GetAttackCollisionChannel(uint32 Dataid);
 	
 	static uint32 GetSkillId(UPC_PlayerDataAsset* PlayerDataAsset, EPC_SkillSlotType SlotType, EPC_CharacterStanceType CharacterStance
@@ -37,13 +39,18 @@ public:
 	static UParticleSystemComponent* SpawnEffectAttached(UParticleSystem* ParticleSystem, USceneComponent* AttachToComponent, FName AttachPointName, FVector Location, FRotator Rotation, EAttachLocation::Type LocationType, bool bAutoDestroy);
 
 	static FVector FindSurfacePos(ACharacter* Character, FVector& CurrentPos);
+
+	static bool IsDebugDrawing(UObject* WorldContextObject);
 	
 	template <typename T>
 	static TArray<T*> GetAllRows(EPC_DataTableType DataTableType);
+
+private:
+
 };
 
 template <typename T>
-TArray<T*> FPC_GameUtil::GetAllRows(EPC_DataTableType CharacterType)
+TArray<T*> FPC_GameUtil::GetAllRows(EPC_DataTableType Type)
 {
 	if (GEngine)
 	{
@@ -51,7 +58,7 @@ TArray<T*> FPC_GameUtil::GetAllRows(EPC_DataTableType CharacterType)
 		{
 			if (UPC_DataSubsystem* DataSubsystem = GameInstance->GetSubsystem<UPC_DataSubsystem>())
 			{
-				if (const UDataTable* DataTable = DataSubsystem->GetTable(CharacterType))
+				if (const UDataTable* DataTable = DataSubsystem->GetTable(Type))
 				{
 					TArray<T*> TableRows;
 					DataTable->GetAllRows(TEXT(""), TableRows);

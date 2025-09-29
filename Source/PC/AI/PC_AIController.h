@@ -36,9 +36,6 @@ public:
 	
 	FPC_EnemyTableRow* GetEnemyData();
 
-	UFUNCTION()
-	bool IsAwareOf(AActor* Target); //인지 여부
-	
 protected:
 
 	UFUNCTION()
@@ -51,6 +48,7 @@ protected:
 	void HandleSensedDamage(AActor* InActor);
 
 	void HandleLoseTarget(AActor* InActor);
+	void OnSenseTarget(AActor* InActor);
 	FAIStimulus GetAIStimulus(AActor* Actor, EPC_AISenseType AIPerceptionSense);
 
 	virtual void SetGenericTeamId(const FGenericTeamId& TeamID);

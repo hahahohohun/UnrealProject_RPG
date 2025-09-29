@@ -32,7 +32,8 @@ public:
 	virtual UPC_ActionComponent* GetActionComponent() const = 0;
 	virtual UPC_LockOnComponent* GetLockOnComponent() const = 0;
 	virtual UPC_BackstabSystemComponent* GetBackstabSystemComponent() const = 0;
-
 	virtual UPC_BattleComponent* GetBattleComponent() const = 0;
 	virtual UPC_PlayerDataAsset* GetPlayerData() const = 0;
+	
+	virtual void OnSensedByBossMonster(ACharacter* InCharacter) const = 0;
 };

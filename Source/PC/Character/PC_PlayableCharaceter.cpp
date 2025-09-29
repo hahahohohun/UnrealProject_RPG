@@ -19,6 +19,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "PC/Data/PC_InputDataAsset.h"
 #include "PC/Data/PC_PlayerDataAsset.h"
+#include "PC/Misc/GameMode/PCGameMode.h"
 #include "PC/UI/PC_HUDWidget.h"
 #include "PC/Utills/PC_GameUtill.h"
 #include "Perception/AIPerceptionStimuliSourceComponent.h"
@@ -63,8 +64,6 @@ void APC_PlayableCharaceter::BeginPlay()
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
 	}
-	
-
 }
 
 void APC_PlayableCharaceter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -94,6 +93,9 @@ void APC_PlayableCharaceter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 		EnhancedInputComponent->BindAction(InputData->Num2Action, ETriggerEvent::Triggered, this, &ThisClass::Num2);
 		EnhancedInputComponent->BindAction(InputData->Num3Action, ETriggerEvent::Triggered, this, &ThisClass::Num3);
 		EnhancedInputComponent->BindAction(InputData->Num4Action, ETriggerEvent::Triggered, this, &ThisClass::Num4);
+
+		EnhancedInputComponent->BindAction(InputData->DebugDrawAction, ETriggerEvent::Triggered, this, &ThisClass::DebugDraw);
+
 	}
 }
 
@@ -281,6 +283,28 @@ void APC_PlayableCharaceter::Num4(const FInputActionValue& Value)
 	SkillComponent->RequestPlaySkill(SkillId);
 }
 
+void APC_PlayableCharaceter::DebugDraw(const FInputActionValue& Value)
+{
+	const bool IsPressed = Value[0] != 0.0f;
+	if(!IsPressed)
+	{
+		return;
+	}
+
+	UWorld* World = GetWorld();
+	check(World);
+
+	APCGameMode* GameMode = Cast<APCGameMode>(World->GetAuthGameMode());
+	check(GameMode);
+
+	GameMode->DebugDrawing = !GameMode->DebugDrawing;
+}
+
+void APC_PlayableCharaceter::OnSensedByBossMonster(ACharacter* Incharacter) const
+{
+	OnEnCounterBossMonsterDelegate.Broadcast(Incharacter);
+}
+
 void APC_PlayableCharaceter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
@@ -301,6 +325,8 @@ void APC_PlayableCharaceter::SetupHUDWidget(UPC_HUDWidget* InWidget)
 		StatComponent->OnHPChangedDelegate.AddUObject(InWidget, &UPC_HUDWidget::UpdateHPBar);
 		StatComponent->OnMPChangedDelegate.AddUObject(InWidget, &UPC_HUDWidget::UpdateMPBar);
 		StatComponent->OnStaminaChangedDelegate.AddUObject(InWidget, &UPC_HUDWidget::UpdateStaminaBar);
+
+		OnEnCounterBossMonsterDelegate.AddUObject(InWidget, &UPC_HUDWidget::OnEnCounterBossMonster);
 	}
 }
 

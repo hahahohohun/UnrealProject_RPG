@@ -97,7 +97,7 @@ struct FPC_EnemyTableRow : public FTableRowBase
 	float AttackRange = 0.f;
 
 	UPROPERTY(EditAnywhere)
-	TObjectPtr<UAnimMontage> AttackAnim = nullptr;
+	TArray<TObjectPtr<UAnimMontage>> AttackAnims;
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UAnimMontage> DashBackAnim = nullptr;

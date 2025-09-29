@@ -8,6 +8,7 @@
 #include "Navigation/PathFollowingComponent.h"
 
 #include "PC/Character/PC_NonPlayableCharacter.h"
+#include "PC/Interface/PC_PlayerCharacterInterface.h"
 #include "PC/Utills/PC_GameUtill.h"
 #include "Perception/AIPerceptionComponent.h"
 #include "Perception/AISenseConfig_Damage.h"
@@ -139,16 +140,6 @@ void APC_AIController::OnPerceptionUpdate(const TArray<AActor*>& UpdatedActors)
 			break;
 		}
 	}
-
-	if (AActor* Target = Cast<AActor>(GetBlackboardComponent()->GetValueAsObject(TEXT("Target"))))
-	{
-		const bool bAware = IsAwareOf(Target);
-		GetBlackboardComponent()->SetValueAsBool(TEXT("bIsAware"), bAware);
-	}
-	else
-	{
-		GetBlackboardComponent()->SetValueAsBool(TEXT("bIsAware"), false);
-	}
 }
 
 void APC_AIController::SetupSenseConfig()
@@ -181,8 +172,7 @@ void APC_AIController::HandleSensedSight(AActor* InActor)
 	ensure(AIPawn);
 
 	AIPawn->ChangeState(EPC_EnemyStateType::Battle);
-	GetBlackboardComponent()->SetValueAsObject(TEXT("Target"), InActor);
-	GetBlackboardComponent()->SetValueAsBool(TEXT("bIsAware"), true);
+	OnSenseTarget(InActor);
 }
 
 void APC_AIController::HandleSensedHearing(AActor* InActor, FVector InLocation)
@@ -203,9 +193,8 @@ void APC_AIController::HandleSensedDamage(AActor* InActor)
 	ensure(AIPawn);
 
 	AIPawn->ChangeState(EPC_EnemyStateType::Battle);
-	
-	GetBlackboardComponent()->SetValueAsObject(TEXT("Target"), InActor);
-	GetBlackboardComponent()->SetValueAsBool(TEXT("bIsAware"), true);
+
+	OnSenseTarget(InActor);
 }
 
 void APC_AIController::HandleLoseTarget(AActor* InActor)
@@ -223,28 +212,42 @@ void APC_AIController::HandleLoseTarget(AActor* InActor)
 		return;
 
 	AIPawn->ChangeState(EPC_EnemyStateType::Patrol);
-	GetBlackboardComponent()->SetValueAsObject(TEXT("Target"), nullptr);
-	GetBlackboardComponent()->SetValueAsBool(TEXT("bIsAware"), false);
+	OnSenseTarget(nullptr);
 }
 
-bool APC_AIController::IsAwareOf(AActor* Target)
+void APC_AIController::OnSenseTarget(AActor* InActor)
 {
-	if (!Target) return false;
+	AActor* PrevTarget = Cast<ACharacter>(GetBlackboardComponent()->GetValueAsObject(TEXT("Target")));
+	if(PrevTarget == InActor)
+		return;
+	
+	GetBlackboardComponent()->SetValueAsObject(TEXT("Target"), InActor);
 
-	// 최근 시야/피해 자극을 가져온다 (네가 만든 헬퍼 재사용)
-	const FAIStimulus SightStimulus  = GetAIStimulus(Target, EPC_AISenseType::Sight);
-	const FAIStimulus DamageStimulus = GetAIStimulus(Target, EPC_AISenseType::Damage);
+	IPC_CharacterAIInterface* AIPawn = Cast<IPC_CharacterAIInterface>(GetPawn());
+	ensure(AIPawn);
 
-	// '완전히' 시야를 잃은 상태: 마지막 시야 자극이 성공이 아니고, 그 기억마저 만료됨
-	const bool bLostSight = !SightStimulus.WasSuccessfullySensed() && SightStimulus.IsExpired();
+	FPC_EnemyTableRow* EnemyTableRow = AIPawn->GetEnemyData();
+	ensure(EnemyTableRow);
 
-	// 피해 자극이 없거나(무효) 이미 만료됨
-	const bool bDamageExpired = !DamageStimulus.IsValid() || DamageStimulus.IsExpired();
+	if(EnemyTableRow->IsBoos)
+	{
+		//플레이어와 조우했다면
+		if(IPC_PlayerCharacterInterface* PlayerCharacterInterface = Cast<IPC_PlayerCharacterInterface>(InActor))
+		{
+			if(InActor)
+			{
+				PlayerCharacterInterface->OnSensedByBossMonster(Cast<ACharacter>(AIPawn));
+			}
+		}
 
-	// 인지 여부: 둘 다 만족해야만 false, 그 외엔 true
-	//  - 시야 메모리(MaxAge) 동안은 인지 유지
-	//  - 최근 피해를 받은 직후(Damage MaxAge)에도 인지 유지
-	return !(bLostSight && bDamageExpired);
+		if(!InActor)
+		{
+			if(IPC_PlayerCharacterInterface* PlayerCharacterInterface = Cast<IPC_PlayerCharacterInterface>(PrevTarget))
+			{
+				PlayerCharacterInterface->OnSensedByBossMonster(nullptr);
+			}
+		}
+	}
 }
 
 FAIStimulus APC_AIController::GetAIStimulus(AActor* Actor, EPC_AISenseType AIPerceptionSense)

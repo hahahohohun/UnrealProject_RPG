@@ -13,6 +13,8 @@ class APCGameMode : public AGameModeBase
 
 public:
 	APCGameMode();
+
+	bool DebugDrawing = false;
 };
 
 

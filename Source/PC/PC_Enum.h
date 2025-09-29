@@ -106,6 +106,7 @@ enum class EPC_SkillTargetingType : uint8
 	NoneTarget,
 	ChainAttack,
 	Multiple,
+	TargetPlayer,
 	Num,
 };
 
@@ -116,6 +117,8 @@ enum class EPC_ExecType : uint8
 	Dash,
 	DashToTarget,
 	Projectile,
+	FireMultipleProjectile,
+	FireCircularRain,
 	Dot,
 	Pushback,
 	Num,

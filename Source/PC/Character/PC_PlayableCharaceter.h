@@ -20,6 +20,8 @@ class UPC_ActionComponent;
 class UPC_LockOnComponent;
 class UAIPerceptionStimuliSourceComponent;
 
+DECLARE_MULTICAST_DELEGATE_OneParam(FPC_OnEnCounterBossMonster, ACharacter* Incharacter)
+
 UCLASS()
 class PC_API APC_PlayableCharaceter : public APC_BaseCharacter , public IPC_CharacterHUDInterface, public IGenericTeamAgentInterface, public IPC_PlayerCharacterInterface
 {
@@ -51,6 +53,11 @@ protected:
 	void Num3(const FInputActionValue& Value);
 	void Num4(const FInputActionValue& Value);
 
+	void DebugDraw(const FInputActionValue& Value);
+	
+	//보스몬스터에게 감지됐을때
+	void OnSensedByBossMonster(ACharacter* Incharacter) const override;
+	
 public:
 
 	virtual void PossessedBy(AController* NewController) override;
@@ -116,4 +123,6 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AActor> ProjectileClass;
+
+	FPC_OnEnCounterBossMonster OnEnCounterBossMonsterDelegate;
 };

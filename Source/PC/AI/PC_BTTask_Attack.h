@@ -18,6 +18,9 @@ class PC_API UPC_BTTask_Attack : public UBTTaskNode
 	UPC_BTTask_Attack();
 
 	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
+
+	UPROPERTY(EditAnywhere)
+	bool bLastAttacking = false;
 };
 
 

@@ -9,6 +9,7 @@
 #include "NavigationSystem.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/Character.h"
+#include "PC/Misc/GameMode/PCGameMode.h"
 
 FPC_CharacterStatTableRow* FPC_GameUtil::GetCharacterStatData(uint32 CharacterId)
 {
@@ -146,7 +147,7 @@ float FPC_GameUtil::GetRootMotionDistanceData(FSoftObjectPath& ObjectPath)
 	return 0.f;
 }
 
-float FPC_GameUtil::CalculateRootMotionDistance(UAnimMontage* AnimMontage)
+float FPC_GameUtil::CalculateRootMotionDistance_Internal(UAnimMontage* AnimMontage)
 {
 	if(!AnimMontage)
 	{
@@ -190,7 +191,96 @@ float FPC_GameUtil::CalculateRootMotionDistance(UAnimMontage* AnimMontage)
 	return  TotalDistance;
 }
 
+UAnimMontage* FPC_GameUtil::GetProperAttackMontage(TArray<TObjectPtr<UAnimMontage>>& AnimMontages,
+	TArray<TObjectPtr<UAnimMontage>>& AlreadyPlayedMontage, AActor* AttackActor, FVector TargetPos)
+{
+	auto BuildCandidates = [&]()->TArray<UAnimMontage*>
+	{
+		TArray<UAnimMontage*> Out;
+		Out.Reserve(AnimMontages.Num());
 
+		for(UAnimMontage* Montage : AnimMontages)
+		{
+			if(Montage && !AlreadyPlayedMontage.Contains(Montage))
+			{
+				Out.Add(Montage);
+			}
+		}
+		return Out;
+	};
+
+	TArray<UAnimMontage*> Candidates = BuildCandidates();
+
+	//후보군이 없으면
+	if(Candidates.Num() == 0)
+	{
+		//마지막 했던거 제외 시키도록
+		if(AlreadyPlayedMontage.Num() > 0)
+		{
+			UAnimMontage* Last = AlreadyPlayedMontage.Last();
+			AlreadyPlayedMontage.Reset();
+			AlreadyPlayedMontage.Add(Last);
+		}
+
+		Candidates = BuildCandidates();
+
+		if(Candidates.Num() == 0)
+		{
+			if(AnimMontages.Num() == 1 && AnimMontages[0])
+			{
+				return AnimMontages[0];
+			}
+
+			return nullptr;
+		}
+	}
+
+	FVector CurrentPos = AttackActor->GetActorLocation();
+	float DisFromTarget = FVector::Dist(CurrentPos, TargetPos);
+
+	TArray<TPair<UAnimMontage*, float>> Montages;
+	Montages.Reserve(Candidates.Num());
+
+	TArray<FPC_AnimMontageRootMotionDistanceRow*>RootMotionDistanceTableRows = GetAllRows<FPC_AnimMontageRootMotionDistanceRow>(EPC_DataTableType::RootMotionDistance);
+	for(UAnimMontage* Montage : Candidates)
+	{
+		FString PathStr = Montage->GetPathName();
+		FSoftObjectPath SoftObjectPath(PathStr);
+		const float Dist = GetRootMotionDistanceData(SoftObjectPath);
+		Montages.Emplace(Montage, Dist);
+	}
+
+	//Algo::Sort(Montages, [DisFromTarget](TPair<UAnimMontage*, float>& A, TPair<UAnimMontage*, float>& B)
+	//{
+	//	return FMath::Abs(DisFromTarget - A.Value < FMath::Abs(DisFromTarget - B.Value));
+	//});
+
+	Algo::Sort(Montages, [DisFromTarget](TPair<UAnimMontage*, float>& A, TPair<UAnimMontage*, float>& B)
+{
+	return FMath::Abs(DisFromTarget - A.Value) < FMath::Abs(DisFromTarget - B.Value);
+});
+
+	
+	const int32 TopK = FMath::Min(1, Montages.Num()); //몽타주 풀이 작을수도.
+	const int32 PickIdx = FMath::RandRange(0, TopK - 1);
+
+	UAnimMontage* ProperMontage = Montages[PickIdx].Key;
+	AlreadyPlayedMontage.Add(ProperMontage);
+
+	if (IsDebugDrawing(AttackActor))
+	{
+		float DebugDist = CalculateRootMotionDistance_Internal(ProperMontage);
+
+		DrawDebugSphere(AttackActor->GetWorld(), CurrentPos, 10.f, 10, FColor::Blue, false, 3.f);
+		DrawDebugSphere(AttackActor->GetWorld(), CurrentPos + AttackActor->GetActorRotation().Vector() * DebugDist,
+		                10.f, 10, FColor::Red, false, 3.f);
+		DrawDebugLine(AttackActor->GetWorld(), CurrentPos,
+		              CurrentPos + AttackActor->GetActorRotation().Vector() * DebugDist, FColor::Red, false, 3.f);
+	}
+	
+	
+	return ProperMontage;
+}
 
 
 ECollisionChannel FPC_GameUtil::GetAttackCollisionChannel(uint32 DataId)
@@ -302,6 +392,18 @@ FVector FPC_GameUtil::FindSurfacePos(ACharacter* Character, FVector& CurrentPos)
 	}
 
 	return FVector::ZeroVector;
+}
+
+bool FPC_GameUtil::IsDebugDrawing(UObject* WorldContextObject)
+{
+	UWorld* World = WorldContextObject->GetWorld();
+	check(World);
+
+	APCGameMode* GameMode = Cast<APCGameMode>(World->GetAuthGameMode());
+	check(GameMode);
+
+	return GameMode->DebugDrawing;
+	
 }
 
 

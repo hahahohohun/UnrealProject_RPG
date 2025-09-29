@@ -45,7 +45,7 @@ public:
 	virtual void IncrementPatrolIndex() = 0;
 	
 	virtual void SetAIAttackFinishDelegate(const FAICharacterAttackFinished& InOnAttackFinished) = 0;
-	virtual void Attack() = 0;
+	virtual void Attack(bool bLastAttack) = 0;
 
 	virtual void SetAIMoveMontageFinishedDelegate(const FAICharacterMoveMontageFinished& InOnMoveMontageFinished) = 0;
 	
@@ -54,4 +54,7 @@ public:
 	virtual void DashBack()= 0;
 	
 	virtual void SetAITurnFinishDelegate(const FAICharacterTurnFinished& InOnTurnFinished) = 0;
+
+	virtual void JumpToNextAttackMontage() = 0 ;
+	virtual void ResetUsedMontage() = 0;
 };
