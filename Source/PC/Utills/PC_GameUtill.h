@@ -22,8 +22,12 @@ public:
 	static FPC_ExecTableRow* GetExecData(uint32 execId);
 	static FPC_CrowdControlTableRow* GetCrowdControlData(uint32 crowdId);
 	static float GetRootMotionDistanceData(FSoftObjectPath& ObjectPath);
-	static float CalculateRootMotionDistance_Internal(UAnimMontage* AnimMontage);
+	static float CalculateRootMotionDistance(UAnimMontage* AnimMontage);
 
+	static FPC_HitPartListRow* GetHitPartData(FSoftObjectPath& ObjectPath);
+	static EPC_HitPartType GetHitPartTypeByName(FName BoneName, UDataAsset* DataAsset);
+	
+	
 	static UAnimMontage* GetProperAttackMontage(TArray<TObjectPtr<UAnimMontage>>& AnimMontages, TArray<TObjectPtr<UAnimMontage>>& AlreadyPlayedMontage,
 		AActor* AttackActor, FVector TargetPos);
 	static ECollisionChannel GetAttackCollisionChannel(uint32 Dataid);

@@ -32,7 +32,8 @@ EBTNodeResult::Type UPC_BTTask_MoveAlongPatrolRoute::ExecuteTask(UBehaviorTreeCo
 		return EBTNodeResult::Failed;
 
 	FVector TargetLocation = PatrolRoute->GetLocationAtSplinePoint();
-	EPathFollowingRequestResult::Type PathFollowingRequestResult = AIController->MoveToLocation(TargetLocation, 1.f, false);
+	EPathFollowingRequestResult::Type PathFollowingRequestResult =
+		AIController->MoveToLocation(TargetLocation, 1.f, false);
 	if (PathFollowingRequestResult == EPathFollowingRequestResult::RequestSuccessful)
 	{
 		UE_LOG(LogPC, Warning, TEXT("MoveTo Request Successful"));

@@ -12,6 +12,7 @@ enum class EPC_DataTableType : int32
 	SkillObject,
 	CrowdControl,
 	RootMotionDistance,
+	HitPart,
 	Num,
 };
 
@@ -163,4 +164,17 @@ enum class EPC_MovementType : uint8
 	Strafe,
 	Run,
 	Num,
+};
+
+UENUM(BlueprintType)
+enum class EPC_HitPartType : uint8
+{
+	None,
+	Body,
+	Arm_l,
+	Arm_r,
+	Leg_l,
+	Leg_r,
+	Head,
+	Num
 };

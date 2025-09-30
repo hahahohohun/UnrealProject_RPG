@@ -20,6 +20,19 @@ struct FPC_ExecData
 };
 
 USTRUCT(BlueprintType)
+struct FPC_HitPartData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere)
+	FName HitPartName = NAME_None;
+
+	UPROPERTY(EditAnywhere)
+	EPC_HitPartType HitPartType = EPC_HitPartType::None;
+};
+
+
+USTRUCT(BlueprintType)
 struct FPC_CharacterStatTableRow : public FTableRowBase
 {
 	GENERATED_BODY()
@@ -333,5 +346,17 @@ struct FPC_PhysicSkeletonBoneNameRow : public  FTableRowBase
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Animation")
 	float Distance = 0.f;
+};
+
+USTRUCT(BlueprintType)
+struct FPC_HitPartListRow : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FSoftObjectPath PhysicsAssetPath;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<FPC_HitPartData> HitPartDatas;
 };
 

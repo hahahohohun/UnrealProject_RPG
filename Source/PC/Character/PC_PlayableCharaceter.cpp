@@ -32,7 +32,7 @@ APC_PlayableCharaceter::APC_PlayableCharaceter()
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
-	CameraBoom->TargetArmLength = 500.0f; // The camera follows at this distance behind the character	
+	CameraBoom->TargetArmLength = 1500.0f; // The camera follows at this distance behind the character	
 	CameraBoom->bUsePawnControlRotation = true;
 	
 	// Create a follow camera

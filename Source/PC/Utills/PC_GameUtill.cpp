@@ -9,6 +9,7 @@
 #include "NavigationSystem.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/Character.h"
+#include "PC/Data/PC_HitPartDataAsset.h"
 #include "PC/Misc/GameMode/PCGameMode.h"
 
 FPC_CharacterStatTableRow* FPC_GameUtil::GetCharacterStatData(uint32 CharacterId)
@@ -147,7 +148,7 @@ float FPC_GameUtil::GetRootMotionDistanceData(FSoftObjectPath& ObjectPath)
 	return 0.f;
 }
 
-float FPC_GameUtil::CalculateRootMotionDistance_Internal(UAnimMontage* AnimMontage)
+float FPC_GameUtil::CalculateRootMotionDistance(UAnimMontage* AnimMontage)
 {
 	if(!AnimMontage)
 	{
@@ -191,8 +192,80 @@ float FPC_GameUtil::CalculateRootMotionDistance_Internal(UAnimMontage* AnimMonta
 	return  TotalDistance;
 }
 
+FPC_HitPartListRow* FPC_GameUtil::GetHitPartData(FSoftObjectPath& ObjectPath)
+{
+	TArray<FPC_HitPartListRow*> HitRows = GetAllRows<FPC_HitPartListRow>(EPC_DataTableType::HitPart);
+	if (FPC_HitPartListRow** FoundRow = HitRows.FindByPredicate([&ObjectPath](const FPC_HitPartListRow* Row)
+	{
+		  return Row->PhysicsAssetPath == ObjectPath;
+	}))
+	{
+		return *FoundRow;
+	}
+	
+	UE_LOG(LogPC, Error, TEXT("HitPartData is Invalid"));
+	return nullptr;
+}
+
+EPC_HitPartType FPC_GameUtil::GetHitPartTypeByName(FName BoneName, UDataAsset* DataAsset)
+{
+	UPC_HitPartDataAsset* HitPartDataAsset = Cast<UPC_HitPartDataAsset>(DataAsset);
+	if (!HitPartDataAsset)
+		return EPC_HitPartType::None;
+
+	for (FString KeyWord : HitPartDataAsset->HeadKeywords)
+	{
+		if (BoneName.ToString().Contains(KeyWord))
+		{
+			return EPC_HitPartType::Head;
+		}
+	}
+
+	for (FString KeyWord : HitPartDataAsset->BodyKeywords)
+	{
+		if (BoneName.ToString().Contains(KeyWord))
+		{
+			return EPC_HitPartType::Body;
+		}
+	}
+
+	for (FString KeyWord : HitPartDataAsset->ArmKeywords)
+	{
+		if (BoneName.ToString().Contains(KeyWord))
+		{
+			for (FString Marker : HitPartDataAsset->LeftMarkers)
+			{
+				return EPC_HitPartType::Arm_l;
+			}
+
+			for (FString Marker : HitPartDataAsset->RightMarkers)
+			{
+				return EPC_HitPartType::Arm_r;
+			}
+		}
+	}
+					
+	for (FString KeyWord : HitPartDataAsset->LegKeywords)
+	{
+		if (BoneName.ToString().Contains(KeyWord))
+		{
+			for (FString Marker : HitPartDataAsset->LeftMarkers)
+			{
+				return EPC_HitPartType::Leg_l;
+			}
+
+			for (FString Marker : HitPartDataAsset->RightMarkers)
+			{
+				return EPC_HitPartType::Leg_r;
+			}
+		}
+	}
+
+	return EPC_HitPartType::None;
+}
+
 UAnimMontage* FPC_GameUtil::GetProperAttackMontage(TArray<TObjectPtr<UAnimMontage>>& AnimMontages,
-	TArray<TObjectPtr<UAnimMontage>>& AlreadyPlayedMontage, AActor* AttackActor, FVector TargetPos)
+                                                   TArray<TObjectPtr<UAnimMontage>>& AlreadyPlayedMontage, AActor* AttackActor, FVector TargetPos)
 {
 	auto BuildCandidates = [&]()->TArray<UAnimMontage*>
 	{
@@ -269,7 +342,7 @@ UAnimMontage* FPC_GameUtil::GetProperAttackMontage(TArray<TObjectPtr<UAnimMontag
 
 	if (IsDebugDrawing(AttackActor))
 	{
-		float DebugDist = CalculateRootMotionDistance_Internal(ProperMontage);
+		float DebugDist = CalculateRootMotionDistance(ProperMontage);
 
 		DrawDebugSphere(AttackActor->GetWorld(), CurrentPos, 10.f, 10, FColor::Blue, false, 3.f);
 		DrawDebugSphere(AttackActor->GetWorld(), CurrentPos + AttackActor->GetActorRotation().Vector() * DebugDist,

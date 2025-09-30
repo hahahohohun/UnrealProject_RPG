@@ -151,7 +151,7 @@ void APC_AIController::SetupSenseConfig()
 	SightSense->LoseSightRadius = EnemyTableRow->LoseSightRadius;
 	SightSense->PeripheralVisionAngleDegrees = EnemyTableRow->SightAngle;
 	//얼마나 기억할건지
-	SightSense->SetMaxAge(20.f);
+	SightSense->SetMaxAge(5.f);
 	SightSense->DetectionByAffiliation.bDetectEnemies = true;
 
 	HearingSense->HearingRange = 1500.f;
