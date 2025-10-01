@@ -38,7 +38,7 @@ struct FPC_CharacterStatTableRow : public FTableRowBase
 	GENERATED_BODY()
 	
 	public:
-	FPC_CharacterStatTableRow() :MaxHp(0.0f), Attack(0.0f), MovementSpeed(0.0f){}
+	FPC_CharacterStatTableRow() :MaxHp(0.0f), MaxStamina(0.0f), Attack(0.0f), MovementSpeed(0.0f){}
 	
 	UPROPERTY(EditAnywhere)
 	uint32 CharacterId;
@@ -52,12 +52,16 @@ struct FPC_CharacterStatTableRow : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Stat")
 	float MovementSpeed;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Stat")
+	float MaxStamina;
+	
 	FPC_CharacterStatTableRow operator+(const FPC_CharacterStatTableRow& Other) const
 	{
 		FPC_CharacterStatTableRow Result;
 
 		Result.MaxHp = this->MaxHp + Other.MaxHp;
 		Result.Attack = this->Attack + Other.Attack;
+		Result.MaxStamina = this->MaxStamina + Other.MaxStamina;
 		Result.MovementSpeed = this->MovementSpeed + Other.MovementSpeed;
 		
 		return Result;

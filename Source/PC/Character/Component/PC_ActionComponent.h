@@ -4,6 +4,7 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "PC/PC_Enum.h"
+#include "PC/Data/PC_PlayerDataAsset.h"
 #include "PC_ActionComponent.generated.h"
 
 USTRUCT(BlueprintType)
@@ -17,19 +18,27 @@ struct FPC_LockData
 	UPROPERTY()
 	EPC_ActionType LockType = EPC_ActionType::None;
 
-	FPC_LockData(){}
-	FPC_LockData(EPC_LockCauseType InCause, EPC_ActionType InType) : LockCauseType(InCause), LockType(InType) {}
+	FPC_LockData()
+	{
+	}
+
+	FPC_LockData(EPC_LockCauseType InCause, EPC_ActionType InType) : LockCauseType(InCause), LockType(InType)
+	{
+	}
 };
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class PC_API UPC_ActionComponent : public UActorComponent
 {
 	GENERATED_BODY()
 	UPC_ActionComponent();
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
+	                           FActorComponentTickFunction* ThisTickFunction) override;
+	void Tick_Running(float DeltaTime);
 
 public:
 	void Move(FVector2D MovementVector);
@@ -54,7 +63,7 @@ public:
 
 	UFUNCTION()
 	void OnMontageEnd(UAnimMontage* Montage, bool bInterrupted);
-	
+
 	UFUNCTION(BlueprintCallable)
 	void ComboAttackSave();
 
@@ -62,19 +71,22 @@ public:
 	void ResetCombo();
 
 	void RotateToControlRotation();
-	
+
+	const FPC_ActionStaminaData* GetActionStaminaData(EPC_ActionType Type) const;
+	bool TryConsumeStaminaOnActionStart(EPC_ActionType InActionType);
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool IsAttacking = false;
-	
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool IsInSpecialAction = false;
-	
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool IsRunning = false;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool IsRolling = false;
-	
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool SaveAttack = false;
 
@@ -83,13 +95,15 @@ public:
 
 	UPROPERTY(BlueprintReadOnly)
 	FVector2D InputVector = FVector2D::ZeroVector;
-	
-	TArray<FPC_LockData> LockData;
 
+	TArray<FPC_LockData> LockData;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TArray<FPC_ActionStaminaData> ActionStaminaDatas;
+	
 	UPROPERTY()
 	TObjectPtr<ACharacter> OwnerCharacter = nullptr;
-	
+
 	UPROPERTY()
 	UAnimMontage* CurrentAttackMontage = nullptr;
 };
-

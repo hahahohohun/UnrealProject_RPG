@@ -57,7 +57,22 @@ void UPC_HUDWidget::UpdateHPBar(float NewCurrentHP, float NewMaxHP)
 
 void UPC_HUDWidget::UpdateStaminaBar(float NewCurrentStamina, float NewMaxStamina)
 {
-	
+	if(MaxStamina < 0.f) //최초 초기화
+	{
+		MaxStamina = NewMaxStamina;
+		CurrentStamina = NewCurrentStamina;
+	}
+
+	CurrentStamina = NewCurrentStamina;
+	MaxStamina = NewMaxStamina;
+
+	if(MaxStamina <= 0.f) return;
+
+	if(PB_Stamina)
+	{
+		float Value = CurrentStamina / MaxStamina;
+		PB_Stamina->SetPercent(Value);
+	}
 }
 
 void UPC_HUDWidget::UpdateMPBar(float NewCurrentMP, float NewMaxMP)

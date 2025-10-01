@@ -6,6 +6,7 @@
 #include "PC/Character/Component/PC_BattleComponent.h"
 #include "PC/Character/Component/PC_CrowdControlComponent.h"
 #include "PC/Character/Component/PC_SkillComponent.h"
+#include "PC/Character/Component/PC_StatComponent.h"
 #include "PC/Data/PC_CharacterDataAsset.h"
 #include "UObject/Interface.h"
 #include "PC_CharacterInterface.generated.h"
@@ -38,6 +39,7 @@ public:
 
 	virtual UPC_SkillComponent* GetSkillComponent() const = 0;
 	virtual UPC_BattleComponent* GetBattleComponent() const = 0;
+	virtual UPC_StatComponent* GetStatComponent() const = 0;
 	
 	virtual TPair<FName, FName> GetWeaponTraceNames(bool bRight) = 0;
 	

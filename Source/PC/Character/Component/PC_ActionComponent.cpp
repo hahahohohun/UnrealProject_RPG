@@ -42,6 +42,35 @@ void UPC_ActionComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 			 	
 		OwnerCharacter->SetActorRotation(NewRot);
 	}
+	
+	Tick_Running(DeltaTime);
+}
+
+void UPC_ActionComponent::Tick_Running(float DeltaTime)
+{
+	if(IsRunning)
+	{
+		const IPC_PlayerCharacterInterface* Interface = CastChecked<IPC_PlayerCharacterInterface>(GetOwner());
+		UPC_PlayerDataAsset* PlayerData = Interface->GetPlayerData();
+		check(PlayerData);
+
+		const FPC_ActionStaminaData* ActionStaminaData = GetActionStaminaData(EPC_ActionType::Run);
+		check(ActionStaminaData);
+
+		if(ActionStaminaData->MaintainCostPerSec > 0.f)
+		{
+			const IPC_CharacterInterface* Character = CastChecked<IPC_CharacterInterface>(GetOwner());
+			UPC_StatComponent* StatComponent = Character->GetStatComponent();
+			check(StatComponent);
+
+			const float Cost = ActionStaminaData->MaintainCostPerSec * DeltaTime;
+			if(!StatComponent->TryConsumeStamina(Cost))
+			{
+				Run(false);
+			}
+		}
+	}
+
 }
 
 void UPC_ActionComponent::Move(FVector2D MovementVector)
@@ -84,6 +113,9 @@ void UPC_ActionComponent::Jump(bool IsPressed)
 	if (!CanAction(EPC_ActionType::Jump))
 		return;
 
+	if(!TryConsumeStaminaOnActionStart(EPC_ActionType::Jump))
+		return;
+	
 	OwnerCharacter->Jump();
 
 	const IPC_PlayerCharacterInterface* Interface = CastChecked<IPC_PlayerCharacterInterface>(GetOwner());
@@ -114,6 +146,9 @@ void UPC_ActionComponent::Attack(bool IsPressed)
 	}
 	else
 	{
+		if(!TryConsumeStaminaOnActionStart(EPC_ActionType::Attack))
+			return;
+		
 		IsAttacking = true;
 		AttackCount++;
 		
@@ -184,6 +219,9 @@ void UPC_ActionComponent::Roll(bool bPressed)
 	if (bPressed && !IsRolling)
 	{
 		if (!CanAction(EPC_ActionType::Roll))
+			return;
+		
+		if(!TryConsumeStaminaOnActionStart(EPC_ActionType::Roll))
 			return;
 		
 		const APlayerController* PlayerController = CastChecked<APlayerController>(OwnerCharacter->GetController());
@@ -414,6 +452,9 @@ void UPC_ActionComponent::ComboAttackSave()
 	
 	if (SaveAttack)
 	{
+		if(!TryConsumeStaminaOnActionStart(EPC_ActionType::Attack))
+			return;
+		
 		SaveAttack = false;
 		AttackCount++;
 		
@@ -451,4 +492,39 @@ void UPC_ActionComponent::RotateToControlRotation()
 	ControlRotation.Pitch = 0.f;
 
 	OwnerCharacter->SetActorRotation(ControlRotation);
+}
+
+const FPC_ActionStaminaData* UPC_ActionComponent::GetActionStaminaData(EPC_ActionType Type) const
+{
+	const IPC_PlayerCharacterInterface* Interface = CastChecked<IPC_PlayerCharacterInterface>(GetOwner());
+	UPC_PlayerDataAsset* PlayerData = Interface->GetPlayerData();
+	check(PlayerData);
+
+	//내가 가지고 있는거
+	for(const FPC_ActionStaminaData& Data : PlayerData->ActionStaminaDatas)
+	{
+		if(Data.ActionType == Type)
+		{
+			return &Data;
+		}
+	}
+
+	return nullptr;
+}
+
+bool UPC_ActionComponent::TryConsumeStaminaOnActionStart(EPC_ActionType InActionType)
+{
+	const FPC_ActionStaminaData* ActionStamina = GetActionStaminaData(InActionType);
+	if(ActionStamina == nullptr)
+		return true;
+
+	const float StartCost = ActionStamina->StartCost;
+	if(StartCost <= 0.f)
+		return true;
+	
+	const IPC_CharacterInterface* CharacterInterface = CastChecked<IPC_CharacterInterface>(GetOwner());
+	UPC_StatComponent* StatComponent = CharacterInterface->GetStatComponent();
+	check(StatComponent);
+
+	return StatComponent->TryConsumeStamina(StartCost);
 }

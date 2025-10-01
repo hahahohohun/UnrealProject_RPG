@@ -32,7 +32,7 @@ APC_PlayableCharaceter::APC_PlayableCharaceter()
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
-	CameraBoom->TargetArmLength = 1500.0f; // The camera follows at this distance behind the character	
+	CameraBoom->TargetArmLength = 500.0f; // The camera follows at this distance behind the character	
 	CameraBoom->bUsePawnControlRotation = true;
 	
 	// Create a follow camera
@@ -110,9 +110,10 @@ void APC_PlayableCharaceter::Move(const FInputActionValue& Value)
 void APC_PlayableCharaceter::Jump(const FInputActionValue& Value)
 {
 	Super::Jump();
-
-	MakeNoise(1, this, GetActorLocation());
-	UGameplayStatics::SpawnSoundAtLocation(GetWorld(), PlayerData->JumpSound, GetActorLocation());
+	const bool IsPressed = Value[0] != 0.f;
+	
+	check(ActionComponent);
+	ActionComponent->Jump(IsPressed);
 }
 
 void APC_PlayableCharaceter::Look(const FInputActionValue& Value)

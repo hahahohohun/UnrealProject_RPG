@@ -75,6 +75,7 @@ public:
 
 	virtual UPC_ActionComponent* GetActionComponent() const override { return ActionComponent; }
 	virtual UPC_LockOnComponent* GetLockOnComponent() const override { return LockOnComponent; }
+	virtual UPC_StatComponent* GetStatComponent() const override { return StatComponent; }
 	virtual UPC_BackstabSystemComponent* GetBackstabSystemComponent() const override { return BackstabSystemComponent; }
 	
 	virtual UPC_BattleComponent* GetBattleComponent() const override { return BattleComponent; }

@@ -64,6 +64,7 @@ public:
 	
 	virtual UPC_BattleComponent* GetBattleComponent() const override { return BattleComponent; }
 	virtual UPC_SkillComponent* GetSkillComponent() const override { return SkillComponent; }
+	virtual UPC_StatComponent* GetStatComponent() const override { return StatComponent; }
 	
 	
 	UFUNCTION()

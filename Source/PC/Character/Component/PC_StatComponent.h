@@ -27,7 +27,7 @@ public:
 	// Sets default values for this component's properties
 	UPC_StatComponent();
 	virtual  void InitializeComponent() override;
-	
+	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	FPC_OnHPChangedDelegate OnHPChangedDelegate;
 	FPC_OnMPChangedDelegate OnMPChangedDelegate;
 	FPC_OnStaminaChangedDelegate OnStaminaChangedDelegate;
@@ -48,12 +48,18 @@ public:
 
 	void HealHp(float InHealAmount);
 	float ApplyDamage(float InDamage);
-
+	bool TryConsumeStamina(float InAmount);
+	void ConsumeStamina(float InAmount);
+	
 	void SetHp(float NewHp);
-
 	float MaxHp;
 	float CurrentHp;
 
+	void SetStamina(float newStamina);
+	float MaxStamina;
+	float CurrentStamina;
+	float StaminaRegenCooldown = 0.0f;
+	
 	UPROPERTY(Meta= (AllowPrivateAccess = "true"))
 	FPC_CharacterStatTableRow BaseStat;
 
