@@ -22,9 +22,6 @@ public:
 	bool bStart = false;
 	
 	UPROPERTY(EditAnywhere)
-	bool bRigt = true;
-	
-	UPROPERTY(EditAnywhere)
 	bool bRight = true;
 	
 	UPROPERTY(EditAnywhere)

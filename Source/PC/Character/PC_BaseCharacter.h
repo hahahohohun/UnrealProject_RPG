@@ -46,7 +46,7 @@ public:
 	virtual void SetupLockOnWidget(UPC_UserWidget* InUserWidget) override;
 	virtual void SetupAttackIndicatorOnWidget(class UPC_UserWidget* InUserWidget) override;
 	virtual void OnLocked(bool bLocked) override;
-	
+	virtual void LaunchCharacter(FVector StartPos, FVector CauserPos, float Power);
 	virtual void OnAttackIndicator(bool bLocked) override;
 	virtual void OnDead();
 	

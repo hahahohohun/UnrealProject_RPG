@@ -6,6 +6,7 @@
 #include "Engine/DataTable.h"
 #include "PC/PC_Enum.h"
 #include "PC/Data/PC_CameraDataAsset.h"
+#include "PC/Data/PC_GameDataAsset.h"
 #include "Subsystems/Subsystem.h"
 #include "PC_DataSubsystem.generated.h"
 
@@ -33,6 +34,9 @@ public:
 
 	UPROPERTY()
 	TMap<EPC_CameraType, UPC_CameraDataAsset*> CameraData;
+
+	UPROPERTY()
+	UPC_GameDataAsset* GameDataAsset;
 	
 private:
 	UPROPERTY(Config)
@@ -65,4 +69,7 @@ private:
 	
 	UPROPERTY(config)
 	FSoftObjectPath AimCameraDataPath;
+
+	UPROPERTY(Config)
+	FSoftObjectPath GameDataPath;
 };

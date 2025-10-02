@@ -4,6 +4,8 @@
 #include "PC_BattleComponent.h"
 
 #include "MovieSceneFwd.h"
+#include "NiagaraFunctionLibrary.h"
+#include "PC_ActionComponent.h"
 #include "PC_StatComponent.h"
 #include "Engine/DamageEvents.h"
 #include "Kismet/GameplayStatics.h"
@@ -106,18 +108,49 @@ void UPC_BattleComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 
 			if (HitActor && !DamagedActor.Contains(HitActor))
 			{
+				DamagedActor.Add(HitActor);
+
 				if (APC_BaseCharacter* HitCharacter = Cast<APC_BaseCharacter>(HitActor))
 				{
-					UE_LOG(LogPC, Log, TEXT("Hit!!"));
-
-					DamagedActor.Add(HitActor);
 					
-					const float Damage = Character->StatComponent->GetTotalStat().Attack;
+					bool IsGuard = false;
+					bool IsRolling = false;
+					if(IPC_PlayerCharacterInterface* HitPlayerCharacterInterface = Cast<IPC_PlayerCharacterInterface>(HitActor))
+					{
+						 if(UPC_ActionComponent* HitCharActionComp = HitPlayerCharacterInterface->GetActionComponent())
+						 {
+						 	IsGuard = HitCharActionComp->IsGuarded();
+						 	IsRolling = HitCharActionComp->IsRolling;
+						 }
+					}
+					
+					if (IsRolling)
+						continue;
 
-					FDamageEvent DamageEvent;
-					HitActor->TakeDamage(Damage, DamageEvent, Character->GetController(), Character);
+					FPC_GameUtil::PlayHitStop(this, 0.2f, 0.f);
+					
+					if(IsGuard)
+					{
+						HitCharacter->LaunchCharacter(HitCharacter->GetActorLocation(), HitResult.ImpactPoint, 20);
+						
+						if (UPC_CharacterDataAsset* HitCharDataAsset = HitCharacter->GetCharacterDataAsset())
+						{
+							SpawnEffect(HitResult.ImpactPoint, HitCharDataAsset->GuardFx);
+						}
+					}
+					else
+					{
+						UE_LOG(LogPC, Log, TEXT("Hit!!"));
+						FPC_GameUtil::CameraShake(EPC_CameraShakeMagnitudeType::Weak);
+						const float Damage = Character->StatComponent->GetTotalStat().Attack;
+						FDamageEvent DamageEvent;
+						HitActor->TakeDamage(Damage, DamageEvent, Character->GetController(), Character);
 
-					SpawnEffect(HitResult.ImpactPoint);
+						if (UPC_CharacterDataAsset* HitCharDataAsset = HitCharacter->GetCharacterDataAsset())
+						{
+							SpawnEffect(HitResult.ImpactPoint, HitCharDataAsset->HitFx);
+						}
+					}
 				}
 			}
 		}
@@ -351,10 +384,27 @@ void UPC_BattleComponent::EndTrace()
 	TraceElapsedTime = 0.f;
 }
 
-void UPC_BattleComponent::SpawnEffect(FVector InHitLocation)
+void UPC_BattleComponent::SpawnEffect(FVector InHitLocation, UNiagaraSystem* HitFx)
 {
 	UWorld* World = GetWorld();
 	if (!World)
 		return;
+
+	if(!HitFx)
+		return;
 	
+	UNiagaraComponent* Fx = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), HitFx, InHitLocation,  FRotator::ZeroRotator,
+	FVector(1.f),
+	true );
+	//if(Fx)
+	//{
+	//	FTimerHandle TimerHandle;
+	//	GetWorld()->GetTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([Fx]()
+	//	{
+	//		if (IsValid(Fx))
+	//		{
+	//			Fx->DestroyComponent(); // NiagaraComponent 제거
+	//		}
+	//	}), 0.2f, false);
+	//}
 }

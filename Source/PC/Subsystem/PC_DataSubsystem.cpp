@@ -55,6 +55,16 @@ void UPC_DataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 			CameraData.Add(EPC_CameraType::Aim, DataAsset);
 		}
 	}
+
+	const FSoftObjectPath GameDataAssetObject(GameDataPath);
+	if (GameDataAssetObject.IsValid())
+	{
+		if (UPC_GameDataAsset* DataAsset = Cast<UPC_GameDataAsset>(GameDataAssetObject.TryLoad()))
+		{
+			GameDataAsset = DataAsset;
+		}
+	}
+
 }
 
 UDataTable* UPC_DataSubsystem::GetTable(EPC_DataTableType TableType)

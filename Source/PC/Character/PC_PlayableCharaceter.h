@@ -21,7 +21,7 @@ class UPC_LockOnComponent;
 class UAIPerceptionStimuliSourceComponent;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FPC_OnEnCounterBossMonster, ACharacter* Incharacter)
-
+//클래스명 오타 ㅜㅠ
 UCLASS()
 class PC_API APC_PlayableCharaceter : public APC_BaseCharacter , public IPC_CharacterHUDInterface, public IGenericTeamAgentInterface, public IPC_PlayerCharacterInterface
 {

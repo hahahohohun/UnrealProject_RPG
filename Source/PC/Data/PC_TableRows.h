@@ -279,6 +279,12 @@ struct FPC_ExecTableRow : public FTableRowBase
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UMaterialInterface> MaterialInterface = nullptr;
+
+	UPROPERTY(EditAnywhere)
+	bool bPlayHitMaterial = true;
+
+	UPROPERTY(EditAnywhere)
+	EPC_CameraShakeMagnitudeType ShakeMagnitude = EPC_CameraShakeMagnitudeType::Weak;
 };
 
 USTRUCT(BlueprintType)

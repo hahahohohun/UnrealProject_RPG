@@ -53,6 +53,8 @@ public:
 	bool CanAction(EPC_ActionType InActionType);
 
 	bool IsLocked(EPC_ActionType InLockType);
+	bool IsGuarded();
+
 	void AddLock(EPC_LockCauseType InLockCauseType, EPC_ActionType InLockType);
 	void ReleaseLock(EPC_LockCauseType InLockCauseType, EPC_ActionType InLockType);
 	void ForceReleaseLock(EPC_LockCauseType InLockCauseType);

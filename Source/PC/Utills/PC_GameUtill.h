@@ -17,6 +17,8 @@ public:
 	
 	static FPC_WeaponTableRow* GetWeaponData(uint32 WeaponId);
 	static UPC_CameraDataAsset* GetCameraData(EPC_CameraType CameraType);
+	static UPC_GameDataAsset* GetGameData();
+	
 	static FPC_SkillTableRow* GetSkillData(uint32 skillId);
 	static FPC_SkillObjectTableRow* GetSkillObjectData(uint32 skillObjectId);
 	static FPC_ExecTableRow* GetExecData(uint32 execId);
@@ -35,7 +37,11 @@ public:
 	static uint32 GetSkillId(UPC_PlayerDataAsset* PlayerDataAsset, EPC_SkillSlotType SlotType, EPC_CharacterStanceType CharacterStance
 	,bool bInSpecialAttack);
 	
-	static void CameraShake();
+	static void CameraShake(EPC_CameraShakeMagnitudeType Type);
+	static void PlayHitStop(const UObject* WorldObject, float Duration, float Dilation);
+	static void ApplyHitReactionKnockback(const UObject* WorldObject, float Amount);
+	static void PlayHitMaterial(ACharacter* DamageCharacter);
+	
 	static void SpawnEffectAtLocation(UObject* WorldContextObj, UNiagaraSystem* NiagaraSystem, FVector Location, FRotator Rotation);
 	static void SpawnEffectAtLocation(UObject* WorldContextObj, UParticleSystem* ParticleSystem, FVector Location, FRotator Rotation);
 

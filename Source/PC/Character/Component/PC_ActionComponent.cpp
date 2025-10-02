@@ -338,6 +338,18 @@ bool UPC_ActionComponent::IsLocked(EPC_ActionType InLockType)
 	return false;
 }
 
+bool UPC_ActionComponent::IsGuarded()
+{
+	//Guard 분기
+	if(IsInSpecialAction)
+	{
+		if (CanAction(EPC_ActionType::Guard))
+			return true;
+		
+	}
+	return false;
+}
+
 void UPC_ActionComponent::AddLock(EPC_LockCauseType InLockCauseType, EPC_ActionType InLockType)
 {
 	const FPC_LockData Data(InLockCauseType, InLockType);

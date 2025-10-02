@@ -120,7 +120,7 @@ void APC_SkillObject::PlaySound()
 void APC_SkillObject::PlayFX(FVector InHitLocation)
 {
 	UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), DespawnFX, GetActorLocation(), GetActorRotation());
-	FPC_GameUtil::CameraShake();
+	FPC_GameUtil::CameraShake(EPC_CameraShakeMagnitudeType::Weak);
 }
 
 void APC_SkillObject::PlayImpactPointDecal()

@@ -589,7 +589,7 @@ void UPC_SkillComponent::CheckCollision(const FPC_ExecInfo& ExecInfo, FCollision
 
 				if (ExecTableRow->bPlayCameraShake)
 				{
-					FPC_GameUtil::CameraShake();
+					FPC_GameUtil::CameraShake(EPC_CameraShakeMagnitudeType::Weak);
 				}
 
 				if (IPC_CharacterInterface* CharacterInterface = Cast<IPC_CharacterInterface>(OverlapResult.GetActor()))

@@ -26,7 +26,7 @@ public:
 	void StartTrace(FName InTraceStartBoneName, FName InTraceEndBoneName);
 	void EndTrace();
 	
-	void SpawnEffect(FVector InHitLocation);
+	void SpawnEffect(FVector InHitLocation, UNiagaraSystem* HitFx);
 
 	void SwapWeapon();
 	bool CanSwapWeapon();

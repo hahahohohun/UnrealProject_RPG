@@ -178,3 +178,13 @@ enum class EPC_HitPartType : uint8
 	Head,
 	Num
 };
+
+UENUM(BlueprintType)
+enum class EPC_CameraShakeMagnitudeType : uint8
+{
+	None,
+	Weak,
+	Normal,
+	Strong,
+	Num
+};

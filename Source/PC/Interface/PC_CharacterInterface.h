@@ -31,7 +31,7 @@ public:
 	virtual void AttackTrace(bool bStart, FName TraceStartBoneName, FName TraceEndBoneName) = 0;
 
 	virtual void AttackTraceWithWeapon(bool bStart, bool bRight) = 0;
-	
+	virtual void LaunchCharacter(FVector StartPos, FVector CauserPos, float Power) = 0;
 	virtual  UStaticMeshComponent* GetWeapon_L_StaticMeshComponent() = 0;
 	virtual  UStaticMeshComponent* GetWeapon_R_StaticMeshComponent() = 0;
 	

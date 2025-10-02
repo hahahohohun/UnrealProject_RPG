@@ -62,6 +62,9 @@ void APC_BaseCharacter::BeginPlay()
 float APC_BaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	StatComponent->ApplyDamage(DamageAmount);
+
+	FPC_GameUtil::PlayHitMaterial(this);
+	
 	return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 }
 
@@ -95,6 +98,19 @@ void APC_BaseCharacter::SetupAttackIndicatorOnWidget(class UPC_UserWidget* InUse
 void APC_BaseCharacter::OnLocked(bool bLocked)
 {
 	OnCharacterLocked.Broadcast(bLocked);
+}
+
+void APC_BaseCharacter::LaunchCharacter(FVector StartPos, FVector CauserPos, float Power)
+{
+	FVector Dir2D = (StartPos - CauserPos).GetSafeNormal2D();
+	FVector Target = GetActorLocation() + Dir2D * Power; // Distance=수 cm~수십 cm
+	SetActorLocation(Target, true);
+	
+	//const FVector RawDir = (StartPos - CauserPos).GetSafeNormal2D();
+	//const FVector FloorNormal = GetCharacterMovement()->CurrentFloor.HitResult.ImpactNormal;
+	//const FVector GroundDir = FVector::VectorPlaneProject(RawDir, FloorNormal).GetSafeNormal2D();
+	//
+	//Super::LaunchCharacter(GroundDir* Power, true, false);
 }
 
 void APC_BaseCharacter::OnAttackIndicator(bool bAttackIndicator)
