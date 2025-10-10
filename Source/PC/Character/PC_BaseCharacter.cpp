@@ -104,7 +104,8 @@ void APC_BaseCharacter::LaunchCharacter(FVector StartPos, FVector CauserPos, flo
 {
 	FVector Dir2D = (StartPos - CauserPos).GetSafeNormal2D();
 	FVector Target = GetActorLocation() + Dir2D * Power; // Distance=수 cm~수십 cm
-	SetActorLocation(Target, true);
+	FVector NewPos = FPC_GameUtil::FindSurfacePos(this, Target);
+	SetActorLocation(NewPos, true);
 	
 	//const FVector RawDir = (StartPos - CauserPos).GetSafeNormal2D();
 	//const FVector FloorNormal = GetCharacterMovement()->CurrentFloor.HitResult.ImpactNormal;

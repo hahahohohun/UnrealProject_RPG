@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "PC_ActionComponent.h"
 #include "Components/ActorComponent.h"
 #include "PC/Data//PC_TableRows.h"
 #include "PC/Data/PC_CharacterDataAsset.h"
@@ -62,6 +63,10 @@ public:
 	
 	int32 CurWeaponIdx = 0;
 	TArray<FPC_WeaponData> Weapons;
+
+private:
+	UPROPERTY()
+	TObjectPtr<UPC_ActionComponent> ActionComponent;
 	
 };
 

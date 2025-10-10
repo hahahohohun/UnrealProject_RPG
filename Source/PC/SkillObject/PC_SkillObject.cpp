@@ -15,15 +15,15 @@
 // Sets default values
 APC_SkillObject::APC_SkillObject()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
 	Collision_Environment = CreateDefaultSubobject<USphereComponent>(TEXT("Collision_Environment"));
 	RootComponent = Collision_Environment;
-	
+
 	TriggerCollision = CreateDefaultSubobject<USphereComponent>(TEXT("CollisionComponent"));
 	TriggerCollision->SetupAttachment(RootComponent);
-	
+
 	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMeshComponent"));
 	StaticMeshComponent->SetupAttachment(RootComponent);
 
@@ -31,9 +31,9 @@ APC_SkillObject::APC_SkillObject()
 
 	NiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("NiagaraComponent"));
 	NiagaraComponent->SetupAttachment(RootComponent);
-	
+
 	ProjectileMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovement"));
-	ProjectileMovementComponent->SetUpdatedComponent(RootComponent); 
+	ProjectileMovementComponent->SetUpdatedComponent(RootComponent);
 }
 
 // Called when the game starts or when spawned
@@ -44,7 +44,7 @@ void APC_SkillObject::BeginPlay()
 	FPC_SkillObjectTableRow* SkillObjectTableRow = FPC_GameUtil::GetSkillObjectData(SkillObjectId);
 	check(SkillObjectTableRow);
 
-	if(SkillObjectTableRow->SkillObjectType ==  EPC_SkillObjectType::Projectile)
+	if (SkillObjectTableRow->SkillObjectType == EPC_SkillObjectType::Projectile)
 	{
 		if (!TriggerCollision->OnComponentBeginOverlap.IsAlreadyBound(this, &ThisClass::OnBeginOverlap))
 			TriggerCollision->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnBeginOverlap);
@@ -59,7 +59,7 @@ void APC_SkillObject::BeginPlay()
 		if (BounceCount > 0)
 			ProjectileMovementComponent->bShouldBounce = true;
 
-		if(ShowImpactPointDecal)
+		if (ShowImpactPointDecal)
 		{
 			PlayImpactPointDecal();
 		}
@@ -79,27 +79,32 @@ void APC_SkillObject::Tick(float DeltaTime)
 }
 
 void APC_SkillObject::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+                                     UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
+                                     const FHitResult& SweepResult)
 {
 	FPC_SkillObjectTableRow* SkillObjectTableRow = FPC_GameUtil::GetSkillObjectData(SkillObjectId);
 	check(SkillObjectTableRow);
-	
+
 	if (ACharacter* HitCharacter = Cast<ACharacter>(OtherActor))
 	{
 		FDamageEvent DamageEvent;
-		HitCharacter->TakeDamage(SkillObjectTableRow->Damage, DamageEvent, OwnerCharacter->GetController(), OwnerCharacter.Get());
+		HitCharacter->TakeDamage(SkillObjectTableRow->Damage, DamageEvent, OwnerCharacter->GetController(),
+		                         OwnerCharacter.Get());
 	}
-	
-	ProcessDestroy();
+
+	if(SkillObjectTableRow->IsCollisionDestroy)
+	{
+		ProcessDestroy();
+	}
 }
 
 void APC_SkillObject::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+                                   UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 }
 
 void APC_SkillObject::OnComponentHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,
-	UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+                                     UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 	if (BounceCount > 0)
 	{
@@ -120,7 +125,7 @@ void APC_SkillObject::PlaySound()
 void APC_SkillObject::PlayFX(FVector InHitLocation)
 {
 	UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), DespawnFX, GetActorLocation(), GetActorRotation());
-	FPC_GameUtil::CameraShake(EPC_CameraShakeMagnitudeType::Weak);
+	//FPC_GameUtil::CameraShake(EPC_CameraShakeMagnitudeType::Weak);
 }
 
 void APC_SkillObject::PlayImpactPointDecal()
@@ -136,10 +141,10 @@ void APC_SkillObject::PlayImpactPointDecal()
 	Params.TraceChannel = ECC_Visibility;
 
 	FPredictProjectilePathResult Result;
-	if(UGameplayStatics::PredictProjectilePath(this,Params,Result))
+	if (UGameplayStatics::PredictProjectilePath(this, Params, Result))
 	{
 		const FHitResult& Hit = Result.HitResult;
-		
+
 		FVector DecalSize(60.f);
 		FRotator DecalRotation = FVector::UpVector.Rotation();
 
@@ -151,7 +156,6 @@ void APC_SkillObject::PlayImpactPointDecal()
 			DecalRotation,
 			2.0f);
 	}
-	
 }
 
 void APC_SkillObject::ProcessDestroy()
@@ -160,7 +164,7 @@ void APC_SkillObject::ProcessDestroy()
 	Collision_Environment->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	ProjectileMovementComponent->Deactivate();
 	StaticMeshComponent->SetVisibility(false);
-	
+
 	PlaySound();
 	PlayFX(GetActorLocation());
 
@@ -170,4 +174,3 @@ void APC_SkillObject::ProcessDestroy()
 		Destroy();
 	}), 0.5f, false);
 }
-

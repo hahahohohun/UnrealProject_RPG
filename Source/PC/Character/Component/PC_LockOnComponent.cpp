@@ -28,7 +28,7 @@ void UPC_LockOnComponent::TickComponent(float DeltaTime, enum ELevelTick TickTyp
 
 		if(LockedTarget.Get())
 		{
-			const FVector LockTargetLocation = Owner->GetActorLocation();
+			const FVector LockTargetLocation = LockedTarget->GetActorLocation();
 			const FVector OwnerLocation = GetOwner()->GetActorLocation();
 
 			const FRotator CurrentRotation = PlayerController->GetControlRotation();

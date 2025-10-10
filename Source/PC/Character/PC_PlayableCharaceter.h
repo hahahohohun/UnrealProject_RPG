@@ -62,13 +62,14 @@ public:
 
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void SetupHUDWidget(UPC_HUDWidget* InWidget) override;
-
+	
 	void AdjustMovement(bool IsPressed);
 	void AdjustCamera(bool bIsPressed);
 	
 	void SetGenericTeamId(const FGenericTeamId& TeamID);
 	FGenericTeamId GetGenericTeamId() const;
 
+	
 	
 	virtual USpringArmComponent* GetSpringArmComponent() const override { return CameraBoom; }
 	virtual UCameraComponent* GetCameraComponent() const override { return FollowCamera; }
@@ -80,7 +81,6 @@ public:
 	
 	virtual UPC_BattleComponent* GetBattleComponent() const override { return BattleComponent; }
 	virtual UPC_PlayerDataAsset* GetPlayerData() const override { return PlayerData; }
-
 public:
 	/** Camera boom positioning the camera behind the character */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))

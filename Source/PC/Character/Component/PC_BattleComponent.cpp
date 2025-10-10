@@ -94,6 +94,11 @@ void UPC_BattleComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 		TraceLines.Emplace(PrevMid, CurrMid);
 	}
 	
+	//TODO 공격별로 히트 효과 여부 처리
+	bool HitAction = false;
+	if(ActionComponent)
+		HitAction = ActionComponent->IsLastAttack();
+	
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(GetOwner());
 
@@ -115,6 +120,7 @@ void UPC_BattleComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 					
 					bool IsGuard = false;
 					bool IsRolling = false;
+
 					if(IPC_PlayerCharacterInterface* HitPlayerCharacterInterface = Cast<IPC_PlayerCharacterInterface>(HitActor))
 					{
 						 if(UPC_ActionComponent* HitCharActionComp = HitPlayerCharacterInterface->GetActionComponent())
@@ -126,8 +132,9 @@ void UPC_BattleComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 					
 					if (IsRolling)
 						continue;
-
-					FPC_GameUtil::PlayHitStop(this, 0.2f, 0.f);
+					
+					if(HitAction)
+						FPC_GameUtil::PlayHitStop(this, 0.2f, 0.f);
 					
 					if(IsGuard)
 					{
@@ -178,6 +185,11 @@ void UPC_BattleComponent::BeginPlay()
 	UPC_CharacterDataAsset* CharacterData = CharacterInterface->GetCharacterDataAsset();
 	check(CharacterData);
 
+	if(IPC_PlayerCharacterInterface* HitPlayerCharacterInterface = Cast<IPC_PlayerCharacterInterface>(OwnerCharacter))
+	{
+		ActionComponent = HitPlayerCharacterInterface->GetActionComponent();
+	}
+	
 	TArray<FPC_WeaponData>& WeaponDatas = CharacterData->WeaponIds;
 
 	for(int32 i = 0; i< WeaponDatas.Num(); ++i)
@@ -285,8 +297,9 @@ void UPC_BattleComponent::EquipWeapon(uint8 InWeaponId, bool bRightHand)
 		USkeletalMeshComponent* SkeletalMeshComponent = Character->GetMesh();
 		check(SkeletalMeshComponent);
 		
-		UStaticMeshComponent* WeaponStaticMeshComponent = bRightHand? Interface->GetWeapon_R_StaticMeshComponent() :
-		Interface->GetWeapon_L_StaticMeshComponent();
+		UStaticMeshComponent* WeaponStaticMeshComponent = bRightHand?
+			Interface->GetWeapon_R_StaticMeshComponent() : Interface->GetWeapon_L_StaticMeshComponent();
+		
 		check(WeaponStaticMeshComponent);
 
 		WeaponStaticMeshComponent->DetachFromComponent(FDetachmentTransformRules::KeepRelativeTransform);

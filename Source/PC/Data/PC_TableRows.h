@@ -236,6 +236,9 @@ struct FPC_ExecTableRow : public FTableRowBase
 	float Damage = 0.f;
 
 	UPROPERTY(EditAnywhere)
+	FRotator ProjectileRotation = FRotator::ZeroRotator;
+
+	UPROPERTY(EditAnywhere)
 	EPC_ExecType ExecType = EPC_ExecType::None;
 
 	UPROPERTY(EditAnywhere)
@@ -292,6 +295,9 @@ struct FPC_SkillObjectTableRow : public  FTableRowBase
 {
 	GENERATED_BODY()
 
+	UPROPERTY(EditAnywhere)
+	bool IsCollisionDestroy = true;
+	
 	UPROPERTY(EditAnywhere)
 	uint32 DataId = 0;
 

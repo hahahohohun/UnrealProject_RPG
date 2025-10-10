@@ -54,7 +54,7 @@ public:
 	virtual void DashBack()= 0;
 	
 	virtual void SetAITurnFinishDelegate(const FAICharacterTurnFinished& InOnTurnFinished) = 0;
-
-	virtual void JumpToNextAttackMontage() = 0 ;
 	virtual void ResetUsedMontage() = 0;
+	virtual void JumpToNextAttackMontage() = 0;
+
 };

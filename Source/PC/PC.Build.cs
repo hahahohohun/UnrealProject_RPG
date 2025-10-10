@@ -6,12 +6,13 @@ public class PC : ModuleRules
 {
 	public PC(ReadOnlyTargetRules Target) : base(Target)
 	{
+		PrivateDependencyModuleNames.AddRange(new string[] { });
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
 		PublicDependencyModuleNames.AddRange(new string[] { 
 			"Core", "CoreUObject", "Engine", "InputCore", "HeadMountedDisplay", "EnhancedInput",
 			"UMG", "Niagara" , "AIModule", "GameplayTasks", "GameplayCameras" ,"Niagara", "NavigationSystem"
-			, "AssetRegistry"
+			, "AssetRegistry","EngineCameras"
 		});
 	}
 }

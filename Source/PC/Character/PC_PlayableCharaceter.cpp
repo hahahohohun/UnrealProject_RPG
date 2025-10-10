@@ -32,7 +32,7 @@ APC_PlayableCharaceter::APC_PlayableCharaceter()
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
-	CameraBoom->TargetArmLength = 500.0f; // The camera follows at this distance behind the character	
+	CameraBoom->TargetArmLength = 600.0f; //데이터로 제어함	
 	CameraBoom->bUsePawnControlRotation = true;
 	
 	// Create a follow camera
@@ -330,6 +330,7 @@ void APC_PlayableCharaceter::SetupHUDWidget(UPC_HUDWidget* InWidget)
 		OnEnCounterBossMonsterDelegate.AddUObject(InWidget, &UPC_HUDWidget::OnEnCounterBossMonster);
 	}
 }
+
 
 //bOrientRotationToMovement : true 가속을 받는 방향으로 캐릭터가 회전
 void APC_PlayableCharaceter::AdjustMovement(bool IsPressed)

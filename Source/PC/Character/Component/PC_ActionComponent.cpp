@@ -24,6 +24,16 @@ void UPC_ActionComponent::BeginPlay()
 	Super::BeginPlay();
 
 	OwnerCharacter = CastChecked<ACharacter>(GetOwner());
+	
+	const IPC_PlayerCharacterInterface* Interface = CastChecked<IPC_PlayerCharacterInterface>(GetOwner());
+	check(Interface);
+	
+	UPC_PlayerDataAsset* PlayerData = Interface->GetPlayerData();
+	check(PlayerData);
+
+	TArray<UAnimMontage*>& AttackMontages = PlayerData->AttackMontages;
+	AttackMaxCount = AttackMontages.Num();
+
 }
 
 void UPC_ActionComponent::TickComponent(float DeltaTime, ELevelTick TickType,
@@ -139,6 +149,8 @@ void UPC_ActionComponent::Attack(bool IsPressed)
 	check(PlayerData);
 
 	TArray<UAnimMontage*>& AttackMontages = PlayerData->AttackMontages;
+	if(AttackMaxCount == 0)
+		AttackMaxCount = AttackMontages.Num();
 
 	if (IsAttacking)
 	{
@@ -152,7 +164,7 @@ void UPC_ActionComponent::Attack(bool IsPressed)
 		IsAttacking = true;
 		AttackCount++;
 		
-		if (AttackCount > AttackMontages.Num())
+		if (AttackCount > AttackMaxCount)
 		{
 			AttackCount = 0;
 		}
@@ -504,6 +516,11 @@ void UPC_ActionComponent::RotateToControlRotation()
 	ControlRotation.Pitch = 0.f;
 
 	OwnerCharacter->SetActorRotation(ControlRotation);
+}
+
+bool UPC_ActionComponent::IsLastAttack() const
+{
+	return AttackCount == AttackMaxCount;
 }
 
 const FPC_ActionStaminaData* UPC_ActionComponent::GetActionStaminaData(EPC_ActionType Type) const

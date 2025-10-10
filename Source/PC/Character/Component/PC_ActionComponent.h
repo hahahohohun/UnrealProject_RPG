@@ -73,6 +73,7 @@ public:
 	void ResetCombo();
 
 	void RotateToControlRotation();
+	bool IsLastAttack() const; 
 
 	const FPC_ActionStaminaData* GetActionStaminaData(EPC_ActionType Type) const;
 	bool TryConsumeStaminaOnActionStart(EPC_ActionType InActionType);
@@ -108,4 +109,7 @@ public:
 
 	UPROPERTY()
 	UAnimMontage* CurrentAttackMontage = nullptr;
+
+private:
+	int AttackMaxCount = 0;
 };

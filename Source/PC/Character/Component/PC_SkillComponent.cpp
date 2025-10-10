@@ -358,6 +358,46 @@ void UPC_SkillComponent::ProcessNonTargetExec(float DeltaTime, FPC_ExecInfo& Exe
 			}
 		} 
 	}
+	else if(ExecTableRow->ExecType == EPC_ExecType::Projectile)
+	{
+		if (!ExecInfo.bExecCollisionSpawned)
+		{
+			ExecInfo.bExecCollisionSpawned = true;
+
+			FPC_SkillObjectTableRow* SkillObjectTableRow = FPC_GameUtil::GetSkillObjectData(
+				ExecTableRow->ExecProperty_0);
+			check(SkillObjectTableRow);
+
+			UClass* SkillObjectClass = SkillObjectTableRow->SkillObjectActor;
+			check(SkillObjectClass);
+			
+			USkeletalMeshComponent* SkeletalMeshComponent = OwnerCharacter->GetMesh();
+			check(SkeletalMeshComponent);
+
+			FVector Location = FVector::ZeroVector;
+			if (ExecTableRow->SkillPosBoneName != NAME_None)
+			{
+				Location = SkeletalMeshComponent->GetSocketLocation(ExecTableRow->SkillPosBoneName);
+			}
+			else
+			{
+				Location = OwnerCharacter->GetActorLocation();
+				Location.X += 50;
+			}
+			
+			FRotator Rotation = OwnerCharacter->GetActorRotation();//TargetLocation - Location).Rotation();
+			Rotation.Roll  += ExecTableRow->ProjectileRotation.Roll;   
+			
+			FTransform Transform;
+			Transform.SetLocation(Location);
+			Transform.SetRotation(Rotation.Quaternion());
+			APC_SkillObject* SkillObject = GetWorld()->SpawnActorDeferred<APC_SkillObject>(
+				SkillObjectClass, Transform, GetOwner(), nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+			SkillObject->OwnerCharacter = OwnerCharacter.Get();
+			SkillObject->SkillObjectId = ExecTableRow->ExecProperty_0;
+			SkillObject->FinishSpawning(Transform);
+		}
+	}
 }
 
 void UPC_SkillComponent::ProcessChainAttackExec(float DeltaTime, FPC_SkillInfo& SkillInfo, FPC_ExecInfo& ExecInfo,
