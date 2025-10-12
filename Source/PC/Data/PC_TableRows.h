@@ -188,7 +188,7 @@ struct FPC_SkillTableRow : public FTableRowBase
 
 	UPROPERTY(EditAnywhere)
 	UNiagaraSystem* SkillActiveFx;
-
+	
 	UPROPERTY(EditAnywhere)
 	TArray<FPC_ExecData> ExecDatas;
 };
@@ -204,6 +204,18 @@ struct FPC_ExecTableRow : public FTableRowBase
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UAnimMontage> SkillAnim;
 
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UMaterialInterface> SkillDecalMaterial;
+
+	UPROPERTY(EditAnywhere)
+	FVector DecalSize = FVector::ZeroVector;
+
+	UPROPERTY(EditAnywhere)
+	FVector DecalRelativePos = FVector::ZeroVector;
+
+	UPROPERTY(EditAnywhere)
+	FRotator DecalRelativeRot = FRotator::ZeroRotator;
+	
 	UPROPERTY(EditAnywhere)
 	UNiagaraSystem* ExecFX_Niagara_Start = nullptr;
 	
@@ -236,7 +248,10 @@ struct FPC_ExecTableRow : public FTableRowBase
 	float Damage = 0.f;
 
 	UPROPERTY(EditAnywhere)
-	FRotator ProjectileRotation = FRotator::ZeroRotator;
+	FRotator ProjectileAdditiveRot = FRotator::ZeroRotator;
+
+	UPROPERTY(EditAnywhere)
+	FVector ProjectileAdditivePos = FVector::ZeroVector;
 
 	UPROPERTY(EditAnywhere)
 	EPC_ExecType ExecType = EPC_ExecType::None;

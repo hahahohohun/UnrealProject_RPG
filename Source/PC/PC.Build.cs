@@ -10,7 +10,7 @@ public class PC : ModuleRules
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
 		PublicDependencyModuleNames.AddRange(new string[] { 
-			"Core", "CoreUObject", "Engine", "InputCore", "HeadMountedDisplay", "EnhancedInput",
+			"Core", "CoreUObject", "Engine", "Slate", "SlateCore","InputCore", "HeadMountedDisplay", "EnhancedInput",
 			"UMG", "Niagara" , "AIModule", "GameplayTasks", "GameplayCameras" ,"Niagara", "NavigationSystem"
 			, "AssetRegistry","EngineCameras"
 		});

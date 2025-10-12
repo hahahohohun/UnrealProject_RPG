@@ -1,17 +1,19 @@
 #include "PC_SkillComponent.h"
 
-#include <tiffio.h>
+//#include <tiffio.h>
 
 //#include "SAdvancedRotationInputBox.h"
 #include "PC_CrowdControlComponent.h"
-#include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/DecalComponent.h"
 #include "Engine/DamageEvents.h"
-#include "Framework/Text/ShapedTextCache.h"
 #include "GameFramework/Character.h"
-#include "GameFramework/SpringArmComponent.h"
+//#include "Framework/Text/ShapedTextCache.h"
+//#include "Camera/CameraComponent.h"
+//#include "GameFramework/SpringArmComponent.h"
+//#include "Kismet/KismetMathLibrary.h"
+//#include "PC/Data/PC_CameraDataAsset.h"
 #include "Kismet/KismetMathLibrary.h"
-#include "PC/Data/PC_CameraDataAsset.h"
 #include "PC/Interface/PC_CharacterInterface.h"
 #include "PC/Interface/PC_PlayerCharacterInterface.h"
 #include "PC/SkillObject/PC_SkillObject.h"
@@ -151,6 +153,46 @@ void UPC_SkillComponent::CalcSkillTime(uint32 SkillId, float& SkillLifeTime, TAr
 
 		//Delay + 스킬 Duration
 		SkillLifeTime += ExecData.DelayTime + FPC_GameUtil::GetExecData(ExecData.ExecDataId)->Duration;
+	}
+}
+
+void UPC_SkillComponent::PlayDecal(uint32 ExecDataId, FVector StartPos, FVector LaunchVel,FRotator Rot)
+{
+	FPC_ExecTableRow* ExecTableRow = FPC_GameUtil::GetExecData(ExecDataId);
+	if (ExecTableRow == nullptr)
+		return;
+	
+	UMaterialInterface* SkillDecalMaterial = ExecTableRow->SkillDecalMaterial;
+	if(SkillDecalMaterial == nullptr)
+		return;
+	
+	UWorld* World = GetWorld();
+	if (!World) return;
+	
+	FHitResult Hit;
+	FVector End = StartPos + OwnerCharacter->GetActorForwardVector() * 800.f;
+	FCollisionQueryParams Query;
+	Query.AddIgnoredActor(OwnerCharacter.Get());
+
+	if (World->LineTraceSingleByChannel(Hit, StartPos, End, ECC_WorldStatic))
+	{
+		FRotator DecalRotation(-90.f, GetOwner()->GetActorRotation().Yaw, 0.f);
+		FVector MidPoint = (StartPos + Hit.ImpactPoint) * 0.5f;
+		FVector DecalLocation = MidPoint + GetOwner()->GetActorForwardVector() * ExecTableRow->DecalSize.Z;
+		
+		UDecalComponent* Decal = UGameplayStatics::SpawnDecalAtLocation(
+		GetWorld(),
+		SkillDecalMaterial,
+		ExecTableRow->DecalSize,
+		 DecalLocation,
+		 DecalRotation);
+		//10.0f);
+		
+		if(Decal)
+		{
+			// FadeOut 설정: 1초 대기 후, 0.5초 동안 페이드 아웃, 완료 시 데칼 파괴
+			Decal->SetFadeOut(2.0f, 1.f, true);
+		}
 	}
 }
 
@@ -382,11 +424,11 @@ void UPC_SkillComponent::ProcessNonTargetExec(float DeltaTime, FPC_ExecInfo& Exe
 			else
 			{
 				Location = OwnerCharacter->GetActorLocation();
-				Location.X += 50;
 			}
 			
 			FRotator Rotation = OwnerCharacter->GetActorRotation();//TargetLocation - Location).Rotation();
-			Rotation.Roll  += ExecTableRow->ProjectileRotation.Roll;   
+			Rotation += ExecTableRow->ProjectileAdditiveRot;   
+			Location += ExecTableRow->ProjectileAdditivePos;
 			
 			FTransform Transform;
 			Transform.SetLocation(Location);
@@ -396,6 +438,10 @@ void UPC_SkillComponent::ProcessNonTargetExec(float DeltaTime, FPC_ExecInfo& Exe
 			SkillObject->OwnerCharacter = OwnerCharacter.Get();
 			SkillObject->SkillObjectId = ExecTableRow->ExecProperty_0;
 			SkillObject->FinishSpawning(Transform);
+			
+			const FVector LaunchVel = OwnerCharacter->GetActorForwardVector() * 50.f; // 방향만 넘김(스피드는 PlayDecal에서 곱함)
+			FRotator DecalRotation = OwnerCharacter->GetActorForwardVector().Rotation();
+			PlayDecal(ExecInfo.ExecData->ExecDataId, OwnerCharacter->GetActorLocation(), LaunchVel, DecalRotation);
 		}
 	}
 }
@@ -757,4 +803,6 @@ void UPC_SkillComponent::Tick_PlaySkill(float DeltaTime)
 	{
 		return SkillInfo.ElapsedTime > SkillInfo.LifeTime;
 	});
+	
+	
 }

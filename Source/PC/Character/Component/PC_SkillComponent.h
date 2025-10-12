@@ -75,6 +75,8 @@ public:
 	void InitSkillInfo(uint32 SkillId, TArray<TWeakObjectPtr<AActor>> Targets, FPC_SkillInfo& SkillInfo);
 	void CalcSkillTime(uint32 SkillId, float& SkillLifeTime, TArray<FPC_ExecInfo>& ExecInfos);
 
+	void PlayDecal(uint32 ExecDataId, FVector StartPos, FVector ForwardVector, FRotator Rot );
+	
 	//논타겟
 	void ProcessSkill(float DeltaTime, FPC_SkillInfo& SkillInfo);
 	void ProcessNonTargetExec(float DeltaTime, FPC_ExecInfo& ExecInfo, FVector StartPos, FRotator StartRot);
