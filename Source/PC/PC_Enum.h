@@ -13,6 +13,7 @@ enum class EPC_DataTableType : int32
 	CrowdControl,
 	RootMotionDistance,
 	HitPart,
+	StatusEffect,
 	Num,
 };
 
@@ -81,6 +82,16 @@ enum class EPC_SkillObjectType :uint8
 	None,
 	Projectile,
 	Num
+};
+
+UENUM(BlueprintType)
+enum class EPC_StatusEffectType : uint8
+{
+	None = 0,
+	Head = 1,
+	AttackSpeed = 2,
+	MoveSpeed = 3,
+	Num,
 };
 
 UENUM(BlueprintType)

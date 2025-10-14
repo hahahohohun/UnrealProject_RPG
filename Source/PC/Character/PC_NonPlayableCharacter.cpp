@@ -268,7 +268,10 @@ void APC_NonPlayableCharacter::ChangeState(EPC_EnemyStateType StateType)
 
 	if(AAIController* AIController = Cast<AAIController>(GetController()))
 	{
-		AIController->GetBlackboardComponent()->SetValueAsEnum(TEXT("State"), static_cast<uint8>(StateType));
+		if(UBlackboardComponent* BlackboardComponent = AIController->GetBlackboardComponent())
+		{
+			BlackboardComponent->SetValueAsEnum(TEXT("State"), static_cast<uint8>(StateType));
+		}
 	}
 }
 

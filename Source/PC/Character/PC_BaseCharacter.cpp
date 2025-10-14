@@ -74,6 +74,11 @@ void APC_BaseCharacter::ApplyStat(const FPC_CharacterStatTableRow& BaseStat, con
 	GetCharacterMovement()->MaxWalkSpeed = MovementSpeed;
 }
 
+void APC_BaseCharacter::ApplyStatusEffect(uint32 StatusEffectId, float RemainingTime)
+{
+	
+}
+
 void APC_BaseCharacter::SetupCharacterWidget(UPC_UserWidget* InWidget)
 {
 
@@ -139,7 +144,7 @@ bool APC_BaseCharacter::IsDead()
 
 TPair<FName, FName> APC_BaseCharacter::GetWeaponTraceNames(bool bRight)
 {
-	return {BattleComponent->TraceEndBoneName, BattleComponent->TraceEndBoneName};
+	return {BattleComponent->TraceStartBoneName, BattleComponent->TraceEndBoneName};
 }
 
 FPC_OnStartSkillDelegate& APC_BaseCharacter::GetOnStartSkillDelegate()
@@ -168,6 +173,8 @@ void APC_BaseCharacter::PostInitializeComponents()
 
 	StatComponent->OnCharacterDieDelegate.AddUObject(this, &ThisClass::OnDead);
 	StatComponent->OnStatChangedDelegate.AddUObject(this, &ThisClass::ApplyStat);
+
+	StatusEffectComponent->OnStatusEffectTimeUpdate.AddUObject(this, &ThisClass::ApplyStatusEffect);
 }
 
 void APC_BaseCharacter::AttackTrace(bool bStart, FName TraceStartBoneName, FName TraceEndBoneName)

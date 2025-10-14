@@ -325,7 +325,7 @@ void APC_AIController::OnPossess(APawn* Possessed)
 void APC_AIController::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-
+	
 	AActor* CurrentActor = Cast<AActor>(GetBlackboardComponent()->GetValueAsObject(TEXT("Target")));
 	if (!CurrentActor)
 		return;

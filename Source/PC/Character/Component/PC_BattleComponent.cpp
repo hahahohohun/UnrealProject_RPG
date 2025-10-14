@@ -405,8 +405,8 @@ void UPC_BattleComponent::SpawnEffect(FVector InHitLocation, UNiagaraSystem* Hit
 
 	if(!HitFx)
 		return;
-	
-	UNiagaraComponent* Fx = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), HitFx, InHitLocation,  FRotator::ZeroRotator,
+
+	UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), HitFx, InHitLocation,  FRotator::ZeroRotator,
 	FVector(1.f),
 	true );
 	//if(Fx)

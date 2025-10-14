@@ -8,6 +8,8 @@
 #include "CoreTypes.h"
 #include "NavigationSystem.h"
 #include "Components/CapsuleComponent.h"
+#include "DSP/MidiNoteQuantizer.h"
+#include "DynamicMesh/MeshTransforms.h"
 #include "GameFramework/Character.h"
 #include "PC/Data/PC_CharacterDataAsset.h"
 #include "PC/Data/PC_HitPartDataAsset.h"
@@ -153,6 +155,23 @@ FPC_CrowdControlTableRow* FPC_GameUtil::GetCrowdControlData(uint32 crowdId)
 	}
 
 	UE_LOG(LogPC, Error, TEXT("crowdId object data is Invalid"));
+	return nullptr;
+}
+
+FPC_StatusEffectTableRow* FPC_GameUtil::GetStatusEffectData(uint32 statusEffectId)
+{
+	TArray<FPC_StatusEffectTableRow*> TableRows = GetAllRows<FPC_StatusEffectTableRow>(
+	EPC_DataTableType::StatusEffect);
+	if (FPC_StatusEffectTableRow** FoundRow = TableRows.FindByPredicate(
+		[statusEffectId](const FPC_StatusEffectTableRow* Row)
+		{
+			return Row->DataId == statusEffectId;
+		}))
+	{
+		return *FoundRow;
+	}
+
+	UE_LOG(LogPC, Error, TEXT("statusEffect object data is Invalid"));
 	return nullptr;
 }
 
@@ -413,6 +432,9 @@ uint32 FPC_GameUtil::GetSkillId(UPC_PlayerDataAsset* PlayerDataAsset, EPC_SkillS
 
 void FPC_GameUtil::CameraShake(EPC_CameraShakeMagnitudeType Type)
 {
+	if(Type == EPC_CameraShakeMagnitudeType::None)
+		return;
+	
 	UPC_GameDataAsset* GameDataAsset = GetGameData();
 	check(GameDataAsset);
 	
@@ -478,13 +500,14 @@ void FPC_GameUtil::PlayHitMaterial(ACharacter* DamageCharacter)
 }
 
 void FPC_GameUtil::SpawnEffectAtLocation(UObject* WorldContextObj, UNiagaraSystem* NiagaraSystem, FVector Location,
-                                         FRotator Rotation)
+                                         FRotator Rotation, float Scale)
 {
-	UNiagaraFunctionLibrary::SpawnSystemAtLocation(WorldContextObj, NiagaraSystem, Location, Rotation);
+	UNiagaraFunctionLibrary::SpawnSystemAtLocation(WorldContextObj, NiagaraSystem, Location,
+		Rotation, FVector(Scale));
 }
 
 void FPC_GameUtil::SpawnEffectAtLocation(UObject* WorldContextObj, UParticleSystem* ParticleSystem, FVector Location,
-                                         FRotator Rotation)
+                                         FRotator Rotation, float Scale)
 {
 	UGameplayStatics::SpawnEmitterAtLocation(WorldContextObj, ParticleSystem, Location, Rotation);
 }

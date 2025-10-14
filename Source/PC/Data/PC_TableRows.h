@@ -354,6 +354,36 @@ struct FPC_CrowdControlTableRow : public FTableRowBase
 	float Property_2 = 0.f;
 };
 
+USTRUCT()
+struct FPC_StatusEffectTableRow : public FTableRowBase
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(EditAnywhere)
+	uint32 DataId = 0;
+
+	UPROPERTY(EditAnywhere)
+	EPC_StatusEffectType StatusType = EPC_StatusEffectType::None;
+
+	UPROPERTY(EditAnywhere)
+	float ModifierValue = 0;
+
+	UPROPERTY(EditAnywhere)
+	float Duration = 0;
+
+	UPROPERTY(EditAnywhere)
+	UTexture2D* Icon; // UI 아이콘
+	
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UNiagaraSystem> EffectFX_Start = nullptr;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UNiagaraSystem> EffectFX_End = nullptr;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UNiagaraSystem> EffectFx_Cascade = nullptr;
+};
+
 USTRUCT(BlueprintType)
 struct FPC_AnimMontageRootMotionDistanceRow : public  FTableRowBase
 {

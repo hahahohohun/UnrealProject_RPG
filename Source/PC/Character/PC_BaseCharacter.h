@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GenericTeamAgentInterface.h"
 #include "Component/PC_BattleComponent.h"
+#include "Component/PC_StatusEffectComponent.h"
 #include "GameFramework/Character.h"
 #include "PC/PC_Enum.h"
 #include "PC/Interface/PC_CharacterInterface.h"
@@ -41,7 +42,8 @@ protected:
 
 public:
 	void ApplyStat(const FPC_CharacterStatTableRow& BaseStat, const FPC_CharacterStatTableRow& ModifierStat);
-
+	void ApplyStatusEffect(uint32 StatusEffectId, float RemainingTime);
+	
 	virtual void SetupCharacterWidget(class UPC_UserWidget* InUserWidget) override;
 	virtual void SetupLockOnWidget(UPC_UserWidget* InUserWidget) override;
 	virtual void SetupAttackIndicatorOnWidget(class UPC_UserWidget* InUserWidget) override;
@@ -90,6 +92,9 @@ public:
 	UPROPERTY()
 	TObjectPtr<UPC_StatComponent> StatComponent = nullptr;
 
+	UPROPERTY()
+	TObjectPtr<UPC_StatusEffectComponent> StatusEffectComponent = nullptr;
+	
 	UPROPERTY()
 	TObjectPtr<UPC_WidgetComponent> WidgetComponent = nullptr;
 

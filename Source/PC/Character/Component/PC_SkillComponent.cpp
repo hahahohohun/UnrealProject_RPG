@@ -170,12 +170,19 @@ void UPC_SkillComponent::PlayDecal(uint32 ExecDataId, FVector StartPos, FVector 
 	if (!World) return;
 	
 	FHitResult Hit;
-	FVector End = StartPos + OwnerCharacter->GetActorForwardVector() * 800.f;
+	FVector End = StartPos;
+	End.Z -= 1000.f;
+	
 	FCollisionQueryParams Query;
 	Query.AddIgnoredActor(OwnerCharacter.Get());
 
-	if (World->LineTraceSingleByChannel(Hit, StartPos, End, ECC_WorldStatic))
+	FCollisionObjectQueryParams ObjectQueryParams;
+	ObjectQueryParams.AddObjectTypesToQuery(ECC_WorldStatic);
+
+	if (World->LineTraceSingleByObjectType(Hit, StartPos, End, ObjectQueryParams, Query))
 	{
+		DrawDebugSphere(World, Hit.ImpactPoint, 20.f, 10, FColor::Red, false, 3.f);
+		
 		FRotator DecalRotation(-90.f, GetOwner()->GetActorRotation().Yaw, 0.f);
 		FVector MidPoint = (StartPos + Hit.ImpactPoint) * 0.5f;
 		FVector DecalLocation = MidPoint + GetOwner()->GetActorForwardVector() * ExecTableRow->DecalSize.Z;
@@ -270,8 +277,11 @@ void UPC_SkillComponent::ProcessNonTargetExec(float DeltaTime, FPC_ExecInfo& Exe
 		float Duration = ExecTableRow->Duration;
 
 		float CurveAlpha = ExecInfo.ElapsedTime / Duration;
-		float PosAlpha = ExecTableRow->ExeCurve->GetFloatValue(CurveAlpha);
-
+		float PosAlpha = CurveAlpha;
+		
+		if(ExecTableRow->ExeCurve)
+			PosAlpha = ExecTableRow->ExeCurve->GetFloatValue(CurveAlpha);
+		
 		//float Speed =  DashRange / Duration;
 
 		FVector CurrentPos = OwnerCharacter->GetActorLocation();
@@ -473,7 +483,11 @@ void UPC_SkillComponent::ProcessChainAttackExec(float DeltaTime, FPC_SkillInfo& 
 		float Duration = ExecTableRow->Duration;
 
 		float CurveAlpha = ExecInfo.ElapsedTime / Duration;
-		float PosAlpha = ExecTableRow->ExeCurve->GetFloatValue(CurveAlpha);
+		float PosAlpha = CurveAlpha;
+		if(ExecTableRow->ExeCurve)
+			PosAlpha = ExecTableRow->ExeCurve->GetFloatValue(CurveAlpha);
+
+		//PosAlpha = DeltaTime;
 
 		FVector NewPos = ExecInfo.ExecStartPos + ToTargetDir * ToTargetLength * PosAlpha;
 		NewPos.Z = CurrentPos.Z;
@@ -485,6 +499,8 @@ void UPC_SkillComponent::ProcessChainAttackExec(float DeltaTime, FPC_SkillInfo& 
 
 		if (CurveAlpha > 0.5f && !ExecInfo.bExecCollisionSpawned)
 		{
+			ExecInfo.bExecCollisionSpawned = true;
+
 			FVector ExecCollisionPos = ExecInfo.ExecStartPos + ToTargetDir * ToTargetLength / 2.f;
 			FRotator ExecCollisionRot = ToTargetDir.Rotation();
 
@@ -675,9 +691,15 @@ void UPC_SkillComponent::CheckCollision(const FPC_ExecInfo& ExecInfo, FCollision
 
 				if (ExecTableRow->bPlayCameraShake)
 				{
-					FPC_GameUtil::CameraShake(EPC_CameraShakeMagnitudeType::Weak);
+					FPC_GameUtil::CameraShake(ExecTableRow->ShakeMagnitude);
 				}
 
+				if(ExecTableRow->HitFX_Niagara)
+				{
+					FPC_GameUtil::SpawnEffectAtLocation(GetWorld(), ExecTableRow->HitFX_Niagara, ExecInfo.ExecStartPos,
+							ExecInfo.ExecStartRot, ExecTableRow->HitEffectScale);
+				}
+		
 				if (IPC_CharacterInterface* CharacterInterface = Cast<IPC_CharacterInterface>(OverlapResult.GetActor()))
 				{
 					UPC_CrowdControlComponent* CrowdControlComponent = CharacterInterface->GetCrowdControlComponent();
@@ -716,6 +738,7 @@ void UPC_SkillComponent::OnStartExec(FPC_SkillInfo& SkillInfo, FPC_ExecInfo& Exe
 	{
 		FPC_GameUtil::SpawnEffectAtLocation(GetWorld(), ExecTableRow->ExecFX_Niagara_Start, ExecInfo.ExecStartPos,
 		                                    ExecInfo.ExecStartRot);
+		
 		FPC_GameUtil::SpawnEffectAtLocation(GetWorld(), ExecTableRow->ExecFX_Cascade_Start, ExecInfo.ExecStartPos,
 		                                    ExecInfo.ExecStartRot);
 	}

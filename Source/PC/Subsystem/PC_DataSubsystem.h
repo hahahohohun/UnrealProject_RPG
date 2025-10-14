@@ -59,10 +59,12 @@ private:
 
 	UPROPERTY(Config)
 	FSoftObjectPath CrowdControl_DataTablePath;
+	
+	UPROPERTY(Config)
+	FSoftObjectPath StatusEffect_DataTablePath;
 
 	UPROPERTY(Config)
 	FSoftObjectPath RootMotionDistance_DataTablePath;
-	
 	
 	UPROPERTY(Config)
 	FSoftObjectPath NormalCameraDataPath;

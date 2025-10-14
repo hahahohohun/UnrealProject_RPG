@@ -25,6 +25,7 @@ void UPC_DataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	LoadList.Add(TPair<EPC_DataTableType, FSoftObjectPath>(EPC_DataTableType::RootMotionDistance, RootMotionDistance_DataTablePath));
 
 	LoadList.Add(TPair<EPC_DataTableType, FSoftObjectPath>(EPC_DataTableType::Exec, Exec_DataTablePath));
+	LoadList.Add(TPair<EPC_DataTableType, FSoftObjectPath>(EPC_DataTableType::StatusEffect, StatusEffect_DataTablePath));
 	
 	for (const auto& Element : LoadList)
 	{

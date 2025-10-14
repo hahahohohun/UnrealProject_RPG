@@ -23,6 +23,8 @@ public:
 	static FPC_SkillObjectTableRow* GetSkillObjectData(uint32 skillObjectId);
 	static FPC_ExecTableRow* GetExecData(uint32 execId);
 	static FPC_CrowdControlTableRow* GetCrowdControlData(uint32 crowdId);
+	static FPC_StatusEffectTableRow* GetStatusEffectData(uint32 statusEffectId);
+	
 	static float GetRootMotionDistanceData(FSoftObjectPath& ObjectPath);
 	static float CalculateRootMotionDistance(UAnimMontage* AnimMontage);
 
@@ -42,8 +44,8 @@ public:
 	static void ApplyHitReactionKnockback(const UObject* WorldObject, float Amount);
 	static void PlayHitMaterial(ACharacter* DamageCharacter);
 	
-	static void SpawnEffectAtLocation(UObject* WorldContextObj, UNiagaraSystem* NiagaraSystem, FVector Location, FRotator Rotation);
-	static void SpawnEffectAtLocation(UObject* WorldContextObj, UParticleSystem* ParticleSystem, FVector Location, FRotator Rotation);
+	static void SpawnEffectAtLocation(UObject* WorldContextObj, UNiagaraSystem* NiagaraSystem, FVector Location, FRotator Rotation, float Scale = 1);
+	static void SpawnEffectAtLocation(UObject* WorldContextObj, UParticleSystem* ParticleSystem, FVector Location, FRotator Rotation, float Scale = 1);
 
 	static UNiagaraComponent* SpawnEffectAttached(UNiagaraSystem* NiagaraSystem, USceneComponent* AttachToComponent, FName AttachPointName, FVector Location, FRotator Rotation, EAttachLocation::Type LocationType, bool bAutoDestroy);
 	static UParticleSystemComponent* SpawnEffectAttached(UParticleSystem* ParticleSystem, USceneComponent* AttachToComponent, FName AttachPointName, FVector Location, FRotator Rotation, EAttachLocation::Type LocationType, bool bAutoDestroy);
