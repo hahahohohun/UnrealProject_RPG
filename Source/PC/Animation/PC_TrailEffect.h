@@ -23,6 +23,9 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	bool bRight = true;
+
+	UPROPERTY(EditAnywhere)
+	float HitScale = 1.f;
 	
 	UPROPERTY(EditAnywhere)
 	FName BodyTrailBoneName_Start;

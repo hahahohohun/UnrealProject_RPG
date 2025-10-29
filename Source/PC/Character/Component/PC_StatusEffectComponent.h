@@ -11,8 +11,22 @@ struct FPC_StatusEffectInfo
 {
 	GENERATED_BODY()
 public:	
-	uint32 StatusEffectId;
-	float RemainingTime;
+	UPROPERTY()
+	uint32 StatusEffectId = 0;
+
+	UPROPERTY()
+	float RemainingTime = 0.f;
+
+	UPROPERTY()
+	float Duration = 0.f;
+
+	UPROPERTY()
+	float ModifierValue = 0.f;
+
+	UPROPERTY()
+	EPC_StatusEffectType Type = EPC_StatusEffectType::None;
+
+	bool bAppliedStatModifier = false;
 };
 
 DECLARE_MULTICAST_DELEGATE_TwoParams(FPC_OnStatusEffectTimeUpdate, uint32 StatusEffectId, float RemainingTime);
@@ -29,20 +43,33 @@ public:
 protected:
 	virtual void BeginPlay() override;
 public:
+	FPC_OnStatusEffectTimeUpdate OnStatusEffectTimeUpdate;
+	
 	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	
-	FPC_OnStatusEffectTimeUpdate OnStatusEffectTimeUpdate;
+	UFUNCTION()
+	void ApplyStatusEffect(uint32 StatusEffectID);
+	UFUNCTION()
+	void RemoveEffect(uint32 StatusEffectID);
+	
+	FPC_StatusEffectInfo* GetActiveStatusEffectInfo(uint32 StatusEffectID);
 	
 	UPROPERTY()
 	TWeakObjectPtr<UPC_StatComponent> StatComponent;
 
-	void ApplyStatusEffect(uint32 StatusEffectID);
-	void RemoveEffect(uint32 StatusEffectID);
-
+private:
 	UPROPERTY()
 	TMap<uint32, UNiagaraComponent*> ActiveFXComponents;
 
 	UPROPERTY()
 	TMap<uint32, FPC_StatusEffectInfo> ActiveStatusEffectInfos;
+
+	TWeakObjectPtr<ACharacter> OwnerCharacter = nullptr;
+
+	void StartCascadeFX(uint32 StatusEffectID, const FPC_StatusEffectTableRow& Row);
+	void StopCascadeFX(uint32 StatusEffectID, const FPC_StatusEffectTableRow* RowPtr);
+	void PlayStartFX(const FPC_StatusEffectTableRow& Row);
+	void PlayEndFX(const FPC_StatusEffectTableRow& Row);
+	void ApplyStatus(EPC_StatusEffectType Type, float Amount);
 };
 

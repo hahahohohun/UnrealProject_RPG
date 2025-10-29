@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "Kismet/GameplayStatics.h"
 #include "PC/PC_Enum.h"
+#include "PC/Character/Component/PC_StatComponent.h"
 #include "PC/Data/PC_PlayerDataAsset.h"
 #include "PC/Data/PC_TableRows.h"
 #include "PC/Subsystem/PC_DataSubsystem.h"
@@ -34,15 +35,20 @@ public:
 	
 	static UAnimMontage* GetProperAttackMontage(TArray<TObjectPtr<UAnimMontage>>& AnimMontages, TArray<TObjectPtr<UAnimMontage>>& AlreadyPlayedMontage,
 		AActor* AttackActor, FVector TargetPos);
+	static AActor* GetBestTargetByViewAngle(APlayerController* PlayerController, TArray<AActor*> TargetActors, bool ShouldGetNotInBattleActor, float MaxAngle);
 	static ECollisionChannel GetAttackCollisionChannel(uint32 Dataid);
 	
 	static uint32 GetSkillId(UPC_PlayerDataAsset* PlayerDataAsset, EPC_SkillSlotType SlotType, EPC_CharacterStanceType CharacterStance
 	,bool bInSpecialAttack);
 	
 	static void CameraShake(EPC_CameraShakeMagnitudeType Type);
-	static void PlayHitStop(const UObject* WorldObject, float Duration, float Dilation);
-	static void ApplyHitReactionKnockback(const UObject* WorldObject, float Amount);
+	static void PlayStopDilation(const UObject* WorldObject, float Duration, float Dilation);
 	static void PlayHitMaterial(ACharacter* DamageCharacter);
+
+	//todo
+	static void ApplyHitReactionKnockback(const UObject* WorldObject, float Amount);
+	
+	static FPC_CharacterStatModifier MakeCharacterStatModifierFromRow(const FPC_StatusEffectTableRow& Row, const FPC_CharacterStatTableRow& BaseStat);
 	
 	static void SpawnEffectAtLocation(UObject* WorldContextObj, UNiagaraSystem* NiagaraSystem, FVector Location, FRotator Rotation, float Scale = 1);
 	static void SpawnEffectAtLocation(UObject* WorldContextObj, UParticleSystem* ParticleSystem, FVector Location, FRotator Rotation, float Scale = 1);
@@ -50,6 +56,8 @@ public:
 	static UNiagaraComponent* SpawnEffectAttached(UNiagaraSystem* NiagaraSystem, USceneComponent* AttachToComponent, FName AttachPointName, FVector Location, FRotator Rotation, EAttachLocation::Type LocationType, bool bAutoDestroy);
 	static UParticleSystemComponent* SpawnEffectAttached(UParticleSystem* ParticleSystem, USceneComponent* AttachToComponent, FName AttachPointName, FVector Location, FRotator Rotation, EAttachLocation::Type LocationType, bool bAutoDestroy);
 
+	static void SpawnDamageFloater(ACharacter* DamageCharacter, int32 Damge);
+	
 	static FVector FindSurfacePos(ACharacter* Character, FVector& CurrentPos);
 
 	static bool IsDebugDrawing(UObject* WorldContextObject);

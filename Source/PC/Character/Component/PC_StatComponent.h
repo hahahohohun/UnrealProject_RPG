@@ -16,6 +16,17 @@ DECLARE_MULTICAST_DELEGATE(FPC_OnDeadDelegate);
 
 DECLARE_MULTICAST_DELEGATE_TwoParams(FPC_OnSatChangedDelegate, const FPC_CharacterStatTableRow& BaseStat, const FPC_CharacterStatTableRow& ModfierStat);
 
+USTRUCT()
+struct FPC_CharacterStatModifier
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	FPC_CharacterStatTableRow AddStat; // 가산
+
+	UPROPERTY()
+	FPC_CharacterStatTableRow MulStat; // 승산
+};
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class PC_API UPC_StatComponent : public UActorComponent
@@ -39,6 +50,14 @@ public:
 	void SetBaseStat(const FPC_CharacterStatTableRow& InSetBaseStat);
 	void SetModifierStat(const FPC_CharacterStatTableRow& InModifierStat);
 
+	//버프형
+	void AddStatusEffect(uint32 StatusEffectId);
+	void RemoveStatusEffect(uint32 StatusEffectId);
+
+	void RecalculateStats();
+	//
+
+	
 	const FPC_CharacterStatTableRow& GetBaseStat() const { return BaseStat; }
 	const FPC_CharacterStatTableRow& GetModifierStat() const { return ModifierStat; }
 	FPC_CharacterStatTableRow GetTotalStat() const { return BaseStat + ModifierStat; }
@@ -47,7 +66,8 @@ public:
 	float GetMaxHp() const { return MaxHp; }
 
 	void HealHp(float InHealAmount);
-	float ApplyDamage(float InDamage);
+	void AddStamina(float InAmount);
+	float ApplyDamage(float InDamage, AActor* DamageCauser, bool SpawnEffect);
 	bool TryConsumeStamina(float InAmount);
 	void ConsumeStamina(float InAmount);
 	
@@ -67,4 +87,13 @@ public:
 	FPC_CharacterStatTableRow ModifierStat;
 
 	void ResetStats();
+
+private:
+	TMap<uint32, FPC_CharacterStatModifier> ActiveStatusEffectModifiers;
+
+	//스텟 최종치
+	FPC_CharacterStatTableRow CachedFinal;
+	
 };
+
+

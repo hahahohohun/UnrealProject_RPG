@@ -3,8 +3,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "PC/UI/PC_DamageFloaterWidget.h"
 #include "PC/UI/PC_UserWidget.h"
 #include "PC/UI/PC_HUDWidget.h"
+#include "PC/UI/PC_StatusEffectWidget.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "PC_UISubsystem.generated.h"
 
@@ -20,6 +22,8 @@ public:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 
 	void CreateHUD();
+
+	UPC_DamageFloaterWidget* CreateDamageFloater(AActor* Owner);
 	
 	template<typename T>
 	UPC_UserWidget* CreateUI(T* ClassType);
@@ -27,15 +31,18 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<UPC_HUDWidget> HPBarWidgetClass;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<UPC_StatusEffectWidget> StatusEffectWidgetClass;
+
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = HUD)
 	TSubclassOf<UPC_HUDWidget> HUDWidgetClass;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = HUD)
 	TObjectPtr<UPC_HUDWidget> HUDWidget;
-
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	//TSubclassOf<UPC_DamgeFloaterWidget> DamageFloaterWidgetClass;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<UPC_DamageFloaterWidget> DamageFloaterWidgetClass;
 	
 };
 

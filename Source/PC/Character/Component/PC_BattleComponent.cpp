@@ -11,6 +11,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystem.h"
 #include "PC/PC.h"
+#include "PC/Battle/PC_NormalAttackDamageType.h"
 #include "PC/Character/PC_BaseCharacter.h"
 #include "PC/Character/PC_PlayableCharaceter.h"
 #include "PC/Character/Controller/PC_PlayerController.h"
@@ -32,7 +33,46 @@ void UPC_BattleComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (!bTracing)
+	Tick_TraceWeapon(DeltaTime);
+	Tick_Assassinate(DeltaTime);
+}
+
+void UPC_BattleComponent::Tick_Assassinate(float DeltaTime)
+{
+	if(IPC_PlayerCharacterInterface* PlayerCharacterInterface = Cast<IPC_PlayerCharacterInterface>(GetOwner()))
+	{
+		APlayerController* PlayerController = Cast<APlayerController>(GetOwner());
+		if(!PlayerController)
+			return;
+
+		UPC_ActionComponent* ActComp = PlayerCharacterInterface->GetActionComponent();
+		check(ActComp);
+		
+		if(ActComp->IsAssassinating)
+		{
+			if(AssassinateTarget.IsValid())
+			{
+				AssassinatingElapsedTime += DeltaTime;
+				if(AssassinatingElapsedTime < 0.2f)
+				{
+					const FVector PlayerLocation = OwnerCharacter->GetActorLocation();
+					const FVector TargetLocation = AssassinateTarget->GetActorLocation();
+
+					const FVector LookAtLocation = (TargetLocation - PlayerLocation).GetSafeNormal2D();
+
+					const FVector ProperPlayerLocation = TargetLocation - LookAtLocation * 85.f;
+					const FVector NewLocation = FMath::VInterpTo(PlayerLocation,ProperPlayerLocation, DeltaTime, 1);
+
+					OwnerCharacter->SetActorLocation(NewLocation);
+				}
+			}
+		}
+	}
+}
+
+void UPC_BattleComponent::Tick_TraceWeapon(float DeltaTime)
+{
+		if (!bTracing)
 		return;
 
 	TraceElapsedTime += DeltaTime;
@@ -118,32 +158,39 @@ void UPC_BattleComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 				if (APC_BaseCharacter* HitCharacter = Cast<APC_BaseCharacter>(HitActor))
 				{
 					
-					bool IsGuard = false;
-					bool IsRolling = false;
+					bool IsPlayerGuard = false;
+					bool IsPlayerRolling = false;
 
 					if(IPC_PlayerCharacterInterface* HitPlayerCharacterInterface = Cast<IPC_PlayerCharacterInterface>(HitActor))
 					{
 						 if(UPC_ActionComponent* HitCharActionComp = HitPlayerCharacterInterface->GetActionComponent())
 						 {
-						 	IsGuard = HitCharActionComp->IsGuarded();
-						 	IsRolling = HitCharActionComp->IsRolling;
+						 	IsPlayerGuard = HitCharActionComp->IsGuarded();
+						 	IsPlayerRolling = HitCharActionComp->IsRolling;
 						 }
 					}
 					
-					if (IsRolling)
+					if (IsPlayerRolling)
 						continue;
 					
 					if(HitAction)
-						FPC_GameUtil::PlayHitStop(this, 0.2f, 0.f);
+						FPC_GameUtil::PlayStopDilation(this, 0.2f, 0.f);
 					
-					if(IsGuard)
+					if(IsPlayerGuard)
 					{
+						if (IPC_CharacterInterface* Interface = Cast<IPC_CharacterInterface>(GetOwner()))
+						{
+							Interface->ReactAttackBreak();
+						}
+						
 						HitCharacter->LaunchCharacter(HitCharacter->GetActorLocation(), HitResult.ImpactPoint, 20);
 						
 						if (UPC_CharacterDataAsset* HitCharDataAsset = HitCharacter->GetCharacterDataAsset())
 						{
 							SpawnEffect(HitResult.ImpactPoint, HitCharDataAsset->GuardFx);
 						}
+
+						
 					}
 					else
 					{
@@ -151,11 +198,13 @@ void UPC_BattleComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 						FPC_GameUtil::CameraShake(EPC_CameraShakeMagnitudeType::Weak);
 						const float Damage = Character->StatComponent->GetTotalStat().Attack;
 						FDamageEvent DamageEvent;
+						DamageEvent.DamageTypeClass = UPC_NormalAttackDamageType::StaticClass();
 						HitActor->TakeDamage(Damage, DamageEvent, Character->GetController(), Character);
-
+						
 						if (UPC_CharacterDataAsset* HitCharDataAsset = HitCharacter->GetCharacterDataAsset())
 						{
-							SpawnEffect(HitResult.ImpactPoint, HitCharDataAsset->HitFx);
+							FPC_GameUtil::SpawnEffectAtLocation(GetWorld(), HitCharDataAsset->HitFx, HitResult.ImpactPoint, FRotator::ZeroRotator, 1);
+							//SpawnEffect(HitResult.ImpactPoint, HitCharDataAsset->HitFx);
 						}
 					}
 				}
@@ -172,6 +221,7 @@ void UPC_BattleComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 	PrevStartBoneLocation = CurStartBoneLocation;
 	PrevEndBoneLocation = CurEndBoneLocation;
 }
+
 
 void UPC_BattleComponent::BeginPlay()
 {
@@ -250,6 +300,11 @@ void UPC_BattleComponent::SwapWeapon()
 
 	const int32  num = Weapons.Num();
 
+	if (num <= 0)
+	{
+		return;
+	}
+	
 	if(CurWeaponIdx >= num)
 		CurWeaponIdx = 0;
 	
@@ -377,17 +432,56 @@ void UPC_BattleComponent::FireProjectile(bool IsPressed)
 	}
 }
 
-void UPC_BattleComponent::SetTargetDamage(AActor* HitTarget, float Damage)
+AActor* UPC_BattleComponent::GetAssassinateTarget() const
 {
-	if(HitTarget)
-	{
-		if(ACharacter* Character = Cast<ACharacter>(HitTarget))
-		{
-			FDamageEvent DamageEvent;
-			Character->TakeDamage(Damage, DamageEvent, OwnerCharacter->GetController(),
-				OwnerCharacter.Get());
-		}
-	}
+	IPC_PlayerCharacterInterface* Interface = Cast<IPC_PlayerCharacterInterface>(GetOwner());
+	check(Interface);
+
+	UPC_InteractionComponent* InteractionComponent = Interface->GetInteractionComponent();
+	check(InteractionComponent);
+
+	return InteractionComponent->GetAssassinateTarget();
+}
+
+bool UPC_BattleComponent::TryAssassinate()
+{
+	AActor* TargetActor = GetAssassinateTarget();
+	if(!TargetActor)
+		return false;
+
+	Assassinate(TargetActor);
+
+	return true;
+}
+
+void UPC_BattleComponent::Assassinate(AActor* Target)
+{
+	AssassinateTarget = Cast<ACharacter>(Target);
+	AssassinatingElapsedTime = 0;
+
+	FVector PlayerLocation = Target->GetActorLocation();
+	FVector TargetLocation = AssassinateTarget->GetActorLocation();
+
+	FVector LookAtRot = PlayerLocation - TargetLocation;
+	const FRotator NewRot = LookAtRot.Rotation();
+
+	//각도 보정
+	OwnerCharacter->SetActorRotation(NewRot);
+	AssassinateTarget->SetActorRotation(NewRot);
+	
+	IPC_CharacterInterface* Interface = Cast<IPC_CharacterInterface>(AssassinateTarget);
+	check(Interface);
+
+	UPC_BattleComponent* BattleComponent = Interface->GetBattleComponent();
+	check(BattleComponent);
+
+	UPC_StatComponent* StatComponent = Interface->GetStatComponent();
+	check(StatComponent);
+
+	BattleComponent->IsAssassinated = true;
+
+	float MaxHP = StatComponent->MaxHp;
+	StatComponent->ApplyDamage(MaxHP, OwnerCharacter.Get(), true);
 }
 
 void UPC_BattleComponent::EndTrace()

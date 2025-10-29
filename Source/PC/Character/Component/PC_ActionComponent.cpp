@@ -2,6 +2,7 @@
 
 #include "PC_ActionComponent.h"
 
+#include "AnalyticsProviderETEventCache.h"
 #include "PC_BattleComponent.h"
 #include "PC_LockOnComponent.h"
 #include "GameFramework/Character.h"
@@ -282,12 +283,17 @@ void UPC_ActionComponent::SwapWeapon(bool bPressed)
 	BattleComponent->SwapWeapon();
 }
 
-void UPC_ActionComponent::Backstab(bool IsPressed)
+void UPC_ActionComponent::Assassinate(bool IsPressed)
 {
 	if (!IsPressed)
 		return;
 
-	if (!CanAction(EPC_ActionType::Backstab))
+	if(IsAssassinating)
+		return;
+	
+	IsAssassinating = true;
+
+	if (!CanAction(EPC_ActionType::Assassinate))
 		return;
 
 	const IPC_PlayerCharacterInterface* Interface = CastChecked<IPC_PlayerCharacterInterface>(GetOwner());
@@ -295,40 +301,43 @@ void UPC_ActionComponent::Backstab(bool IsPressed)
 	
 	UPC_PlayerDataAsset* PlayerData = Interface->GetPlayerData();
 	check(PlayerData);
-	
-	AddLock(EPC_LockCauseType::Backstab, EPC_ActionType::Move);
-	AddLock(EPC_LockCauseType::Backstab, EPC_ActionType::Jump);
-
-	UAnimInstance* AnimInstance = OwnerCharacter->GetMesh()->GetAnimInstance();
-	check(AnimInstance);
-	
-	AnimInstance->StopAllMontages(0.1f);
-	OwnerCharacter->PlayAnimMontage(PlayerData->BackstabMontage);
-	FOnMontageEnded EndDelegate = FOnMontageEnded::CreateUObject(this, &ThisClass::OnMontageEnd);
-	AnimInstance->Montage_SetEndDelegate(EndDelegate);
 
 	UPC_BattleComponent* BattleComponent = Interface->GetBattleComponent();
 	check(BattleComponent);
 
-	UPC_BackstabSystemComponent* BackstabSystemComponent = Interface->GetBackstabSystemComponent();
-	check(BackstabSystemComponent);
+	if(!BattleComponent->TryAssassinate())
+		return;
+	
+	UAnimInstance* AnimInstance = OwnerCharacter->GetMesh()->GetAnimInstance();
+	check(AnimInstance);
+	AnimInstance->StopAllMontages(0.1f);
+	OwnerCharacter->PlayAnimMontage(PlayerData->BackstabMontage);
+	
+	FOnMontageEnded EndDelegate = FOnMontageEnded::CreateUObject(this, &ThisClass::OnMontageEnd);
+	AnimInstance->Montage_SetEndDelegate(EndDelegate);
+	
+	AddAllLock(EPC_LockCauseType::Assassinate);
 
-	if(BackstabSystemComponent->ExecuteBackstab())
-	{
-		if(APawn* BackstabTarget = BackstabSystemComponent->GetBackstabTarget())
-		{
-			if(BackstabTarget)
-			{
-				if (APC_BaseCharacter* CharacterBase = Cast<APC_BaseCharacter>(BackstabTarget))
-				{
-					if (FPC_CharacterStatTableRow* StatRow = FPC_GameUtil::GetCharacterStatData(CharacterBase->CharacterDataID))
-					{
-						BattleComponent->SetTargetDamage(BackstabTarget, StatRow->MaxHp);
-					}
-				}
-			}
-		}
-	}
+	
+	//UPC_BackstabSystemComponent* BackstabSystemComponent = Interface->GetBackstabSystemComponent();
+	//check(BackstabSystemComponent);
+	//
+	//if(BackstabSystemComponent->ExecuteBackstab())
+	//{
+	//	if(APawn* BackstabTarget = BackstabSystemComponent->GetBackstabTarget())
+	//	{
+	//		if(BackstabTarget)
+	//		{
+	//			if (APC_BaseCharacter* CharacterBase = Cast<APC_BaseCharacter>(BackstabTarget))
+	//			{
+	//				if (FPC_CharacterStatTableRow* StatRow = FPC_GameUtil::GetCharacterStatData(CharacterBase->CharacterDataID))
+	//				{
+	//					BattleComponent->SetTargetDamage(BackstabTarget, StatRow->MaxHp);
+	//				}
+	//			}
+	//		}
+	//	}
+	//}
 }
 
 bool UPC_ActionComponent::CanAction(EPC_ActionType InActionType)
@@ -366,6 +375,14 @@ void UPC_ActionComponent::AddLock(EPC_LockCauseType InLockCauseType, EPC_ActionT
 {
 	const FPC_LockData Data(InLockCauseType, InLockType);
 	LockData.Add(Data);
+}
+
+void UPC_ActionComponent::AddAllLock(EPC_LockCauseType InLockCauseType)
+{
+	for (int i = static_cast<uint8>(EPC_ActionType::Move); i < static_cast<uint8>(InLockCauseType); i++)
+	{
+		AddLock(InLockCauseType, static_cast<EPC_ActionType>(i));
+	}
 }
 
 void UPC_ActionComponent::ReleaseLock(EPC_LockCauseType InLockCauseType, EPC_ActionType InLockType)
@@ -457,7 +474,8 @@ void UPC_ActionComponent::OnMontageEnd(UAnimMontage* Montage, bool bInterrupted)
 
 	if(Montage == PlayerData->BackstabMontage)
 	{
-		ForceReleaseLock(EPC_LockCauseType::Backstab);
+		IsAssassinating = false;
+		ForceReleaseLock(EPC_LockCauseType::Assassinate);
 	}
 	
 	//if (Montage == CurrentAttackMontage)

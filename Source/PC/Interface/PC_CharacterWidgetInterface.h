@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "PC/UI/PC_LockOnWidget.h"
+#include "PC/UI/PC_IndicatorWidget.h"
 #include "UObject/Interface.h"
 #include "PC_CharacterWidgetInterface.generated.h"
 
@@ -25,9 +25,9 @@ class PC_API IPC_CharacterWidgetInterface
 public:
 	//
 	virtual void SetupCharacterWidget(class UPC_UserWidget* InWidget) = 0;
-	virtual void SetupLockOnWidget(class UPC_UserWidget* InUserWidget) = 0;
-	virtual void SetupAttackIndicatorOnWidget(class UPC_UserWidget* InUserWidget) = 0; //뒷잡 암살
-
+	virtual void SetupIndicatorWidget(class UPC_UserWidget* InUserWidget) = 0;
+	virtual void SetupStatusEffectWidget(UPC_UserWidget* InUserWidget) = 0;
+	
 	virtual void OnLocked(bool bLocked) = 0;
-	virtual void OnAttackIndicator(bool bAttackIndicator) = 0; //암살이 가능하면 UI ON
+	virtual void OnSelectedAssassinateTarget(bool bSelected) = 0;
 };

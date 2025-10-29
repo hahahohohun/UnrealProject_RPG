@@ -4,6 +4,7 @@
 #include "PC_StatComponent.h"
 
 #include "Kismet/GameplayStatics.h"
+#include "PC/PC.h"
 
 #include "PC/Character/PC_BaseCharacter.h"
 #include "PC/Interface/PC_PlayerCharacterInterface.h"
@@ -67,13 +68,58 @@ void UPC_StatComponent::SetModifierStat(const FPC_CharacterStatTableRow& InModif
 	OnStatChangedDelegate.Broadcast(GetBaseStat(), GetModifierStat());
 }
 
+void UPC_StatComponent::AddStatusEffect(uint32 StatusEffectId)
+{
+	FPC_StatusEffectTableRow* statusEffect = FPC_GameUtil::GetStatusEffectData(StatusEffectId);
+	if(!statusEffect)
+		return;
+
+	ActiveStatusEffectModifiers.Add(StatusEffectId,
+		FPC_GameUtil::MakeCharacterStatModifierFromRow(*statusEffect, BaseStat));
+	
+	RecalculateStats();
+}
+
+void UPC_StatComponent::RemoveStatusEffect(uint32 StatusEffectId)
+{
+	ActiveStatusEffectModifiers.Remove(StatusEffectId);
+	RecalculateStats();
+}
+
+void UPC_StatComponent::RecalculateStats()
+{
+	FPC_CharacterStatTableRow ModifierTotal;
+	// 1) Add 합산
+	FPC_CharacterStatTableRow addTotal; 
+	// 2) Mul 승산 누적 
+	FPC_CharacterStatTableRow mulTotal;
+	
+	for (const auto& KVP : ActiveStatusEffectModifiers)
+	{
+		const auto& M = KVP.Value;
+		addTotal = addTotal + (M.AddStat);
+		mulTotal = mulTotal + (M.MulStat);
+	}
+
+	ModifierTotal = ModifierTotal + addTotal;
+	ModifierTotal = ModifierTotal + mulTotal;
+
+	SetModifierStat(ModifierTotal);
+}
+
 void UPC_StatComponent::HealHp(float InHealAmount)
 {
 	CurrentHp = FMath::Clamp(CurrentHp + InHealAmount, 0, GetTotalStat().MaxHp);
 	OnHPChangedDelegate.Broadcast(CurrentHp, MaxHp);
 }
 
-float UPC_StatComponent::ApplyDamage(float InDamage)
+void UPC_StatComponent::AddStamina(float InAmount)
+{
+	CurrentStamina = FMath::Clamp(CurrentStamina + InAmount, 0, GetTotalStat().MaxStamina);
+	OnStaminaChangedDelegate.Broadcast(CurrentStamina, MaxStamina);
+}
+
+float UPC_StatComponent::ApplyDamage(float InDamage, AActor* DamageCauser, bool SpawnEffect)
 {
 	const float PrevHp = CurrentHp;
 	const float ActualDamage = FMath::Clamp<float>(InDamage, 0, InDamage);

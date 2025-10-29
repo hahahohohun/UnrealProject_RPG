@@ -24,7 +24,7 @@ EBTNodeResult::Type UPC_BTTask_SetState::ExecuteTask(UBehaviorTreeComponent& Own
 		return EBTNodeResult::Failed;
 	}
 
-	AIPawn->ChangeState(StateType);
+	AIPawn->RequestChangeState(StateType);
 	
 	return EBTNodeResult::Succeeded;
 	

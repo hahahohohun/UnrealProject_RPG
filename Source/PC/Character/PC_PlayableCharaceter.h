@@ -7,8 +7,9 @@
 #include "CoreMinimal.h"
 #include "InputActionValue.h"
 #include "PC_BaseCharacter.h"
-#include "Component/PC_BackstabSystemComponent.h"
+#include "Component/PC_InteractionComponent.h"
 #include "Component/PC_SkillComponent.h"
+#include "Components/SphereComponent.h"
 #include "PC/Interface/PC_CharacterHUDInterface.h"
 #include "PC/Interface/PC_PlayerCharacterInterface.h"
 #include "PC_PlayableCharaceter.generated.h"
@@ -46,7 +47,7 @@ protected:
 	void Roll(const FInputActionValue& Value);
 	void WeaponSwap(const FInputActionValue& Value);
 	void LockOn(const FInputActionValue& Value);
-	void BackstabOn(const FInputActionValue& Value);
+	void Assassinate(const FInputActionValue& Value);
 
 	void Num1(const FInputActionValue& Value);
 	void Num2(const FInputActionValue& Value);
@@ -62,23 +63,21 @@ public:
 
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void SetupHUDWidget(UPC_HUDWidget* InWidget) override;
-	
+	virtual void ReactAttackBreak() override;
 	void AdjustMovement(bool IsPressed);
 	void AdjustCamera(bool bIsPressed);
 	
 	void SetGenericTeamId(const FGenericTeamId& TeamID);
 	FGenericTeamId GetGenericTeamId() const;
-
-	
 	
 	virtual USpringArmComponent* GetSpringArmComponent() const override { return CameraBoom; }
 	virtual UCameraComponent* GetCameraComponent() const override { return FollowCamera; }
 
 	virtual UPC_ActionComponent* GetActionComponent() const override { return ActionComponent; }
 	virtual UPC_LockOnComponent* GetLockOnComponent() const override { return LockOnComponent; }
+	virtual UPC_InteractionComponent* GetInteractionComponent() const override { return InteractionComponent; }
 	virtual UPC_StatComponent* GetStatComponent() const override { return StatComponent; }
-	virtual UPC_BackstabSystemComponent* GetBackstabSystemComponent() const override { return BackstabSystemComponent; }
-	
+
 	virtual UPC_BattleComponent* GetBattleComponent() const override { return BattleComponent; }
 	virtual UPC_PlayerDataAsset* GetPlayerData() const override { return PlayerData; }
 public:
@@ -95,9 +94,6 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UPC_LockOnComponent> LockOnComponent;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UPC_BackstabSystemComponent> BackstabSystemComponent;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Component, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UPC_ActionComponent> ActionComponent;
@@ -105,6 +101,11 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Component, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UPC_AimComponent> AimComponent;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Component, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UPC_InteractionComponent> InteractionComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Component, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<USphereComponent> InteractionOverlapComponent;
 
 	/** MappingContext */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))

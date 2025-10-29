@@ -30,6 +30,7 @@ void UPC_TrailEffect::NotifyTick(USkeletalMeshComponent* MeshComp, UAnimSequence
 
 				if (UFXSystemComponent* FXSystemComponent = GetSpawnedEffect(MeshComp))
 				{
+					FXSystemComponent->SetFloatParameter(TEXT("HitScale"), HitScale);
 					FXSystemComponent->SetVectorParameter(TEXT("StartTrail"), StartPos);
 					FXSystemComponent->SetVectorParameter(TEXT("EndTrail"), EndPos);
 				}
@@ -47,6 +48,7 @@ void UPC_TrailEffect::NotifyTick(USkeletalMeshComponent* MeshComp, UAnimSequence
 
 				if (UFXSystemComponent* FXSystemComponent = GetSpawnedEffect(MeshComp))
 				{
+					FXSystemComponent->SetFloatParameter(TEXT("HitScale"), HitScale);
 					FXSystemComponent->SetVectorParameter(TEXT("StartTrail"), StartPos);
 					FXSystemComponent->SetVectorParameter(TEXT("EndTrail"), EndPos);
 				}

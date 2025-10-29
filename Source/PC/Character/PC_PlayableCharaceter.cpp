@@ -46,10 +46,13 @@ APC_PlayableCharaceter::APC_PlayableCharaceter()
 
 	WidgetComponent->SetRelativeLocation(FVector(0.0f, 0.0f, 200.0f));
 	LockOnComponent = CreateDefaultSubobject<UPC_LockOnComponent>(TEXT("LockOnComponent"));
-	BackstabSystemComponent = CreateDefaultSubobject<UPC_BackstabSystemComponent>(TEXT("BackstabSystemComponent"));
+	
 	ActionComponent = CreateDefaultSubobject<UPC_ActionComponent>(TEXT("ActionComponent"));
 	AimComponent = CreateDefaultSubobject<UPC_AimComponent>(TEXT("AimComponent"));
 
+	InteractionComponent = CreateDefaultSubobject<UPC_InteractionComponent>(TEXT("InteractionComponent"));
+	InteractionOverlapComponent = CreateDefaultSubobject<USphereComponent>(TEXT("InteractionOverlapComponent"));
+	InteractionOverlapComponent->SetupAttachment(RootComponent);
 }
 
 void APC_PlayableCharaceter::BeginPlay()
@@ -64,6 +67,12 @@ void APC_PlayableCharaceter::BeginPlay()
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
 	}
+
+	if(!InteractionOverlapComponent->OnComponentBeginOverlap.IsAlreadyBound(InteractionComponent.Get(), &UPC_InteractionComponent::OnBeginOverlap))
+		InteractionOverlapComponent->OnComponentBeginOverlap.AddDynamic(InteractionComponent.Get(), &UPC_InteractionComponent::OnBeginOverlap);
+
+	if(!InteractionOverlapComponent->OnComponentEndOverlap.IsAlreadyBound(InteractionComponent.Get(), &UPC_InteractionComponent::OnEndOverlap))
+		InteractionOverlapComponent->OnComponentEndOverlap.AddDynamic(InteractionComponent.Get(), &UPC_InteractionComponent::OnEndOverlap);
 }
 
 void APC_PlayableCharaceter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -83,7 +92,7 @@ void APC_PlayableCharaceter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 
 		EnhancedInputComponent->BindAction(InputData->SpecialAction, ETriggerEvent::Triggered, this, &ThisClass::SpecialAction);
 		EnhancedInputComponent->BindAction(InputData->LockOnAction, ETriggerEvent::Triggered, this, &ThisClass::LockOn);
-		EnhancedInputComponent->BindAction(InputData->BackstabOnAction, ETriggerEvent::Triggered, this, &ThisClass::BackstabOn);
+		EnhancedInputComponent->BindAction(InputData->BackstabOnAction, ETriggerEvent::Triggered, this, &ThisClass::Assassinate);
 		
 		EnhancedInputComponent->BindAction(InputData->RunAction, ETriggerEvent::Triggered, this, &ThisClass::Run);
 		EnhancedInputComponent->BindAction(InputData->RollAction, ETriggerEvent::Triggered, this, &ThisClass::Roll);
@@ -198,21 +207,16 @@ void APC_PlayableCharaceter::LockOn(const FInputActionValue& Value)
 	LockOnComponent->LockOn();
 }
 
-void APC_PlayableCharaceter::BackstabOn(const FInputActionValue& Value)
+void APC_PlayableCharaceter::Assassinate(const FInputActionValue& Value)
 {
 	const bool IsPressed = Value[0] != 0.f;
 	if (!IsPressed)
 		return;
 	
 	//
-	check(BackstabSystemComponent);
-	BackstabSystemComponent->BackstabOn();
 
-	if(BackstabSystemComponent->IsBackstabOnMode())
-	{
-		check(ActionComponent);
-		ActionComponent->Backstab(IsPressed);
-	}
+	check(ActionComponent);
+	ActionComponent->Assassinate(IsPressed);
 }
 
 void APC_PlayableCharaceter::Num1(const FInputActionValue& Value)
@@ -331,6 +335,10 @@ void APC_PlayableCharaceter::SetupHUDWidget(UPC_HUDWidget* InWidget)
 	}
 }
 
+void APC_PlayableCharaceter::ReactAttackBreak()
+{
+	
+}
 
 //bOrientRotationToMovement : true 가속을 받는 방향으로 캐릭터가 회전
 void APC_PlayableCharaceter::AdjustMovement(bool IsPressed)

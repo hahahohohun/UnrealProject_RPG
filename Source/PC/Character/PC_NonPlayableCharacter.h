@@ -32,26 +32,29 @@ protected:
 	virtual FPC_EnemyTableRow* GetEnemyData() override;;
 
 	virtual void SetAIAttackFinishDelegate(const FAICharacterAttackFinished& InOnAttackFinished) override;
-	virtual void SetAIMoveMontageFinishedDelegate(const FAICharacterMoveMontageFinished& InOnMoveMontageFinished) override;
+	virtual void
+	SetAIMoveMontageFinishedDelegate(const FAICharacterMoveMontageFinished& InOnMoveMontageFinished) override;
 	virtual void Attack(bool bLastAttack) override;
 	virtual void OnAttackMontageEnd(UAnimMontage* Montage, bool bInterrupted);
 	virtual void OnDashBackMontageEnd(UAnimMontage* Montage, bool bInterrupted);
-	
+
 	virtual void SetAITurnFinishDelegate(const FAICharacterTurnFinished& InOnTurnFinished) override;
 	virtual void TurnInPlace(float TurnAnimDegree) override;
-	virtual  void DashBack() override;
+	virtual void DashBack() override;
 	virtual AActor* GetPatrolRoute() override;
 	virtual void IncrementPatrolIndex() override;
 
 	virtual void ResetState() override;
-	virtual void ChangeState(EPC_EnemyStateType StateType) override;
-	
+	virtual void RequestChangeState(EPC_EnemyStateType StateType) override;
+	bool CanChangeState(EPC_EnemyStateType StateType);
+	void ChangeState(EPC_EnemyStateType StateType);
+
 	virtual void OnStartCrowdControl(EPC_CrowdControlType CrowdType, AActor* actor) override;
 	virtual void OnEndCrowdControl(EPC_CrowdControlType CrowdType, AActor* actor) override;
 
 	virtual void OnDead() override;
 	virtual void SetupCharacterWidget(class UPC_UserWidget* InWidget) override;
-	
+
 	UFUNCTION(BlueprintCallable)
 	virtual EPC_EnemyStateType GetState() override;
 
@@ -60,14 +63,14 @@ protected:
 
 	virtual void JumpToNextAttackMontage() override;
 	virtual void ResetUsedMontage() override;
+	virtual void ReactAttackBreak() override;
+	virtual void OnStartSkill(uint32 SkillId) override;
+	virtual void OnEndSkill(uint32 SkillId) override;
 
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = camera, meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UPC_WidgetComponent> LockOnWidgetComponent;
+	TObjectPtr<UPC_WidgetComponent> IndicatorComponent;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = camera, meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UPC_WidgetComponent> AttackIndicatorWidgetComponent;
-	
 	FAICharacterAttackFinished OnAttackFinished;
 	FAICharacterTurnFinished OnTurnFinished;
 	FAICharacterMoveMontageFinished OnMoveMontageFinished;
@@ -82,15 +85,18 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	bool HasSuperArmor = false; //CC공격 무시
-	
+
 	UPROPERTY(EditAnywhere)
 	bool IsBossMonster = false;
 
 	UPROPERTY(EditAnywhere)
+	bool bHitPartInit = false; //
+
+	UPROPERTY(EditAnywhere)
 	FName Name = NAME_None;
-	
+
 	EPC_EnemyStateType EnemyState = EPC_EnemyStateType::None;
-	
+
 	EPC_DeadType DeadType = EPC_DeadType::None;
 
 	bool IsTurning = false;

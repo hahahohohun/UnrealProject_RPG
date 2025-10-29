@@ -18,7 +18,9 @@ class PC_API UPC_BattleComponent : public UActorComponent
 public:	
 	// Sets default values for this component's properties
 	UPC_BattleComponent();
-
+private:
+	void Tick_Assassinate(float DeltaTime);
+	void Tick_TraceWeapon(float DeltaTime);
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
@@ -37,8 +39,11 @@ public:
 	bool HasWeapon();
 
 	void FireProjectile(bool IsPressed);
-	void SetTargetDamage(AActor* HitTarget, float Damage);
-	
+
+	AActor* GetAssassinateTarget() const;
+	bool TryAssassinate();
+	void Assassinate(AActor* Target);
+
 	bool bTracing = false;
 	bool bTraceRightWeapon = false;
 	
@@ -63,11 +68,18 @@ public:
 	
 	int32 CurWeaponIdx = 0;
 	TArray<FPC_WeaponData> Weapons;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool IsAssassinated = false;
 
 private:
 	UPROPERTY()
 	TObjectPtr<UPC_ActionComponent> ActionComponent;
-	
+
+	TWeakObjectPtr<ACharacter> AssassinateTarget;
+
+
+	float AssassinatingElapsedTime = 0.f;
 };
 
 

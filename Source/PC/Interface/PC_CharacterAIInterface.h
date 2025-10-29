@@ -35,7 +35,7 @@ public:
 	virtual float GetAITurnSpeed() = 0;
 
 	virtual void ResetState() = 0;
-	virtual void ChangeState(EPC_EnemyStateType StateType) = 0;
+	virtual void RequestChangeState(EPC_EnemyStateType StateType) = 0;
 	virtual void SetDeadType(EPC_DeadType DeadType) = 0;
 	
 	virtual EPC_EnemyStateType GetState() = 0;

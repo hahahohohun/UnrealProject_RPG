@@ -66,7 +66,7 @@ struct FPC_CharacterStatTableRow : public FTableRowBase
 		
 		return Result;
 	}
-	
+
 };
 
 USTRUCT(BlueprintType)
@@ -118,6 +118,12 @@ struct FPC_EnemyTableRow : public FTableRowBase
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UAnimMontage> DashBackAnim = nullptr;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UAnimMontage> HitReactAnim = nullptr; //TODO 방향별 리액트 
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UAnimMontage> AttackBreakAnim = nullptr; //공격이 막혔을때 ex)플레이어 Guard중 
 	
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UAnimMontage> Left90TurnAnim = nullptr;
@@ -132,8 +138,11 @@ struct FPC_EnemyTableRow : public FTableRowBase
 	TObjectPtr<UAnimMontage> Right180TurnAnim = nullptr;
 
 	UPROPERTY(EditAnywhere)
-	bool IsBoos = false;
-
+	bool IsBoss = false;
+	
+	UPROPERTY(EditAnywhere)
+	bool IsHitPartUnit = false;
+	
 	UPROPERTY(EditAnywhere)
 	bool HasSuperAmor = false;
 
@@ -338,6 +347,9 @@ struct FPC_CrowdControlTableRow : public FTableRowBase
 	EPC_CrowdControlType CrowdControlType = EPC_CrowdControlType::None;
 
 	UPROPERTY(EditAnywhere)
+	TObjectPtr<UAnimMontage> CrowdControlAnim = nullptr;
+	
+	UPROPERTY(EditAnywhere)
 	TObjectPtr<UNiagaraSystem> CrowdControlFX = nullptr;
 
 	UPROPERTY(EditAnywhere)
@@ -363,16 +375,22 @@ struct FPC_StatusEffectTableRow : public FTableRowBase
 	uint32 DataId = 0;
 
 	UPROPERTY(EditAnywhere)
+	EPC_StatusEffectApplyType EffectApplyType = EPC_StatusEffectApplyType::Instant;
+	
+	UPROPERTY(EditAnywhere)
 	EPC_StatusEffectType StatusType = EPC_StatusEffectType::None;
 
 	UPROPERTY(EditAnywhere)
 	float ModifierValue = 0;
 
 	UPROPERTY(EditAnywhere)
-	float Duration = 0;
+	EPC_ValueMode ValueMode = EPC_ValueMode::Additive;
+	
+	UPROPERTY(EditAnywhere)
+	float Duration = 0; 
 
 	UPROPERTY(EditAnywhere)
-	UTexture2D* Icon; // UI 아이콘
+	TObjectPtr<UTexture2D> Icon; // UI 아이콘
 	
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UNiagaraSystem> EffectFX_Start = nullptr;
@@ -382,6 +400,11 @@ struct FPC_StatusEffectTableRow : public FTableRowBase
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UNiagaraSystem> EffectFx_Cascade = nullptr;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FVector RelativePos_EffectFx_Cascade = FVector::ZeroVector;
+
+	
 };
 
 USTRUCT(BlueprintType)

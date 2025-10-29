@@ -40,6 +40,7 @@ APC_AIController::APC_AIController()
 void APC_AIController::RunAI()
 {
 	UBlackboardComponent* BlackboardPtr = GetBlackboardComponent();
+	
 	ensure(BlackboardPtr);
 	
 	//사용준비
@@ -173,7 +174,7 @@ void APC_AIController::HandleSensedSight(AActor* InActor)
 	IPC_CharacterAIInterface* AIPawn = Cast<IPC_CharacterAIInterface>(GetPawn());
 	ensure(AIPawn);
 
-	AIPawn->ChangeState(EPC_EnemyStateType::Battle);
+	AIPawn->RequestChangeState(EPC_EnemyStateType::Battle);
 	OnSenseTarget(InActor);
 }
 
@@ -185,7 +186,7 @@ void APC_AIController::HandleSensedHearing(AActor* InActor, FVector InLocation)
 	if (AIPawn->GetState() == EPC_EnemyStateType::Battle)
 		return;
 
-	AIPawn->ChangeState(EPC_EnemyStateType::Investigating);
+	AIPawn->RequestChangeState(EPC_EnemyStateType::Investigating);
 	GetBlackboardComponent()->SetValueAsVector(TEXT("InvestigatingPos"), InLocation);
 }
 
@@ -194,7 +195,7 @@ void APC_AIController::HandleSensedDamage(AActor* InActor)
 	IPC_CharacterAIInterface* AIPawn = Cast<IPC_CharacterAIInterface>(GetPawn());
 	ensure(AIPawn);
 
-	AIPawn->ChangeState(EPC_EnemyStateType::Battle);
+	AIPawn->RequestChangeState(EPC_EnemyStateType::Battle);
 
 	OnSenseTarget(InActor);
 }
@@ -213,7 +214,7 @@ void APC_AIController::HandleLoseTarget(AActor* InActor)
 	if (CrowdControlComponent->IsCrowdControlled())
 		return;
 
-	AIPawn->ChangeState(EPC_EnemyStateType::Patrol);
+	AIPawn->RequestChangeState(EPC_EnemyStateType::Patrol);
 	OnSenseTarget(nullptr);
 }
 
@@ -231,7 +232,7 @@ void APC_AIController::OnSenseTarget(AActor* InActor)
 	FPC_EnemyTableRow* EnemyTableRow = AIPawn->GetEnemyData();
 	ensure(EnemyTableRow);
 
-	if(EnemyTableRow->IsBoos)
+	if(EnemyTableRow->IsBoss)
 	{
 		//플레이어와 조우했다면
 		if(IPC_PlayerCharacterInterface* PlayerCharacterInterface = Cast<IPC_PlayerCharacterInterface>(InActor))

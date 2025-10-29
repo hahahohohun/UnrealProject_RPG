@@ -13,9 +13,11 @@
 #include "GameFramework/Character.h"
 #include "PC/Data/PC_CharacterDataAsset.h"
 #include "PC/Data/PC_HitPartDataAsset.h"
+#include "PC/Interface/PC_CharacterAIInterface.h"
 #include "PC/Interface/PC_CharacterInterface.h"
 #include "PC/Interface/PC_PlayerCharacterInterface.h"
 #include "PC/Misc/GameMode/PCGameMode.h"
+#include "PC/Subsystem/PC_UISubsystem.h"
 
 FPC_CharacterStatTableRow* FPC_GameUtil::GetCharacterStatData(uint32 CharacterId)
 {
@@ -80,11 +82,11 @@ UPC_CameraDataAsset* FPC_GameUtil::GetCameraData(EPC_CameraType CameraType)
 
 UPC_GameDataAsset* FPC_GameUtil::GetGameData()
 {
-	if(GEngine)
+	if (GEngine)
 	{
-		if(UGameInstance* GameInstance = UGameplayStatics::GetGameInstance(GEngine->GetCurrentPlayWorld()))
+		if (UGameInstance* GameInstance = UGameplayStatics::GetGameInstance(GEngine->GetCurrentPlayWorld()))
 		{
-			if(UPC_DataSubsystem* DataSubsystem = GameInstance->GetSubsystem<UPC_DataSubsystem>())
+			if (UPC_DataSubsystem* DataSubsystem = GameInstance->GetSubsystem<UPC_DataSubsystem>())
 			{
 				return DataSubsystem->GameDataAsset;
 			}
@@ -161,7 +163,7 @@ FPC_CrowdControlTableRow* FPC_GameUtil::GetCrowdControlData(uint32 crowdId)
 FPC_StatusEffectTableRow* FPC_GameUtil::GetStatusEffectData(uint32 statusEffectId)
 {
 	TArray<FPC_StatusEffectTableRow*> TableRows = GetAllRows<FPC_StatusEffectTableRow>(
-	EPC_DataTableType::StatusEffect);
+		EPC_DataTableType::StatusEffect);
 	if (FPC_StatusEffectTableRow** FoundRow = TableRows.FindByPredicate(
 		[statusEffectId](const FPC_StatusEffectTableRow* Row)
 		{
@@ -281,12 +283,18 @@ EPC_HitPartType FPC_GameUtil::GetHitPartTypeByName(FName BoneName, UDataAsset* D
 		{
 			for (FString Marker : HitPartDataAsset->LeftMarkers)
 			{
-				return EPC_HitPartType::Arm_l;
+				if (BoneName.ToString().Contains(Marker))
+				{
+					return EPC_HitPartType::Arm_l;
+				}
 			}
 
 			for (FString Marker : HitPartDataAsset->RightMarkers)
 			{
-				return EPC_HitPartType::Arm_r;
+				if (BoneName.ToString().Contains(Marker))
+				{
+					return EPC_HitPartType::Arm_r;
+				}
 			}
 		}
 	}
@@ -297,12 +305,18 @@ EPC_HitPartType FPC_GameUtil::GetHitPartTypeByName(FName BoneName, UDataAsset* D
 		{
 			for (FString Marker : HitPartDataAsset->LeftMarkers)
 			{
-				return EPC_HitPartType::Leg_l;
+				if (BoneName.ToString().Contains(Marker))
+				{
+					return EPC_HitPartType::Leg_l;
+				}
 			}
 
 			for (FString Marker : HitPartDataAsset->RightMarkers)
 			{
-				return EPC_HitPartType::Leg_r;
+				if (BoneName.ToString().Contains(Marker))
+				{
+					return EPC_HitPartType::Leg_r;
+				}
 			}
 		}
 	}
@@ -403,6 +417,53 @@ UAnimMontage* FPC_GameUtil::GetProperAttackMontage(TArray<TObjectPtr<UAnimMontag
 	return ProperMontage;
 }
 
+AActor* FPC_GameUtil::GetBestTargetByViewAngle(APlayerController* PlayerController, TArray<AActor*> TargetActors,
+                                               bool ShouldGetNotInBattleActor, float MaxAngle)
+{
+	AActor* FoundTarget = nullptr;
+	float BestAngle = INT_MAX;
+
+	FVector CameraForward = PlayerController->GetControlRotation().Vector();
+	CameraForward.Z = 0.f;
+
+	for (AActor* TargetActor : TargetActors)
+	{
+		IPC_CharacterInterface* CharacterInterface = Cast<IPC_CharacterInterface>(TargetActor);
+		if (!CharacterInterface)
+			continue;
+
+		if (CharacterInterface->IsDead())
+			continue;
+
+		IPC_CharacterAIInterface* CharacterAIInterface = Cast<IPC_CharacterAIInterface>(CharacterInterface);
+		if (!CharacterAIInterface)
+			continue;
+
+		EPC_EnemyStateType EnemyState = CharacterAIInterface->GetState();
+		if (ShouldGetNotInBattleActor)
+		{
+			if (EnemyState != EPC_EnemyStateType::Patrol &&
+				EnemyState != EPC_EnemyStateType::Investigating)
+			{
+				continue;
+			}
+		}
+
+		FVector ToTargetDir = (TargetActor->GetActorLocation() - PlayerController->GetPawn()->GetActorLocation()).
+			GetSafeNormal2D();
+		float OffsetAngle = FMath::RadiansToDegrees(FMath::Acos(ToTargetDir.Dot(CameraForward)));
+		if (OffsetAngle < MaxAngle)
+		{
+			if (OffsetAngle < BestAngle)
+			{
+				FoundTarget = TargetActor;
+				BestAngle = OffsetAngle;
+			}
+		}
+	}
+	return FoundTarget;
+}
+
 
 ECollisionChannel FPC_GameUtil::GetAttackCollisionChannel(uint32 DataId)
 {
@@ -432,26 +493,27 @@ uint32 FPC_GameUtil::GetSkillId(UPC_PlayerDataAsset* PlayerDataAsset, EPC_SkillS
 
 void FPC_GameUtil::CameraShake(EPC_CameraShakeMagnitudeType Type)
 {
-	if(Type == EPC_CameraShakeMagnitudeType::None)
+	if (Type == EPC_CameraShakeMagnitudeType::None)
 		return;
-	
+
 	UPC_GameDataAsset* GameDataAsset = GetGameData();
-	check(GameDataAsset);
-	
-	if (APlayerController* PlayerController = UGameplayStatics::GetPlayerController(GEngine->GetCurrentPlayWorld(), 0))
+	if(GameDataAsset)
 	{
-		PlayerController->ClientStartCameraShake(*GameDataAsset->CameraShakeClass.Find(Type));
+		if (APlayerController* PlayerController = UGameplayStatics::GetPlayerController(GEngine->GetCurrentPlayWorld(), 0))
+		{
+			PlayerController->ClientStartCameraShake(*GameDataAsset->CameraShakeClass.Find(Type));
+		}
 	}
+
 }
 
-void FPC_GameUtil::PlayHitStop(const UObject* WorldObject, float Duration, float Dilation)
+void FPC_GameUtil::PlayStopDilation(const UObject* WorldObject, float Duration, float Dilation)
 {
 	UWorld* World = WorldObject->GetWorld();
 	check(World);
 
 	UGameplayStatics::SetGlobalTimeDilation(World, Dilation);
-
-	//0.2초 실제 시간 후 한번만 실행
+	
 	FTSTicker::GetCoreTicker().AddTicker(
 		FTickerDelegate::CreateLambda([World](float)
 		{
@@ -477,6 +539,7 @@ void FPC_GameUtil::PlayHitMaterial(ACharacter* DamageCharacter)
 	UWorld* World = DamageCharacter->GetWorld();
 	check(World);
 
+	//기존에 머테리얼 캐싱
 	UMaterialInterface* OverlayMaterial = SkeletalMeshComponent->GetOverlayMaterial();
 	SkeletalMeshComponent->SetOverlayMaterial(CharacterDataAsset->DamgeMaterial);
 
@@ -490,20 +553,61 @@ void FPC_GameUtil::PlayHitMaterial(ACharacter* DamageCharacter)
 				USkeletalMeshComponent* MeshComponent = DamageCharacter->GetMesh();
 				UMaterialInterface* Material = MeshComponent->GetOverlayMaterial();
 
-				if(MeshComponent && Material)
+				if (MeshComponent && Material)
 				{
 					MeshComponent->SetOverlayMaterial(OverlayMaterial);
 				}
 			}
-		},0.03f,false
+		}, 0.03f, false
 	);
+}
+
+// StatusType = AttackPowerUp, ValueMode = Multiplicative, ModifierValue = 1.2f (즉 +20%)
+// 또는 Additive 모드라면 ModifierValue = +15.0f 같은 식
+FPC_CharacterStatModifier FPC_GameUtil::MakeCharacterStatModifierFromRow(
+	const FPC_StatusEffectTableRow& Row, const FPC_CharacterStatTableRow& BaseStat)
+{
+	FPC_CharacterStatModifier Out;
+
+	switch (Row.StatusType)
+	{
+	case EPC_StatusEffectType::AttackPowerUp:
+		if (Row.ValueMode == EPC_ValueMode::Multiplicative)
+		{
+			// BaseStat.Attack 기준으로 증가분만 계산
+			const float Factor = Row.ModifierValue ? (Row.ModifierValue * 0.01f) : (Row.ModifierValue - 1.f);
+			Out.AddStat.Attack = BaseStat.Attack * Factor;
+		}
+		else
+		{
+			Out.AddStat.Attack = Row.ModifierValue;
+		}
+		break;
+
+	case EPC_StatusEffectType::MoveSpeed:
+		if (Row.ValueMode == EPC_ValueMode::Multiplicative)
+		{
+			const float Factor = Row.ModifierValue ? (Row.ModifierValue * 0.01f) : (Row.ModifierValue - 1.f);
+			Out.AddStat.MovementSpeed = BaseStat.MovementSpeed * Factor;
+		}
+		else
+		{
+			Out.AddStat.MovementSpeed = Row.ModifierValue;
+		}
+		break;
+
+	default:
+		break;
+	}
+
+	return Out;
 }
 
 void FPC_GameUtil::SpawnEffectAtLocation(UObject* WorldContextObj, UNiagaraSystem* NiagaraSystem, FVector Location,
                                          FRotator Rotation, float Scale)
 {
 	UNiagaraFunctionLibrary::SpawnSystemAtLocation(WorldContextObj, NiagaraSystem, Location,
-		Rotation, FVector(Scale));
+	                                               Rotation, FVector(Scale));
 }
 
 void FPC_GameUtil::SpawnEffectAtLocation(UObject* WorldContextObj, UParticleSystem* ParticleSystem, FVector Location,
@@ -527,6 +631,37 @@ UParticleSystemComponent* FPC_GameUtil::SpawnEffectAttached(UParticleSystem* Par
 {
 	return UGameplayStatics::SpawnEmitterAttached(ParticleSystem, AttachToComponent, AttachPointName, Location,
 	                                              Rotation, LocationType, bAutoDestroy);
+}
+
+//TODO 풀링 처리
+void FPC_GameUtil::SpawnDamageFloater(ACharacter* DamageCharacter, int32 Damge)
+{
+	if (!DamageCharacter) return;
+
+	UWorld* World = DamageCharacter->GetWorld();
+	check(World);
+
+	APlayerController* PlayerController = UGameplayStatics::GetPlayerController(World, 0);
+	if (!PlayerController)
+		return;
+
+	//노출될 위치
+	float HalfHeight = DamageCharacter->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+	const FVector WorldPosition = DamageCharacter->GetActorLocation() + FVector(0.f, 0.f, HalfHeight);
+
+	if (GEngine)
+	{
+		if (UGameInstance* GameInstance = UGameplayStatics::GetGameInstance(GEngine->GetCurrentPlayWorld()))
+		{
+			if(UPC_UISubsystem* UISubsystem = GameInstance->GetSubsystem<UPC_UISubsystem>())
+			{
+				UPC_DamageFloaterWidget* DamageFloaterWidget = UISubsystem->CreateDamageFloater(DamageCharacter);
+				if(!DamageFloaterWidget) return;
+
+				DamageFloaterWidget->Init(Damge, WorldPosition, PlayerController);
+			}
+		}
+	}
 }
 
 FVector FPC_GameUtil::FindSurfacePos(ACharacter* Character, FVector& CurrentPos)

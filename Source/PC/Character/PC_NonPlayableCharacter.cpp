@@ -2,11 +2,11 @@
 
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
-#include "Component/PC_BackstabSystemComponent.h"
 #include "Component/PC_StatComponent.h"
 #include "Component/PC_WidgetComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Misc/LowLevelTestAdapter.h"
 #include "PC/AI/PC_AIController.h"
 #include "PC/AI/Actor/PC_PatrolRoute.h"
 #include "PC/Subsystem/PC_UISubsystem.h"
@@ -16,28 +16,17 @@
 
 APC_NonPlayableCharacter::APC_NonPlayableCharacter()
 {
-	LockOnWidgetComponent = CreateDefaultSubobject<UPC_WidgetComponent>(TEXT("LockOnWidgetComponent"));
-	LockOnWidgetComponent->SetupAttachment(GetMesh(), FName("Pelvis"));
-	static ConstructorHelpers::FClassFinder<UUserWidget> LockOnWidgetRef(TEXT("/Game/ProjectClass/UI/WBP_LockOn.WBP_LockOn_C"));
+	IndicatorComponent = CreateDefaultSubobject<UPC_WidgetComponent>(TEXT("IndicatorIndicatorWidgetComponent"));
+	IndicatorComponent->SetupAttachment(GetMesh(), FName("Pelvis"));
+	static ConstructorHelpers::FClassFinder<UUserWidget> LockOnWidgetRef(TEXT("/Game/ProjectClass/UI/WBP_Indicator.WBP_Indicator_C"));
 	if(LockOnWidgetRef.Class)
 	{
-		LockOnWidgetComponent->SetWidgetClass(LockOnWidgetRef.Class);
-		LockOnWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
-		LockOnWidgetComponent->SetDrawSize(FVector2D(30.f, 30.f));
-		LockOnWidgetComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		IndicatorComponent->SetWidgetClass(LockOnWidgetRef.Class);
+		IndicatorComponent->SetWidgetSpace(EWidgetSpace::Screen);
+		IndicatorComponent->SetDrawSize(FVector2D(30.f, 30.f));
+		IndicatorComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
-
-	AttackIndicatorWidgetComponent = CreateDefaultSubobject<UPC_WidgetComponent>(TEXT("AttackIndicatorWidgetComponent"));
-	AttackIndicatorWidgetComponent->SetupAttachment(GetMesh(), FName("neck_01"));
-	static ConstructorHelpers::FClassFinder<UUserWidget> AttackIndicatorWidgetRef(TEXT("/Game/ProjectClass/UI/WBP_AttackIndicator.WBP_AttackIndicator_C"));
-	if(AttackIndicatorWidgetRef.Class)
-	{
-		AttackIndicatorWidgetComponent->SetWidgetClass(AttackIndicatorWidgetRef.Class);
-		AttackIndicatorWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
-		AttackIndicatorWidgetComponent->SetDrawSize(FVector2D(30.f, 30.f));
-		AttackIndicatorWidgetComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	}
-
+	
 	WidgetComponent->SetRelativeLocation(FVector(0.0f,0.0f,0.0f));
 	WidgetComponent->SetupAttachment(GetMesh());
 }
@@ -58,25 +47,28 @@ void APC_NonPlayableCharacter::BeginPlay()
 		MeshComponent->SetAnimClass(EnemyTableRow->AnimInstance);
 	}
 
-	if(EnemyTableRow->IsBoos)
-	{
-		
-	}
-	else
-	{
-		UGameInstance* GameInstance = GetGameInstance();
-		check(GameInstance);
+	// 3) UI Subsystem 1회 획득
+	UGameInstance* GameInstance = GetGameInstance();
+	check(GameInstance);
+	UPC_UISubsystem* UISubsystem = GameInstance->GetSubsystem<UPC_UISubsystem>();
+	check(UISubsystem);
 
-		UPC_UISubsystem* UISubsystem = GameInstance->GetSubsystem<UPC_UISubsystem>();
-		check(UISubsystem);
-		
+	if(!EnemyTableRow->IsBoss)
+	{
 		WidgetComponent->SetWidgetClass(UISubsystem->HPBarWidgetClass);
 		WidgetComponent->InitWidget();
-
 		WidgetComponent->SetRelativeLocation(FVector(0.0f, 0.0f, 180.0f));
 		WidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
 		WidgetComponent->SetDrawSize(FVector2D(150.0f, 15.0f));
 		WidgetComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+
+	if(EnemyTableRow->IsHitPartUnit)
+	{
+		//플레이어 Channel 무시
+		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Ignore);
+		//캡슐이 공격받는게 아니기 때문
+		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_GameTraceChannel3, ECR_Ignore);
 	}
 	
 	ResetState();
@@ -98,6 +90,23 @@ float APC_NonPlayableCharacter::TakeDamage(float DamageAmount, FDamageEvent cons
 	DamageAmount,
 	DamageCauser->GetActorLocation(),
 	GetActorLocation());
+
+	if(DamageAmount > KINDA_SMALL_NUMBER)
+	{
+		FPC_GameUtil::SpawnDamageFloater(this, DamageAmount);
+
+		if(UAnimInstance* AnimIns = GetMesh()->GetAnimInstance())
+		{
+			if(EnemyState != EPC_EnemyStateType::SKillUsing && !IsDead()
+				&& !EnemyTableRow->HasSuperAmor)
+			{
+				if(EnemyTableRow->HitReactAnim)
+				{
+					AnimIns->Montage_Play(EnemyTableRow->HitReactAnim, 1.f, EMontagePlayReturnType::MontageLength);
+				}
+			}
+		}
+	}
 	
 	return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 }
@@ -216,12 +225,12 @@ void APC_NonPlayableCharacter::Attack(bool bLastAttack)
 
 	AAIController* AIController = Cast<AAIController>(GetController());
 	check(AIController);
-
-	AActor* TargetActor = Cast<AAIController>(GetController());
-	check(TargetActor);
-
+	
+	AActor* Target = Cast<AActor>(AIController->GetBlackboardComponent()->GetValueAsObject(TEXT("Target")));
+	check(Target);
+	
 	UAnimMontage* Montage = FPC_GameUtil::GetProperAttackMontage(AttackAnims, AlreadyPlayedAttackMontages,
-		this, TargetActor->GetActorLocation() );
+		this, Target->GetActorLocation() );
 	
 	check(Montage);
 	
@@ -244,7 +253,49 @@ void APC_NonPlayableCharacter::IncrementPatrolIndex()
 
 void APC_NonPlayableCharacter::ResetState()
 {
-	ChangeState(EPC_EnemyStateType::Patrol);
+	RequestChangeState(EPC_EnemyStateType::Patrol);
+}
+
+void APC_NonPlayableCharacter::RequestChangeState(EPC_EnemyStateType StateType)
+{
+	if(!CanChangeState(StateType))
+		return;
+
+	ChangeState(StateType);
+}
+
+bool APC_NonPlayableCharacter::CanChangeState(EPC_EnemyStateType StateType)
+{
+	// 1. 이미 죽은 상태면 어떤 상태로도 전환 불가
+	if (EnemyState == EPC_EnemyStateType::Dead)
+		return false;
+
+	// 2. 동일한 상태로 전환은 무의미하므로 불가
+	if (EnemyState == StateType)
+		return false;
+
+	// 3. 전투 중에는 '탐색' 상태로 전환 불가
+	if (EnemyState == EPC_EnemyStateType::Battle &&
+		StateType == EPC_EnemyStateType::Investigating)
+		return false;
+
+	// 4. CC(CrowdControl) 상태에서는 대부분의 상태로 전환 불가
+	if (EnemyState == EPC_EnemyStateType::CrowdControlled)
+	{
+		switch (StateType)
+		{
+		case EPC_EnemyStateType::Battle:
+		case EPC_EnemyStateType::SKillUsing:
+		case EPC_EnemyStateType::Patrol:
+		case EPC_EnemyStateType::Investigating:
+			return false;
+		default:
+			break;
+		}
+	}
+
+	// 그 외의 경우는 전환 가능
+	return true;
 }
 
 void APC_NonPlayableCharacter::ChangeState(EPC_EnemyStateType StateType)
@@ -283,7 +334,7 @@ void APC_NonPlayableCharacter::SetDeadType(EPC_DeadType NewDeadType)
 void APC_NonPlayableCharacter::OnStartCrowdControl(EPC_CrowdControlType CrowdControlType, AActor* Causer)
 {
 	Super::OnStartCrowdControl(CrowdControlType, Causer);
-	ChangeState(EPC_EnemyStateType::CrowdControlled);
+	RequestChangeState(EPC_EnemyStateType::CrowdControlled);
 }
 
 void APC_NonPlayableCharacter::OnEndCrowdControl(EPC_CrowdControlType CrowdControlType, AActor* Causer)
@@ -297,7 +348,7 @@ void APC_NonPlayableCharacter::OnEndCrowdControl(EPC_CrowdControlType CrowdContr
 			AIContoller->GetBlackboardComponent()->SetValueAsObject(TEXT("Target"), Causer);
 		}
 		
-		ChangeState(EPC_EnemyStateType::Battle);
+		RequestChangeState(EPC_EnemyStateType::Battle);
 	}
 }
 
@@ -312,7 +363,6 @@ void APC_NonPlayableCharacter::OnDead()
 		{
 			BTComponent->StopTree();
 		}
-		
 	}
 	
 	check(CrowdControlComponent);
@@ -321,7 +371,7 @@ void APC_NonPlayableCharacter::OnDead()
 	check(WidgetComponent);
 	WidgetComponent->SetVisibility(false);
 	
-	ChangeState(EPC_EnemyStateType::Dead);
+	RequestChangeState(EPC_EnemyStateType::Dead);
 
 	if(UCapsuleComponent* Cap = GetCapsuleComponent())
 	{
@@ -348,6 +398,7 @@ void APC_NonPlayableCharacter::SetupCharacterWidget(class UPC_UserWidget* InWidg
 		StatComponent->OnHPChangedDelegate.AddUObject(BossHPBarWidget, &UPC_BossHPBarWidget::UpdateHpBar);
 		BossHPBarWidget->UpdateHpBar(StatComponent->GetCurrentHp(), StatComponent->GetMaxHp());
 	}
+
 }
 
 EPC_EnemyStateType APC_NonPlayableCharacter::GetState()
@@ -373,6 +424,66 @@ void APC_NonPlayableCharacter::JumpToNextAttackMontage()
 void APC_NonPlayableCharacter::ResetUsedMontage()
 {
 	AlreadyPlayedAttackMontages.Empty();
+}
+
+void APC_NonPlayableCharacter::ReactAttackBreak()
+{
+	if(UAnimInstance* AnimIns = GetMesh()->GetAnimInstance())
+	{
+		if(EnemyState == EPC_EnemyStateType::Battle && !IsDead())
+		{
+			if(EnemyTableRow->AttackBreakAnim)
+			{
+				if(!CanChangeState(EPC_EnemyStateType::ReactAttackBreak))
+					return;
+				
+				if(AAIController* AIContoller = Cast<AAIController>(GetController()))
+				{
+					AIContoller->StopMovement();
+				}
+				
+				ChangeState(EPC_EnemyStateType::ReactAttackBreak);
+				
+				AnimIns->StopAllMontages(0.1f);
+				AnimIns->Montage_Play(EnemyTableRow->AttackBreakAnim, 1.f, EMontagePlayReturnType::MontageLength);
+				FOnMontageEnded EndDelegate;
+				EndDelegate.BindLambda([this](UAnimMontage* Montage, bool bInterrupted)
+				{
+					if (!IsDead())
+					{
+						ChangeState(EPC_EnemyStateType::Battle);
+					}
+				});
+				AnimIns->Montage_SetEndDelegate(EndDelegate, EnemyTableRow->AttackBreakAnim);
+			}
+		}
+	}
+}
+
+void APC_NonPlayableCharacter::OnStartSkill(uint32 SkillId)
+{
+	Super::OnStartSkill(SkillId);
+
+	RequestChangeState(EPC_EnemyStateType::SKillUsing);
+	
+	if(AAIController* AIContoller = Cast<AAIController>(GetController()))
+	{
+		AIContoller->StopMovement();
+	}
+
+	GetCharacterMovement()->DisableMovement();
+}
+
+void APC_NonPlayableCharacter::OnEndSkill(uint32 SkillId)
+{
+	Super::OnEndSkill(SkillId);
+
+	GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+
+	check(CrowdControlComponent);
+	
+	if(!CrowdControlComponent->IsCrowdControlled())
+		ChangeState(EPC_EnemyStateType::Battle);
 }
 
 AActor* APC_NonPlayableCharacter::GetPatrolRoute()

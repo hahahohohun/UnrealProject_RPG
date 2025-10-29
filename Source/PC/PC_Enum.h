@@ -23,9 +23,11 @@ enum class EPC_EnemyStateType : uint8
 	None = 0,
 	Patrol = 1,
 	Battle = 2,
-	Investigating =3,
+	Investigating = 3,
 	CrowdControlled = 4,
 	Dead = 5,
+	SKillUsing,
+	ReactAttackBreak,
 	Num
 };
 
@@ -34,7 +36,6 @@ enum class EPC_DeadType : uint8
 {
 	None = 0,
 	Normal = 1,
-	Backstab, //암살로 죽음
 	Num
 };
 
@@ -58,7 +59,7 @@ enum class EPC_ActionType : uint8
 	Run = 4,
 	Roll= 5,
 	Guard = 6,
-	Backstab = 7,
+	Assassinate = 7,
 	Num,
 };
 
@@ -72,7 +73,7 @@ enum class EPC_LockCauseType: uint8
 	Run = 4,
 	Roll = 5,
 	SpecialAction = 6,
-	Backstab = 7,
+	Assassinate = 7,
 	Num,
 };
 
@@ -88,9 +89,29 @@ UENUM(BlueprintType)
 enum class EPC_StatusEffectType : uint8
 {
 	None = 0,
-	Head = 1,
-	AttackSpeed = 2,
+	Heal = 1,
+	AttackPowerUp = 2,
 	MoveSpeed = 3,
+	Stamina = 4,
+	Num,
+};
+
+UENUM(BlueprintType)
+enum class EPC_StatusEffectApplyType : uint8
+{
+	None            UMETA(DisplayName = "None"),
+	Instant         UMETA(DisplayName = "즉발형"),
+	OverTime        UMETA(DisplayName = "지속형 (초당 Tick 적용)"),
+	StatModifier    UMETA(DisplayName = "버프형 (스탯 변경 후 원복)"),
+};
+
+// 값 해석 방법: +인지 ×인지
+UENUM(BlueprintType)
+enum class EPC_ValueMode : uint8
+{
+	None = 0,
+	Additive,
+	Multiplicative,
 	Num,
 };
 
@@ -197,5 +218,6 @@ enum class EPC_CameraShakeMagnitudeType : uint8
 	Weak,
 	Normal,
 	Strong,
+	Assassinate,
 	Num
 };

@@ -3,6 +3,7 @@
 #include "GameFramework/Character.h"
 #include "PC/Interface/PC_CharacterInterface.h"
 #include "PC/Interface/PC_CharacterWidgetInterface.h"
+#include "PC/Utills/PC_GameUtill.h"
 
 UPC_LockOnComponent::UPC_LockOnComponent()
 {
@@ -54,7 +55,7 @@ APawn* UPC_LockOnComponent::FindTarget()
 
 	ACharacter* Owner = Cast<ACharacter>(GetOwner());
 	check(Owner);
-
+	
 	APlayerController* PlayerController = Cast<APlayerController>(Owner->GetController());
 	check(PlayerController);
 
@@ -72,35 +73,13 @@ APawn* UPC_LockOnComponent::FindTarget()
 	CurrentWorld->OverlapMultiByChannel(OverlapResult, OwnerLocation, FQuat::Identity,
 		ECC_GameTraceChannel3, FCollisionShape::MakeSphere(TargetDetectRadius),QueryParams);
 
-	APawn* FoundTarget = nullptr;
-	float BestAngle = INT_MAX;
-
-	//사잇값이 가장 좁은 타겟 찾기
-	for (FOverlapResult& Result : OverlapResult)
+	TArray<AActor*> Actors;
+	for(FOverlapResult& Result : OverlapResult)
 	{
-		APawn* ResultPawn = Cast<APawn>(Result.GetActor());
-		if (!ResultPawn)
-			continue;
-		
-		IPC_CharacterInterface* CharacterInterface = Cast<IPC_CharacterInterface>(ResultPawn);
-		check(ResultPawn);
-
-		if (CharacterInterface->IsDead())
-			continue;;
-		
-		FVector ToTargetDir = (Result.GetActor()->GetActorLocation() - OwnerLocation).GetSafeNormal();
-		float OffsetAngle = FMath::RadiansToDegrees(FMath::Acos(ToTargetDir.Dot(CameraForward)));
-		if (OffsetAngle < TargetDetectAngle)
-		{
-			if (OffsetAngle < BestAngle)
-			{
-				FoundTarget = ResultPawn;
-				BestAngle = OffsetAngle;
-			}
-		}
+		Actors.Add(Result.GetActor());
 	}
-	
-	return FoundTarget;
+
+	return Cast<APawn>(FPC_GameUtil::GetBestTargetByViewAngle(PlayerController,Actors,false, TargetDetectRadius));
 }
 
 void UPC_LockOnComponent::LockTarget(APawn* InActor)

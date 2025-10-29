@@ -48,7 +48,7 @@ public:
 	void Run(bool bPressed);
 	void Roll(bool bPressed);
 	void SwapWeapon(bool bPressed);
-	void Backstab(bool bPressed); //뒷잡 암살
+	void Assassinate(bool bPressed); //뒷잡 암살
 
 	bool CanAction(EPC_ActionType InActionType);
 
@@ -56,6 +56,8 @@ public:
 	bool IsGuarded();
 
 	void AddLock(EPC_LockCauseType InLockCauseType, EPC_ActionType InLockType);
+	void AddAllLock(EPC_LockCauseType InLockCauseType);
+	
 	void ReleaseLock(EPC_LockCauseType InLockCauseType, EPC_ActionType InLockType);
 	void ForceReleaseLock(EPC_LockCauseType InLockCauseType);
 	void ResetAllLock();
@@ -89,10 +91,14 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool IsRolling = false;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool IsAssassinating = false;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool SaveAttack = false;
 
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	int AttackCount = 0;
 
