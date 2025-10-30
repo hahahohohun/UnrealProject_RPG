@@ -26,6 +26,7 @@ protected:
 	                         AActor* DamageCauser) override;
 
 	virtual void Tick(float DeltaTime) override;
+	virtual void Tick_DrawHitPart();
 
 	virtual float GetAIAttackRange() override;
 	virtual float GetAITurnSpeed() override;

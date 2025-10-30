@@ -65,6 +65,9 @@ public:
 	template <typename T>
 	static TArray<T*> GetAllRows(EPC_DataTableType DataTableType);
 
+	static FColor GetHitPartColor(EPC_HitPartType PartType);
+	static FColor GetHitPartColor(FPC_HitPartListRow* ListRow, FName BoneName);
+
 private:
 
 };

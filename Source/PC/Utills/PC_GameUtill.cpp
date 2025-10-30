@@ -725,3 +725,44 @@ bool FPC_GameUtil::IsDebugDrawing(UObject* WorldContextObject)
 
 	return GameMode->DebugDrawing;
 }
+
+FColor FPC_GameUtil::GetHitPartColor(EPC_HitPartType PartType)
+{
+	FColor Color = FColor::White;
+	switch (PartType)
+	{
+		case EPC_HitPartType::Body:
+			Color = FColor::Green;
+			break;
+		case EPC_HitPartType::Arm_l:
+			Color = FColor::Orange;
+			break;
+		case EPC_HitPartType::Arm_r:
+			Color = FColor::Yellow;
+			break;
+		case EPC_HitPartType::Leg_l:
+			Color = FColor::Cyan;
+			break;
+		case EPC_HitPartType::Leg_r:
+			Color = FColor::Blue;
+			break;
+		case EPC_HitPartType::Head:
+			Color = FColor::Red;
+			break;
+	}
+
+	return Color;
+}
+
+FColor FPC_GameUtil::GetHitPartColor(FPC_HitPartListRow* ListRow, FName BoneName)
+{
+	for(FPC_HitPartData& HitPartData : ListRow->HitPartDatas)
+	{
+		if(HitPartData.HitPartName == BoneName)
+		{
+			return GetHitPartColor(HitPartData.HitPartType);
+		}
+	}
+
+	return FColor::White;
+}

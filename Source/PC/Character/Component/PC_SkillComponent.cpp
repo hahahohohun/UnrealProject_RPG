@@ -16,6 +16,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "PC/Interface/PC_CharacterInterface.h"
 #include "PC/Interface/PC_PlayerCharacterInterface.h"
+#include "PC/SkillObject/PC_SentinelProjectile.h"
 #include "PC/SkillObject/PC_SkillObject.h"
 #include "PC/Utills/PC_GameUtill.h"
 
@@ -454,6 +455,77 @@ void UPC_SkillComponent::ProcessNonTargetExec(float DeltaTime, FPC_ExecInfo& Exe
 			PlayDecal(ExecInfo.ExecData->ExecDataId, OwnerCharacter->GetActorLocation(), LaunchVel, DecalRotation);
 		}
 	}
+	else if(ExecTableRow->ExecType == EPC_ExecType::SentinelProjectile)
+	{
+		if(!ExecInfo.bExecCollisionSpawned)
+		{
+			ExecInfo.bExecCollisionSpawned = true;
+			
+			// 1) 스킬 오브젝트 클래스 로드
+			FPC_SkillObjectTableRow* SkillObjRow = FPC_GameUtil::GetSkillObjectData(ExecTableRow->ExecProperty_0);
+			check(SkillObjRow);
+			
+			UClass* SkillObjectClass = SkillObjRow->SkillObjectActor;
+			check(SkillObjectClass);
+
+			// 2) 파라미터 읽기 (DT/테이블 맵핑은 프로젝트 규칙대로)
+			const int32 SentinelCount = FMath::Max(1, static_cast<int32>(ExecTableRow->ExecProperty_1));
+			const float OrbitRadius   = ExecTableRow->ExecCollisionProperty_0;   // 추천: OrbitRadius
+			const float TriggerRange  = ExecTableRow->ExecCollisionProperty_1;   // 추천: DetectRange
+			const float OrbitHeight   = ExecTableRow->ExecCollisionProperty_2;
+			const float AngularSpeed  = ExecTableRow->ExecProperty_2 > 0.f ? ExecTableRow->ExecProperty_2 : 180.f;
+			const float IdleLifeTime  = ExecTableRow->Duration;   // 대기 유지 시간
+
+			//TODO 세밀하게 하고싶으면 데이터로 빼도됨
+			const float InitialSpeed  =  2000.f;
+			const float MaxSpeed      =  3000.f;
+			const float HomingAccel   =  8000.f;
+			const float DamageRadius  = 10.f;  // 근접 판정 반경
+
+			// 3) 분산 스폰
+			const FVector BaseLoc = OwnerCharacter->GetActorLocation() + FVector(0,0, OrbitHeight);
+
+			for (int32 i = 0; i < SentinelCount; ++i)
+			{
+				const float StartAngleDeg = (360.f / SentinelCount) * i;
+
+				FTransform Xform;
+				Xform.SetLocation(BaseLoc);
+				Xform.SetRotation(FRotator::ZeroRotator.Quaternion());
+
+				APC_SkillObject* Obj = GetWorld()->SpawnActorDeferred<APC_SkillObject>(
+					SkillObjectClass, Xform, GetOwner(), nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+
+				Obj->OwnerCharacter = OwnerCharacter.Get();
+				Obj->SkillObjectId  = ExecTableRow->ExecProperty_0;
+
+				// Sentinel 전용 초기화 전달
+				if (auto* Sentinel = Cast<APC_SentinelProjectile>(Obj))
+				{
+					FPC_SentinelParams Params;
+					Params.OrbitRadius    = OrbitRadius;
+					Params.OrbitHeight    = OrbitHeight;
+					Params.AngularSpeed   = AngularSpeed;
+					Params.TriggerRange   = TriggerRange;
+					Params.DamageRadius   = DamageRadius;
+
+					Params.InitialSpeed   = InitialSpeed;
+					Params.MaxSpeed       = MaxSpeed;
+					Params.HomingAccel    = HomingAccel;
+					Params.bHoming        = true;
+
+					Params.IdleLifeTime   = IdleLifeTime;               // 
+					Params.IdleLifeTime = ExecTableRow->Duration;     // 발사 후 생존 시간 용도로 사용
+					Params.Damage         = ExecTableRow->Damage;
+					Params.StartAngleDeg  = StartAngleDeg;
+
+					Sentinel->InitSentinel(Params);
+				}
+
+				Obj->FinishSpawning(Xform);
+			}
+		}
+	}
 }
 
 void UPC_SkillComponent::ProcessChainAttackExec(float DeltaTime, FPC_SkillInfo& SkillInfo, FPC_ExecInfo& ExecInfo,
@@ -577,7 +649,7 @@ void UPC_SkillComponent::ProcessTargetPlayerExec(float DeltaTime, FPC_SkillInfo&
 {
 	FPC_ExecTableRow* ExecTableRow = FPC_GameUtil::GetExecData(ExecInfo.ExecData->ExecDataId);
 	check(ExecTableRow);
-	
+
 	if (ExecTableRow->ExecType == EPC_ExecType::FireMultipleProjectile)
 	{
 		float LoopCount = ExecTableRow->ExecProperty_1;
@@ -656,6 +728,7 @@ void UPC_SkillComponent::ProcessTargetPlayerExec(float DeltaTime, FPC_SkillInfo&
 			
 		}
 	}
+	
 }
 
 void UPC_SkillComponent::CheckCollision(const FPC_ExecInfo& ExecInfo, FCollisionShape CollisionShape,

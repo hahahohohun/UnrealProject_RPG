@@ -64,6 +64,9 @@ private:
 	FSoftObjectPath StatusEffect_DataTablePath;
 
 	UPROPERTY(Config)
+	FSoftObjectPath HitPart_DataTablePath;
+
+	UPROPERTY(Config)
 	FSoftObjectPath RootMotionDistance_DataTablePath;
 	
 	UPROPERTY(Config)

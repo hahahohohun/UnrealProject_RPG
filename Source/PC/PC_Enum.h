@@ -150,8 +150,9 @@ enum class EPC_ExecType : uint8
 	Dash,
 	DashToTarget,
 	Projectile,
-	FireMultipleProjectile,
-	FireCircularRain,
+	FireMultipleProjectile, //
+	FireCircularRain, //하늘에서 마구 떨어짐
+	SentinelProjectile, //감지형 프로젝타일
 	Dot,
 	Pushback,
 	Num,
