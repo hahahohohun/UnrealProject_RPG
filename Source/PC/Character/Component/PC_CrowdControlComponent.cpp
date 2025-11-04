@@ -5,6 +5,7 @@
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "PC/Data/PC_CharacterDataAsset.h"
+#include "PC/Interface/PC_CharacterAIInterface.h"
 #include "PC/Interface/PC_CharacterInterface.h"
 #include "PC/Utills/PC_GameUtill.h"
 
@@ -46,7 +47,7 @@ void UPC_CrowdControlComponent::ProcessCC()
 void UPC_CrowdControlComponent::RequestPlayerCC(uint32 CrowdControlId, AActor* Causer)
 {
 	FPC_CrowdControlTableRow* CrowdControlTableRow = FPC_GameUtil::GetCrowdControlData(CrowdControlId);
-	if(!CrowdControlTableRow)
+	if (!CrowdControlTableRow)
 		return;
 
 	FPC_CrowdControlInfo Info;
@@ -82,6 +83,16 @@ bool UPC_CrowdControlComponent::CanPlayCC(FPC_CrowdControlInfo& info)
 
 	if (CharacterInterface->IsDead())
 		return false;
+
+	if (IPC_CharacterAIInterface* AIPawn = Cast<IPC_CharacterAIInterface>(CharacterInterface))
+	{
+		FPC_EnemyTableRow* EnemyTableRow = AIPawn->GetEnemyData();
+		check(EnemyTableRow);
+
+		if(EnemyTableRow->HasSuperAmor)
+			return false;
+		
+	}
 
 	return true;
 }

@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "PC_BaseCharacter.h"
 //#include "PC/Interface/PC_CharacterAIInterface.h"
+#include "SkinnedDecalSampler.h"
 #include "PC/Interface/PC_CharacterAIInterface.h"
 #include "PC/Interface/PC_CharacterHUDInterface.h"
 #include "PC_NonPlayableCharacter.generated.h"
@@ -72,6 +73,10 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = camera, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UPC_WidgetComponent> IndicatorComponent;
 
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<USkinnedDecalSampler> SkinnedDecalSampler;
+	
 	FAICharacterAttackFinished OnAttackFinished;
 	FAICharacterTurnFinished OnTurnFinished;
 	FAICharacterMoveMontageFinished OnMoveMontageFinished;

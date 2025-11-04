@@ -19,6 +19,13 @@ struct FPC_ExecInfo
 	bool bExecStarted = false;
 	bool bExecFinished = false;
 	bool bExecCollisionSpawned = false; //한번 콜리전 관련 함수
+
+	//투사체 예측 경로 관련
+	bool bPathDrawing = false;
+	float PathUpdateAcc = 0.0f;
+	TWeakObjectPtr<AActor>   SpawnedSkillObject = nullptr; // 스폰된 투사체
+	TArray<FVector>          PathPoints;                   // 경로 캐시
+	//
 	
 	float AnimStartTime = 0.0f;
 	float ExecStartTime = 0.0f;
@@ -37,6 +44,7 @@ struct FPC_ExecInfo
 	FRotator ExecEndRot  = FRotator::ZeroRotator;
 	
 	TObjectPtr<UNiagaraComponent> AttachedFx = nullptr;
+	
 };
 
 struct FPC_SkillInfo

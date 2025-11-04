@@ -42,6 +42,7 @@ void APC_SentinelProjectile::InitSentinel(const FPC_SentinelParams& InParams)
 	if (!Character)
 		return;
 
+	//Trace Enemy, Trace Player
 	ECollisionChannel CollisionChannel = FPC_GameUtil::GetAttackCollisionChannel(Character->CharacterDataID);
 	// 감지/근접 반경 적용
 	if (DetectSphere)
@@ -49,7 +50,8 @@ void APC_SentinelProjectile::InitSentinel(const FPC_SentinelParams& InParams)
 		DetectSphere->SetSphereRadius(Cfg.TriggerRange);
 		//DetectSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 		//DetectSphere->SetCollisionResponseToAllChannels(ECR_Ignore);
-		//DetectSphere->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
+		//Enemy Preset, Player Preset
+		DetectSphere->SetCollisionResponseToChannel(ECC_GameTraceChannel2, ECR_Overlap);
 	}
 
 	// 근접 판정은 APC_SkillObject의 TriggerCollision을 재사용(Overlap 전용)

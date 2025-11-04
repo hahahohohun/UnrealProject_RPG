@@ -155,6 +155,7 @@ enum class EPC_ExecType : uint8
 	SentinelProjectile, //감지형 프로젝타일
 	Dot,
 	Pushback,
+	GravityOrbProjectile,        // 
 	Num,
 };
 
@@ -166,6 +167,7 @@ enum class EPC_SkillSlotType : uint8
 	Num_2,
 	Num_3,
 	Num_4,
+	Num_5,
 	Num,
 };
 
@@ -222,3 +224,18 @@ enum class EPC_CameraShakeMagnitudeType : uint8
 	Assassinate,
 	Num
 };
+
+UENUM(BlueprintType)
+enum EPC_ProximityType : uint8
+{
+	None,
+	Near_l,
+	Near_r,
+	Front,
+	Back,
+	Left,
+	Right,
+	Far,
+	Num,
+};
+

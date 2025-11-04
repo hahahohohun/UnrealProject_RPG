@@ -21,6 +21,7 @@ EBTNodeResult::Type UPC_BTTask_Attack::ExecuteTask(UBehaviorTreeComponent& Owner
 		return EBTNodeResult::Failed;
 	}
 
+
 	IPC_CharacterAIInterface* AIPawn = Cast<IPC_CharacterAIInterface>(Pawn);
 	if (!AIPawn)
 	{
@@ -39,12 +40,15 @@ EBTNodeResult::Type UPC_BTTask_Attack::ExecuteTask(UBehaviorTreeComponent& Owner
 	if (!Target)
 		return EBTNodeResult::Failed;
 
-	FVector TargetLocation = Target->GetActorLocation();
-	FVector Location = Pawn->GetActorLocation();
+	if(bRotation)
+	{
+		FVector TargetLocation = Target->GetActorLocation();
+		FVector Location = Pawn->GetActorLocation();
 
-	FVector ToTargetDir = (TargetLocation - Location).GetSafeNormal2D();
+		FVector ToTargetDir = (TargetLocation - Location).GetSafeNormal2D();
 
-	Pawn->SetActorRotation(ToTargetDir.Rotation());
+		Pawn->SetActorRotation(ToTargetDir.Rotation());
+	}
 
 	AIPawn->SetAIAttackFinishDelegate(OnAttackFinished);
 	AIPawn->Attack(bLastAttacking);

@@ -65,6 +65,7 @@ public:
 	template <typename T>
 	static TArray<T*> GetAllRows(EPC_DataTableType DataTableType);
 
+	static EPC_ProximityType GetTargetProximity(AActor* TargetActor, AActor* CurrentActor, float Near, float Middle);
 	static FColor GetHitPartColor(EPC_HitPartType PartType);
 	static FColor GetHitPartColor(FPC_HitPartListRow* ListRow, FName BoneName);
 

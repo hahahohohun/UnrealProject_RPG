@@ -21,6 +21,9 @@ class PC_API UPC_BTTask_Attack : public UBTTaskNode
 
 	UPROPERTY(EditAnywhere)
 	bool bLastAttacking = false;
+
+	UPROPERTY(EditAnywhere)
+	bool bRotation = true;
 };
 
 

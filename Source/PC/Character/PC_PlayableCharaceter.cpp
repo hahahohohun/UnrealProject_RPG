@@ -14,9 +14,11 @@
 #include "Component/PC_WidgetComponent.h"
 #include "Controller/PC_PlayerController.h"
 //#include "Core/Tests/Containers/TestUtils.h"
+#include "Engine/DamageEvents.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "PC/Battle/PC_NormalAttackDamageType.h"
 #include "PC/Data/PC_InputDataAsset.h"
 #include "PC/Data/PC_PlayerDataAsset.h"
 #include "PC/Misc/GameMode/PCGameMode.h"
@@ -103,6 +105,12 @@ void APC_PlayableCharaceter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 		EnhancedInputComponent->BindAction(InputData->Num3Action, ETriggerEvent::Triggered, this, &ThisClass::Num3);
 		EnhancedInputComponent->BindAction(InputData->Num4Action, ETriggerEvent::Triggered, this, &ThisClass::Num4);
 
+		//
+		EnhancedInputComponent->BindAction(InputData->Num5Action, ETriggerEvent::Started, this, &ThisClass::Num5Started);
+		EnhancedInputComponent->BindAction(InputData->Num5Action, ETriggerEvent::Triggered, this, &ThisClass::Num5Triggered);
+		EnhancedInputComponent->BindAction(InputData->Num5Action, ETriggerEvent::Completed, this, &APC_PlayableCharaceter::Num5Completed);
+		EnhancedInputComponent->BindAction(InputData->Num5Action, ETriggerEvent::Canceled, this, &ThisClass::Num5Canceled);
+		
 		EnhancedInputComponent->BindAction(InputData->DebugDrawAction, ETriggerEvent::Triggered, this, &ThisClass::DebugDraw);
 
 	}
@@ -288,6 +296,35 @@ void APC_PlayableCharaceter::Num4(const FInputActionValue& Value)
 	SkillComponent->RequestPlaySkill(SkillId);
 }
 
+void APC_PlayableCharaceter::Num5Started(const FInputActionValue& Value)
+{
+	UE_LOG(LogTemp, Log, TEXT(" Num5Started"));
+}
+
+void APC_PlayableCharaceter::Num5Triggered(const FInputActionValue& Value)
+{
+	UE_LOG(LogTemp, Log, TEXT(" Num5Triggered"));
+}
+
+void APC_PlayableCharaceter::Num5Completed(const FInputActionValue& Value)
+{
+	const bool IsPressed = Value[0] != 0.f;
+	if (IsPressed)
+		return;
+	
+	const uint32 SkillId = FPC_GameUtil::GetSkillId(PlayerData,
+	EPC_SkillSlotType::Num_5,
+	BattleComponent->CharacterStanceType,
+	ActionComponent->IsInSpecialAction);
+	
+	SkillComponent->RequestPlaySkill(SkillId);
+}
+
+void APC_PlayableCharaceter::Num5Canceled(const FInputActionValue& Value)
+{
+}
+
+
 void APC_PlayableCharaceter::DebugDraw(const FInputActionValue& Value)
 {
 	const bool IsPressed = Value[0] != 0.0f;
@@ -303,6 +340,44 @@ void APC_PlayableCharaceter::DebugDraw(const FInputActionValue& Value)
 	check(GameMode);
 
 	GameMode->DebugDrawing = !GameMode->DebugDrawing;
+}
+
+float APC_PlayableCharaceter::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,
+	class AController* EventInstigator, AActor* DamageCauser)
+{
+	IPC_CharacterInterface* OwnerCharacterInterface =  Cast<IPC_CharacterInterface>(this);
+	check(OwnerCharacterInterface);
+	
+	IPC_CharacterInterface* CauserInterface =  Cast<IPC_CharacterInterface>(DamageCauser->GetOwner());
+	check(CauserInterface);
+
+	UPC_CharacterDataAsset* OwnerDataAsset = OwnerCharacterInterface->GetCharacterDataAsset();
+	check(OwnerDataAsset);
+
+	UPC_CharacterDataAsset* CauserDataAsset = CauserInterface->GetCharacterDataAsset();
+	check(CauserDataAsset);
+	
+	float Damage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+
+	if(Damage > KINDA_SMALL_NUMBER)
+	{
+		if(DamageEvent.DamageTypeClass == UPC_NormalAttackDamageType::StaticClass())
+		{
+			CrowdControlComponent->RequestPlayerCC(4, DamageCauser);
+		}
+
+		FPC_GameUtil::SpawnEffectAtLocation(GetWorld(), CauserDataAsset->HitFx, GetActorLocation(), FRotator::ZeroRotator);
+	}
+	else
+	{
+		if(ActionComponent->IsInSpecialAction &&
+			BattleComponent->CharacterStanceType == EPC_CharacterStanceType::Sword)
+		{
+			FPC_GameUtil::SpawnEffectAtLocation(GetWorld(), CauserDataAsset->HitFx, GetActorLocation(), FRotator::ZeroRotator);
+		}
+	}
+	
+	return Damage;
 }
 
 void APC_PlayableCharaceter::OnSensedByBossMonster(ACharacter* Incharacter) const

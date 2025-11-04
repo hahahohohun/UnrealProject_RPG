@@ -5,10 +5,12 @@
 #include "Component/PC_StatComponent.h"
 #include "Component/PC_WidgetComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Engine/DamageEvents.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Misc/LowLevelTestAdapter.h"
 #include "PC/AI/PC_AIController.h"
 #include "PC/AI/Actor/PC_PatrolRoute.h"
+#include "PC/Battle/PC_NormalAttackDamageType.h"
 #include "PC/Subsystem/PC_UISubsystem.h"
 #include "PC/UI/PC_HPBarWidget.h"
 #include "PC/Utills/PC_GameUtill.h"
@@ -32,6 +34,8 @@ APC_NonPlayableCharacter::APC_NonPlayableCharacter()
 
 	WidgetComponent->SetRelativeLocation(FVector(0.0f, 0.0f, 0.0f));
 	WidgetComponent->SetupAttachment(GetMesh());
+
+	SkinnedDecalSampler = CreateDefaultSubobject<USkinnedDecalSampler>(TEXT("SkinnedDecalSampler"));
 }
 
 void APC_NonPlayableCharacter::BeginPlay()
@@ -66,6 +70,19 @@ void APC_NonPlayableCharacter::BeginPlay()
 		WidgetComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
 
+	int32 NumMats = GetMesh()->GetNumMaterials();
+
+	for(int32 i = 0 ; i < NumMats ; i++)
+	{
+		UMaterialInterface* Material = GetMesh()->GetMaterial(i);
+		if(UMaterialInstanceDynamic* MaterialInstanceDynamic = UMaterialInstanceDynamic::Create(Material, this))
+		{
+			GetMesh()->SetMaterial(i, MaterialInstanceDynamic);
+		}
+	}
+
+	SkinnedDecalSampler->UpdateAllDecals();
+
 	if (EnemyTableRow->IsHitPartUnit)
 	{
 		//플레이어 Channel 무시
@@ -86,6 +103,18 @@ void APC_NonPlayableCharacter::PossessedBy(AController* NewController)
 float APC_NonPlayableCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent,
                                            AController* EventInstigator, AActor* DamageCauser)
 {
+	IPC_CharacterInterface* OwnerCharacterInterface = Cast<IPC_CharacterInterface>(this);
+	check(OwnerCharacterInterface);
+
+	IPC_CharacterInterface* CauserCharacterInterface = Cast<IPC_CharacterInterface>(DamageCauser);
+	check(CauserCharacterInterface);
+
+	UPC_CharacterDataAsset* OwnerDataAsset = OwnerCharacterInterface->GetCharacterDataAsset();
+	check(OwnerDataAsset);
+
+	UPC_CharacterDataAsset* CauseDataAsset = CauserCharacterInterface->GetCharacterDataAsset();
+	check(CauseDataAsset);
+	
 	UAISense_Damage::ReportDamageEvent(
 		GetWorld(),
 		this,
@@ -94,8 +123,15 @@ float APC_NonPlayableCharacter::TakeDamage(float DamageAmount, FDamageEvent cons
 		DamageCauser->GetActorLocation(),
 		GetActorLocation());
 
+	float Damage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+
 	if (DamageAmount > KINDA_SMALL_NUMBER)
 	{
+		if(DamageEvent.DamageTypeClass == UPC_NormalAttackDamageType::StaticClass())
+		{
+			CrowdControlComponent->RequestPlayerCC(3, DamageCauser);
+		}
+		
 		FPC_GameUtil::SpawnDamageFloater(this, DamageAmount);
 
 		if (UAnimInstance* AnimIns = GetMesh()->GetAnimInstance())
@@ -109,9 +145,40 @@ float APC_NonPlayableCharacter::TakeDamage(float DamageAmount, FDamageEvent cons
 				}
 			}
 		}
+
+		if(DamageEvent.GetTypeID() == FPointDamageEvent::ClassID)
+		{
+			if(const FPointDamageEvent* PointEvent = static_cast<const FPointDamageEvent*>(&DamageEvent))
+			{
+				const FHitResult& Hit = PointEvent->HitInfo;
+				FPC_GameUtil::SpawnEffectAtLocation(GetWorld(), CauseDataAsset->HitFx, Hit.ImpactPoint, FRotator::ZeroRotator);
+				int32 DecalID = SkinnedDecalSampler->SpawnDecal(Hit.ImpactPoint, Hit.ImpactNormal.Rotation().Quaternion(),Hit.BoneName,25.0f);
+
+				//데칼 삭제
+				FTimerHandle TimerHandle;
+				GetWorld()->GetTimerManager().SetTimer(
+					TimerHandle,
+					FTimerDelegate::CreateLambda([this, DecalID]()
+					{
+						if (SkinnedDecalSampler)
+						{
+							SkinnedDecalSampler->RemoveDecal(DecalID);
+						}
+					}),
+					3.0f,  // 타이머 실행 시간 (초 단위)
+					false  // 반복 여부: false면 한 번만 실행
+				);
+			}
+		}
+		else
+		{
+			FPC_GameUtil::SpawnEffectAtLocation(GetWorld(), CauseDataAsset->HitFx, GetActorLocation(), FRotator::ZeroRotator);
+		}
+
+		FPC_GameUtil::SpawnDamageFloater(this, DamageAmount);
 	}
 
-	return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	return Damage;
 }
 
 void APC_NonPlayableCharacter::Tick(float DeltaTime)

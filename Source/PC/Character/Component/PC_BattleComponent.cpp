@@ -135,9 +135,9 @@ void UPC_BattleComponent::Tick_TraceWeapon(float DeltaTime)
 	}
 	
 	//TODO 공격별로 히트 효과 여부 처리
-	bool HitAction = false;
+	bool ShouldHitAction = false;
 	if(ActionComponent)
-		HitAction = ActionComponent->IsLastAttack();
+		ShouldHitAction = ActionComponent->IsLastAttack();
 	
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(GetOwner());
@@ -173,7 +173,7 @@ void UPC_BattleComponent::Tick_TraceWeapon(float DeltaTime)
 					if (IsPlayerRolling)
 						continue;
 					
-					if(HitAction)
+					if(ShouldHitAction)
 						FPC_GameUtil::PlayStopDilation(this, 0.2f, 0.f);
 					
 					if(IsPlayerGuard)
@@ -189,8 +189,6 @@ void UPC_BattleComponent::Tick_TraceWeapon(float DeltaTime)
 						{
 							SpawnEffect(HitResult.ImpactPoint, HitCharDataAsset->GuardFx);
 						}
-
-						
 					}
 					else
 					{
@@ -211,6 +209,32 @@ void UPC_BattleComponent::Tick_TraceWeapon(float DeltaTime)
 			}
 		}
 
+		FCollisionObjectQueryParams ObjectQueryParams;
+		ObjectQueryParams.AddObjectTypesToQuery(ECC_Pawn);
+
+		//HitPart가 가능한 몹 체크용(거대보스)
+		if(World->LineTraceSingleByObjectType(HitResult, Line.Key, Line.Value, ObjectQueryParams, Params))
+		{
+			AActor* HitActor = HitResult.GetActor();
+			if(HitActor && !DamagedActor.Contains(HitActor))
+			{
+				//캐릭터 체크
+				if (ACharacter* HitCharacter = Cast<ACharacter>(HitActor))
+				{
+					DamagedActor.Add(HitActor);
+					const float Damage = Character->StatComponent->GetTotalStat().Attack;
+
+					FPointDamageEvent DamageEvent;
+					DamageEvent.DamageTypeClass = UPC_NormalAttackDamageType::StaticClass();
+					DamageEvent.HitInfo = HitResult;
+					HitActor->TakeDamage(Damage, DamageEvent, Character->GetController(), Character);
+
+					FPC_GameUtil::CameraShake(EPC_CameraShakeMagnitudeType::Weak);
+					FPC_GameUtil::PlayStopDilation(this, 0.1f, 0.f);
+				}
+			}
+		}
+		
 		if(FPC_GameUtil::IsDebugDrawing(OwnerCharacter.Get()))
 		{
 			DrawDebugLine(World, Line.Key, Line.Value, FColor::Red, false, 3.f, 0, 1.f);
@@ -362,6 +386,9 @@ void UPC_BattleComponent::EquipWeapon(uint8 InWeaponId, bool bRightHand)
 		
 		WeaponStaticMeshComponent->SetRelativeLocation(WeaponTableRow->RelativePos);
 		WeaponStaticMeshComponent->SetRelativeRotation(WeaponTableRow->RelativeRot);
+
+		//크기
+		WeaponStaticMeshComponent->SetRelativeScale3D(WeaponTableRow->RelativeScale);
 		
 		WeaponStaticMeshComponent->SetStaticMesh(WeaponTableRow->WeaponMesh);
 		WeaponStaticMeshComponent->SetVisibility(true);

@@ -54,8 +54,15 @@ protected:
 	void Num3(const FInputActionValue& Value);
 	void Num4(const FInputActionValue& Value);
 
-	void DebugDraw(const FInputActionValue& Value);
+	//TODO NUm1부터 통합처리
+	void Num5Started(const FInputActionValue& Value);
+	void Num5Triggered(const FInputActionValue& Value);
+	void Num5Completed(const FInputActionValue& Value);
+	void Num5Canceled(const FInputActionValue& Value);
 	
+	void DebugDraw(const FInputActionValue& Value);
+
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 	//보스몬스터에게 감지됐을때
 	void OnSensedByBossMonster(ACharacter* Incharacter) const override;
 	

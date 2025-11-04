@@ -484,7 +484,10 @@ uint32 FPC_GameUtil::GetSkillId(UPC_PlayerDataAsset* PlayerDataAsset, EPC_SkillS
 	{
 		if (SkillEntry.Key == FPC_ComboKey(StanceType, bInSpecialAttack))
 		{
-			return *SkillEntry.Data.SkillIds.Find(SkillSlotType);
+			if (const uint32* FoundSkillId = SkillEntry.Data.SkillIds.Find(SkillSlotType))
+			{
+				return *FoundSkillId;
+			}
 		}
 	}
 
@@ -724,6 +727,71 @@ bool FPC_GameUtil::IsDebugDrawing(UObject* WorldContextObject)
 	check(GameMode);
 
 	return GameMode->DebugDrawing;
+}
+
+EPC_ProximityType FPC_GameUtil::GetTargetProximity(AActor* TargetActor, AActor* CurrentActor, float Near, float Middle)
+{
+	if(!TargetActor || !CurrentActor)
+	{
+		return EPC_ProximityType::None;
+	}
+
+	const FVector TargetLocation = TargetActor->GetActorLocation();
+	const FVector CurrentLocation = CurrentActor->GetActorLocation();
+
+	const float Distance = FVector::Dist(TargetLocation, CurrentLocation);
+
+	if(Distance > Middle)
+	{
+		return EPC_ProximityType::Far;
+	}
+
+	const FVector ForwardVector = CurrentActor->GetActorForwardVector();
+	const FVector RightVector = CurrentActor->GetActorRightVector();
+
+	const FVector ToTargetDir  = (TargetLocation - CurrentLocation).GetSafeNormal();
+	
+	const float ForwardDot = FVector::DotProduct(ForwardVector, ToTargetDir);
+	const float RightDot = FVector::DotProduct(RightVector, ToTargetDir);
+	
+	if(Distance <= Near)
+	{
+		if(FMath::RadiansToDegrees(RightDot >= 0.0f))
+		{
+			return EPC_ProximityType::Near_r;
+		}
+		else
+		{
+			return EPC_ProximityType::Near_l;
+		}
+	}
+
+	if(Distance <= Middle)
+	{
+		const float AngleThresold = 45.0f;
+
+		if(FMath::RadiansToDegrees(ForwardDot) > AngleThresold)
+		{
+			return EPC_ProximityType::Front;
+		}
+		else if(FMath::RadiansToDegrees(ForwardDot) < -AngleThresold)
+		{
+			return EPC_ProximityType::Back;
+		}
+		else
+		{
+			if(FMath::RadiansToDegrees(RightDot >= 0.f))
+			{
+				return EPC_ProximityType::Right;
+			}
+			else
+			{
+				return EPC_ProximityType::Left;
+			}
+		}
+	}
+
+	return EPC_ProximityType::None;
 }
 
 FColor FPC_GameUtil::GetHitPartColor(EPC_HitPartType PartType)

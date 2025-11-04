@@ -36,6 +36,8 @@ public:
 
 	UFUNCTION()
 	void OnComponentHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+
+	void PullTargets();
 	
 	void PlaySound();
 	void PlayFX(FVector InHitLocation);
@@ -80,6 +82,9 @@ public:
 	UPROPERTY(EditAnywhere)
 	bool ShowImpactPointDecal = false;
 
+	UPROPERTY(EditAnywhere)
+	bool PullTarget  = false;
+	
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UMaterialInterface> ImpactPointDecalMaterial = nullptr;
 	

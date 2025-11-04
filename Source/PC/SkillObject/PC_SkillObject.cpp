@@ -10,6 +10,7 @@
 #include "NiagaraFunctionLibrary.h"
 #include "Engine/DamageEvents.h"
 #include "GameFramework/Character.h"
+#include "PC/Interface/PC_CharacterInterface.h"
 #include "PC/Utills/PC_GameUtill.h"
 
 // Sets default values
@@ -92,6 +93,11 @@ void APC_SkillObject::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, A
 		                         OwnerCharacter.Get());
 	}
 
+	if(PullTarget)
+	{
+		PullTargets();
+	}
+
 	if(SkillObjectTableRow->IsCollisionDestroy)
 	{
 		ProcessDestroy();
@@ -113,6 +119,33 @@ void APC_SkillObject::OnComponentHit(UPrimitiveComponent* HitComponent, AActor* 
 	else if (BounceCount == 0)
 	{
 		ProcessDestroy();
+	}
+}
+
+void APC_SkillObject::PullTargets()
+{
+	UWorld* World = GetWorld(); if (!World) return;
+
+	const FVector Center = GetActorLocation();
+	const float Radius   = 800.f;   // 끌어당김 범위
+	const float Force    = 60000.f; // 캐릭터/물체당 당기는 힘(임펄스 크기)
+
+	TArray<FOverlapResult> Overlaps;
+	FCollisionShape Sphere = FCollisionShape::MakeSphere(Radius);
+	FCollisionQueryParams Q;
+	Q.AddIgnoredActor(this);
+	Q.AddIgnoredActor(OwnerCharacter.Get());
+
+	if (World->OverlapMultiByChannel(Overlaps, Center, FQuat::Identity, ECC_WorldDynamic, Sphere, Q))
+	{
+		for (const FOverlapResult& Hit : Overlaps)
+		{
+			ACharacter* C = Cast<ACharacter>(Hit.GetActor());
+			if (!C)
+				continue;
+
+			
+		}
 	}
 }
 

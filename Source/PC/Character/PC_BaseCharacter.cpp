@@ -87,15 +87,6 @@ float APC_BaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Dama
 	{
 		if(DamageEvent.DamageTypeClass == UPC_NormalAttackDamageType::StaticClass())
 		{
-			if(Implements<UPC_PlayerCharacterInterface>())
-			{
-				CrowdControlComponent->RequestPlayerCC(4, DamageCauser);
-			}
-			else
-			{
-				CrowdControlComponent->RequestPlayerCC(3, DamageCauser);
-			}
-		
 			//노말머테리얼일때만
 			FPC_GameUtil::PlayHitMaterial(this);
 		}

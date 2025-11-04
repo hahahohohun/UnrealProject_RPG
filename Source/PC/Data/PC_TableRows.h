@@ -6,6 +6,7 @@
 #include "PC/PC_Enum.h"
 #include "PC_TableRows.generated.h"
 
+struct FPC_HitPartUnitAttackAnims;
 //에디터에서 셋팅하는 데이터
 USTRUCT(BlueprintType)
 struct FPC_ExecData
@@ -29,6 +30,16 @@ struct FPC_HitPartData
 
 	UPROPERTY(EditAnywhere)
 	EPC_HitPartType HitPartType = EPC_HitPartType::None;
+};
+
+USTRUCT(BlueprintType)
+struct FPC_HitPartUnitAttackAnims
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere)
+	TArray<TObjectPtr<UAnimMontage>> AnimsMontages;
+	
 };
 
 
@@ -68,6 +79,8 @@ struct FPC_CharacterStatTableRow : public FTableRowBase
 	}
 
 };
+
+
 
 USTRUCT(BlueprintType)
 struct FPC_EnemyTableRow : public FTableRowBase
@@ -115,6 +128,9 @@ struct FPC_EnemyTableRow : public FTableRowBase
 
 	UPROPERTY(EditAnywhere)
 	TArray<TObjectPtr<UAnimMontage>> AttackAnims;
+
+	UPROPERTY(EditAnywhere)
+	TMap<EPC_SkillTargetingType, FPC_HitPartUnitAttackAnims> HitPartAttackAnims;
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UAnimMontage> DashBackAnim = nullptr;
@@ -176,6 +192,9 @@ struct FPC_WeaponTableRow : public FTableRowBase
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FRotator RelativeRot = FRotator::ZeroRotator;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FVector RelativeScale = FVector::OneVector;
 };
 
 USTRUCT(BlueprintType)
