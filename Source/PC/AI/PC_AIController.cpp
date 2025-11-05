@@ -6,7 +6,7 @@
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "Navigation/PathFollowingComponent.h"
-
+#include "Components/CapsuleComponent.h"
 #include "PC/Character/PC_NonPlayableCharacter.h"
 #include "PC/Interface/PC_PlayerCharacterInterface.h"
 #include "PC/Utills/PC_GameUtill.h"
@@ -327,21 +327,51 @@ void APC_AIController::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 	
-	AActor* CurrentActor = Cast<AActor>(GetBlackboardComponent()->GetValueAsObject(TEXT("Target")));
-	if (!CurrentActor)
-		return;
-
 	IPC_CharacterAIInterface* AIPawn = Cast<IPC_CharacterAIInterface>(GetPawn());
 	ensure(AIPawn);
 
-	const FAIStimulus SightStimulus = GetAIStimulus(CurrentActor, EPC_AISenseType::Sight);
-	const FAIStimulus DamageStimulus = GetAIStimulus(CurrentActor, EPC_AISenseType::Damage);
+	const float NearRange = 450.f;
+	const float MiddleRange = 1000.f;
+
+	if(FPC_GameUtil::IsDebugDrawing(this))
+	{
+		if(AIPawn->GetEnemyData()->IsHitPartUnit)
+		{
+			//매쉬가 앞으로 기울어져있어서 보정처리
+			FVector Center = GetPawn()->GetActorLocation() + GetPawn()->GetActorRotation().Vector() *
+				Cast<ACharacter>(GetPawn())->GetMesh()->GetRelativeScale3D().GetMax() * 50.f;
+			
+			Center.Z -= Cast<ACharacter>(GetPawn())->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+			DrawDebugSphere(GetWorld(), Center, NearRange, 16, FColor::Yellow, false, -1, 0, 3.f);
+			DrawDebugSphere(GetWorld(), Center, MiddleRange, 16, FColor::Purple, false, -1,0, 3.f);
+		}
+	}
+	
+	AActor* TargetActor = Cast<AActor>(GetBlackboardComponent()->GetValueAsObject(TEXT("Target")));
+	if (!TargetActor)
+		return;
+	
+	FPC_EnemyTableRow* EnemyTableRow = AIPawn->GetEnemyData();
+	ensure(EnemyTableRow);
+
+	const FAIStimulus SightStimulus = GetAIStimulus(TargetActor, EPC_AISenseType::Sight);
+	const FAIStimulus DamageStimulus = GetAIStimulus(TargetActor, EPC_AISenseType::Damage);
 	
 	const bool bLostSight = !SightStimulus.WasSuccessfullySensed() && SightStimulus.IsExpired();
 	const bool bDamageExpired = !DamageStimulus.IsValid() || DamageStimulus.IsExpired();
 
 	if (bLostSight && bDamageExpired)
 	{
-		HandleLoseTarget(CurrentActor);
+		HandleLoseTarget(TargetActor);
+	}
+
+
+	if(EnemyTableRow->IsHitPartUnit)
+	{
+		EPC_ProximityType TargetProximity = FPC_GameUtil::GetTargetProximity(
+			TargetActor, GetPawn(), NearRange, MiddleRange);
+
+		GetBlackboardComponent()->SetValueAsEnum(TEXT("TargetProximityType"), static_cast<uint8>(TargetProximity));
+		
 	}
 }

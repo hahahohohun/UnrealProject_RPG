@@ -68,7 +68,7 @@ public:
 	static EPC_ProximityType GetTargetProximity(AActor* TargetActor, AActor* CurrentActor, float Near, float Middle);
 	static FColor GetHitPartColor(EPC_HitPartType PartType);
 	static FColor GetHitPartColor(FPC_HitPartListRow* ListRow, FName BoneName);
-
+	static FTransform GetSocketTransform(AActor* Actor, FName BoneName); //소켓찾고 없으면 무기소켓도
 private:
 
 };

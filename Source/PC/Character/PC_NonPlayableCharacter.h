@@ -34,12 +34,12 @@ protected:
 	virtual FPC_EnemyTableRow* GetEnemyData() override;;
 
 	virtual void SetAIAttackFinishDelegate(const FAICharacterAttackFinished& InOnAttackFinished) override;
-	virtual void
-	SetAIMoveMontageFinishedDelegate(const FAICharacterMoveMontageFinished& InOnMoveMontageFinished) override;
+	virtual void SetAIMoveMontageFinishedDelegate(const FAICharacterMoveMontageFinished& InOnMoveMontageFinished) override;
 	virtual void Attack(bool bLastAttack) override;
 	virtual void OnAttackMontageEnd(UAnimMontage* Montage, bool bInterrupted);
 	virtual void OnDashBackMontageEnd(UAnimMontage* Montage, bool bInterrupted);
-
+	virtual void OnTurnMontageEnd(UAnimMontage* Montage, bool bInterrupted);
+	
 	virtual void SetAITurnFinishDelegate(const FAICharacterTurnFinished& InOnTurnFinished) override;
 	virtual void TurnInPlace(float TurnAnimDegree) override;
 	virtual void DashBack() override;

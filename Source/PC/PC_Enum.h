@@ -226,6 +226,16 @@ enum class EPC_CameraShakeMagnitudeType : uint8
 };
 
 UENUM(BlueprintType)
+enum class EPC_SkillFxAttachType : uint8
+{
+	None,
+	AttachToBone,
+	AttachToMiddlePos,
+	Surface,
+	Num,
+};
+
+UENUM(BlueprintType)
 enum EPC_ProximityType : uint8
 {
 	None,

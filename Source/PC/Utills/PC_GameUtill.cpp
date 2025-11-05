@@ -500,14 +500,14 @@ void FPC_GameUtil::CameraShake(EPC_CameraShakeMagnitudeType Type)
 		return;
 
 	UPC_GameDataAsset* GameDataAsset = GetGameData();
-	if(GameDataAsset)
+	if (GameDataAsset)
 	{
-		if (APlayerController* PlayerController = UGameplayStatics::GetPlayerController(GEngine->GetCurrentPlayWorld(), 0))
+		if (APlayerController* PlayerController = UGameplayStatics::GetPlayerController(
+			GEngine->GetCurrentPlayWorld(), 0))
 		{
 			PlayerController->ClientStartCameraShake(*GameDataAsset->CameraShakeClass.Find(Type));
 		}
 	}
-
 }
 
 void FPC_GameUtil::PlayStopDilation(const UObject* WorldObject, float Duration, float Dilation)
@@ -516,7 +516,7 @@ void FPC_GameUtil::PlayStopDilation(const UObject* WorldObject, float Duration, 
 	check(World);
 
 	UGameplayStatics::SetGlobalTimeDilation(World, Dilation);
-	
+
 	FTSTicker::GetCoreTicker().AddTicker(
 		FTickerDelegate::CreateLambda([World](float)
 		{
@@ -656,10 +656,10 @@ void FPC_GameUtil::SpawnDamageFloater(ACharacter* DamageCharacter, int32 Damge)
 	{
 		if (UGameInstance* GameInstance = UGameplayStatics::GetGameInstance(GEngine->GetCurrentPlayWorld()))
 		{
-			if(UPC_UISubsystem* UISubsystem = GameInstance->GetSubsystem<UPC_UISubsystem>())
+			if (UPC_UISubsystem* UISubsystem = GameInstance->GetSubsystem<UPC_UISubsystem>())
 			{
 				UPC_DamageFloaterWidget* DamageFloaterWidget = UISubsystem->CreateDamageFloater(DamageCharacter);
-				if(!DamageFloaterWidget) return;
+				if (!DamageFloaterWidget) return;
 
 				DamageFloaterWidget->Init(Damge, WorldPosition, PlayerController);
 			}
@@ -731,7 +731,7 @@ bool FPC_GameUtil::IsDebugDrawing(UObject* WorldContextObject)
 
 EPC_ProximityType FPC_GameUtil::GetTargetProximity(AActor* TargetActor, AActor* CurrentActor, float Near, float Middle)
 {
-	if(!TargetActor || !CurrentActor)
+	if (!TargetActor || !CurrentActor)
 	{
 		return EPC_ProximityType::None;
 	}
@@ -739,9 +739,9 @@ EPC_ProximityType FPC_GameUtil::GetTargetProximity(AActor* TargetActor, AActor* 
 	const FVector TargetLocation = TargetActor->GetActorLocation();
 	const FVector CurrentLocation = CurrentActor->GetActorLocation();
 
-	const float Distance = FVector::Dist(TargetLocation, CurrentLocation);
+	const float Distance = FVector::Dist2D(TargetLocation, CurrentLocation);
 
-	if(Distance > Middle)
+	if (Distance > Middle)
 	{
 		return EPC_ProximityType::Far;
 	}
@@ -749,46 +749,28 @@ EPC_ProximityType FPC_GameUtil::GetTargetProximity(AActor* TargetActor, AActor* 
 	const FVector ForwardVector = CurrentActor->GetActorForwardVector();
 	const FVector RightVector = CurrentActor->GetActorRightVector();
 
-	const FVector ToTargetDir  = (TargetLocation - CurrentLocation).GetSafeNormal();
-	
+	const FVector ToTargetDir = (TargetLocation - CurrentLocation).GetSafeNormal();
+
 	const float ForwardDot = FVector::DotProduct(ForwardVector, ToTargetDir);
 	const float RightDot = FVector::DotProduct(RightVector, ToTargetDir);
-	
-	if(Distance <= Near)
+
+	const float ForwardAngle = FMath::RadiansToDegrees(FMath::Acos(ForwardDot));
+	UE_LOG(LogTemp, Log, TEXT("%f"), Distance);
+	if (Distance <= Near)
 	{
-		if(FMath::RadiansToDegrees(RightDot >= 0.0f))
-		{
-			return EPC_ProximityType::Near_r;
-		}
-		else
-		{
-			return EPC_ProximityType::Near_l;
-		}
+		return RightDot >= 0.f ? EPC_ProximityType::Near_r : EPC_ProximityType::Near_l;
 	}
 
-	if(Distance <= Middle)
+	if (Distance <= Middle)
 	{
-		const float AngleThresold = 45.0f;
+		const float ForwardThres = 0.7f; // cos(45°) ≈ 0.707
 
-		if(FMath::RadiansToDegrees(ForwardDot) > AngleThresold)
-		{
+		if (ForwardDot >= ForwardThres)
 			return EPC_ProximityType::Front;
-		}
-		else if(FMath::RadiansToDegrees(ForwardDot) < -AngleThresold)
-		{
+		else if (ForwardDot <= -ForwardThres)
 			return EPC_ProximityType::Back;
-		}
 		else
-		{
-			if(FMath::RadiansToDegrees(RightDot >= 0.f))
-			{
-				return EPC_ProximityType::Right;
-			}
-			else
-			{
-				return EPC_ProximityType::Left;
-			}
-		}
+			return RightDot >= 0.f ? EPC_ProximityType::Right : EPC_ProximityType::Left;
 	}
 
 	return EPC_ProximityType::None;
@@ -799,24 +781,24 @@ FColor FPC_GameUtil::GetHitPartColor(EPC_HitPartType PartType)
 	FColor Color = FColor::White;
 	switch (PartType)
 	{
-		case EPC_HitPartType::Body:
-			Color = FColor::Green;
-			break;
-		case EPC_HitPartType::Arm_l:
-			Color = FColor::Orange;
-			break;
-		case EPC_HitPartType::Arm_r:
-			Color = FColor::Yellow;
-			break;
-		case EPC_HitPartType::Leg_l:
-			Color = FColor::Cyan;
-			break;
-		case EPC_HitPartType::Leg_r:
-			Color = FColor::Blue;
-			break;
-		case EPC_HitPartType::Head:
-			Color = FColor::Red;
-			break;
+	case EPC_HitPartType::Body:
+		Color = FColor::Green;
+		break;
+	case EPC_HitPartType::Arm_l:
+		Color = FColor::Orange;
+		break;
+	case EPC_HitPartType::Arm_r:
+		Color = FColor::Yellow;
+		break;
+	case EPC_HitPartType::Leg_l:
+		Color = FColor::Cyan;
+		break;
+	case EPC_HitPartType::Leg_r:
+		Color = FColor::Blue;
+		break;
+	case EPC_HitPartType::Head:
+		Color = FColor::Red;
+		break;
 	}
 
 	return Color;
@@ -824,13 +806,62 @@ FColor FPC_GameUtil::GetHitPartColor(EPC_HitPartType PartType)
 
 FColor FPC_GameUtil::GetHitPartColor(FPC_HitPartListRow* ListRow, FName BoneName)
 {
-	for(FPC_HitPartData& HitPartData : ListRow->HitPartDatas)
+	for (FPC_HitPartData& HitPartData : ListRow->HitPartDatas)
 	{
-		if(HitPartData.HitPartName == BoneName)
+		if (HitPartData.HitPartName == BoneName)
 		{
 			return GetHitPartColor(HitPartData.HitPartType);
 		}
 	}
 
 	return FColor::White;
+}
+
+FTransform FPC_GameUtil::GetSocketTransform(AActor* Actor, FName BoneName)
+{
+	IPC_CharacterInterface* CharacterInterface = Cast<IPC_CharacterInterface>(Actor);
+	if (!CharacterInterface)
+		return FTransform();
+
+	ACharacter* Character = Cast<ACharacter>(Actor);
+	if (!Character)
+		return FTransform();
+
+	USkeletalMeshComponent* SkeletalMeshComponent = Character->GetMesh();
+	if (!SkeletalMeshComponent)
+		return FTransform();
+
+	USkeletalMesh* SkeletonMesh = SkeletalMeshComponent->GetSkeletalMeshAsset();
+	if (!SkeletonMesh)
+		return FTransform();
+
+	if (SkeletalMeshComponent->DoesSocketExist(BoneName))
+	{
+		return SkeletalMeshComponent->GetSocketTransform(BoneName);
+	}
+	else
+	{
+		UStaticMeshComponent* StaticMeshComponent_l = CharacterInterface->GetWeapon_L_StaticMeshComponent();
+		UStaticMeshComponent* StaticMeshComponent_r = CharacterInterface->GetWeapon_R_StaticMeshComponent();
+
+		if(!StaticMeshComponent_l && !StaticMeshComponent_r)
+			return FTransform();
+
+		UStaticMesh* StaticMesh = StaticMeshComponent_l->GetStaticMesh();
+		if(StaticMesh)
+		{
+			if(StaticMesh->FindSocket(BoneName))
+				return StaticMeshComponent_l->GetSocketTransform(BoneName);
+		}
+		
+		StaticMesh = StaticMeshComponent_r->GetStaticMesh();
+		if(StaticMesh)
+		{
+			if(StaticMesh->FindSocket(BoneName))
+				return StaticMeshComponent_r->GetSocketTransform(BoneName);
+		}
+
+		return FTransform();
+
+	}
 }

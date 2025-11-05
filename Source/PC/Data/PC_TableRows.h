@@ -39,7 +39,6 @@ struct FPC_HitPartUnitAttackAnims
 
 	UPROPERTY(EditAnywhere)
 	TArray<TObjectPtr<UAnimMontage>> AnimsMontages;
-	
 };
 
 
@@ -47,13 +46,15 @@ USTRUCT(BlueprintType)
 struct FPC_CharacterStatTableRow : public FTableRowBase
 {
 	GENERATED_BODY()
-	
-	public:
-	FPC_CharacterStatTableRow() :MaxHp(0.0f), MaxStamina(0.0f), Attack(0.0f), MovementSpeed(0.0f){}
-	
+
+public:
+	FPC_CharacterStatTableRow() : MaxHp(0.0f), MaxStamina(0.0f), Attack(0.0f), MovementSpeed(0.0f)
+	{
+	}
+
 	UPROPERTY(EditAnywhere)
 	uint32 CharacterId;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Stat")
 	float MaxHp;
 
@@ -65,7 +66,7 @@ struct FPC_CharacterStatTableRow : public FTableRowBase
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Stat")
 	float MaxStamina;
-	
+
 	FPC_CharacterStatTableRow operator+(const FPC_CharacterStatTableRow& Other) const
 	{
 		FPC_CharacterStatTableRow Result;
@@ -74,12 +75,10 @@ struct FPC_CharacterStatTableRow : public FTableRowBase
 		Result.Attack = this->Attack + Other.Attack;
 		Result.MaxStamina = this->MaxStamina + Other.MaxStamina;
 		Result.MovementSpeed = this->MovementSpeed + Other.MovementSpeed;
-		
+
 		return Result;
 	}
-
 };
-
 
 
 USTRUCT(BlueprintType)
@@ -89,7 +88,7 @@ struct FPC_EnemyTableRow : public FTableRowBase
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Type)
 	int32 EnemyType;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	USkeletalMesh* SkeletalMesh = nullptr;
 
@@ -101,13 +100,13 @@ struct FPC_EnemyTableRow : public FTableRowBase
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TObjectPtr<UBehaviorTree> BehaviorTree = nullptr;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float MovementSpeed_Walk = 0.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float MovementSpeed_Run = 0.f;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float MovementSpeed_Strafe = 0.f;
 
@@ -122,7 +121,7 @@ struct FPC_EnemyTableRow : public FTableRowBase
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float SightAngle = 0.f;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float AttackRange = 0.f;
 
@@ -140,25 +139,22 @@ struct FPC_EnemyTableRow : public FTableRowBase
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UAnimMontage> AttackBreakAnim = nullptr; //공격이 막혔을때 ex)플레이어 Guard중 
-	
+
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UAnimMontage> Left90TurnAnim = nullptr;
 
 	UPROPERTY(EditAnywhere)
-	TObjectPtr<UAnimMontage> Left180TurnAnim = nullptr;
+	TObjectPtr<UAnimMontage> Turn180Anim = nullptr;
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UAnimMontage> Right90TurnAnim = nullptr;
 
 	UPROPERTY(EditAnywhere)
-	TObjectPtr<UAnimMontage> Right180TurnAnim = nullptr;
+	bool IsBoss = false;
 
 	UPROPERTY(EditAnywhere)
-	bool IsBoss = false;
-	
-	UPROPERTY(EditAnywhere)
 	bool IsHitPartUnit = false;
-	
+
 	UPROPERTY(EditAnywhere)
 	bool HasSuperAmor = false;
 
@@ -171,10 +167,10 @@ USTRUCT(BlueprintType)
 struct FPC_WeaponTableRow : public FTableRowBase
 {
 	GENERATED_BODY()
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	uint8 WeaponId = 0;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TObjectPtr<UStaticMesh> WeaponMesh = nullptr;
 
@@ -216,7 +212,7 @@ struct FPC_SkillTableRow : public FTableRowBase
 
 	UPROPERTY(EditAnywhere)
 	UNiagaraSystem* SkillActiveFx;
-	
+
 	UPROPERTY(EditAnywhere)
 	TArray<FPC_ExecData> ExecDatas;
 };
@@ -228,7 +224,7 @@ struct FPC_ExecTableRow : public FTableRowBase
 
 	UPROPERTY(EditAnywhere)
 	uint32 DataId = 0;
-	
+
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UAnimMontage> SkillAnim;
 
@@ -243,35 +239,35 @@ struct FPC_ExecTableRow : public FTableRowBase
 
 	UPROPERTY(EditAnywhere)
 	FRotator DecalRelativeRot = FRotator::ZeroRotator;
-	
+
 	UPROPERTY(EditAnywhere)
 	UNiagaraSystem* ExecFX_Niagara_Start = nullptr;
-	
+
 	UPROPERTY(EditAnywhere)
 	UParticleSystem* ExecFX_Cascade_Start = nullptr;
 
 	UPROPERTY(EditAnywhere)
 	UNiagaraSystem* ExecFX_Niagara_End = nullptr;
-	
+
 	UPROPERTY(EditAnywhere)
 	UParticleSystem* ExecFX_Cascade_End = nullptr;
 
 	//받았을때 데미지 이펙트
 	UPROPERTY(EditAnywhere)
 	UNiagaraSystem* HitFX_Niagara = nullptr;
-	
+
 	UPROPERTY(EditAnywhere)
 	UParticleSystem* HitFX_Cascade = nullptr;
 	//
 	UPROPERTY(EditAnywhere)
 	float HitEffectScale = 1.f;
-	
+
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UCurveFloat> ExeCurve;
-	
+
 	UPROPERTY(EditAnywhere)
 	float Duration = 0.f;
-	
+
 	UPROPERTY(EditAnywhere)
 	float Damage = 0.f;
 
@@ -304,15 +300,15 @@ struct FPC_ExecTableRow : public FTableRowBase
 
 	UPROPERTY(EditAnywhere)
 	float ExecCollisionProperty_1 = 0;
-	
+
 	UPROPERTY(EditAnywhere)
 	float ExecCollisionProperty_2 = 0;
 
 	UPROPERTY(EditAnywhere)
 	float CrowdControlId = INDEX_NONE;
-	
+
 	UPROPERTY(EditAnywhere)
-	bool bAttachFx = false;
+	EPC_SkillFxAttachType SkillFxAttachType = EPC_SkillFxAttachType::None;
 
 	UPROPERTY(EditAnywhere)
 	FName SkillPosBoneName = NAME_None;
@@ -334,19 +330,19 @@ struct FPC_ExecTableRow : public FTableRowBase
 };
 
 USTRUCT(BlueprintType)
-struct FPC_SkillObjectTableRow : public  FTableRowBase
+struct FPC_SkillObjectTableRow : public FTableRowBase
 {
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere)
 	bool IsCollisionDestroy = true;
-	
+
 	UPROPERTY(EditAnywhere)
 	uint32 DataId = 0;
 
 	UPROPERTY(EditAnywhere)
 	float Damage = 0;
-	
+
 	UPROPERTY(EditAnywhere)
 	EPC_SkillObjectType SkillObjectType = EPC_SkillObjectType::None;
 
@@ -367,7 +363,7 @@ struct FPC_CrowdControlTableRow : public FTableRowBase
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UAnimMontage> CrowdControlAnim = nullptr;
-	
+
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UNiagaraSystem> CrowdControlFX = nullptr;
 
@@ -389,13 +385,13 @@ USTRUCT()
 struct FPC_StatusEffectTableRow : public FTableRowBase
 {
 	GENERATED_BODY()
-	
+
 	UPROPERTY(EditAnywhere)
 	uint32 DataId = 0;
 
 	UPROPERTY(EditAnywhere)
 	EPC_StatusEffectApplyType EffectApplyType = EPC_StatusEffectApplyType::Instant;
-	
+
 	UPROPERTY(EditAnywhere)
 	EPC_StatusEffectType StatusType = EPC_StatusEffectType::None;
 
@@ -404,13 +400,13 @@ struct FPC_StatusEffectTableRow : public FTableRowBase
 
 	UPROPERTY(EditAnywhere)
 	EPC_ValueMode ValueMode = EPC_ValueMode::Additive;
-	
+
 	UPROPERTY(EditAnywhere)
-	float Duration = 0; 
+	float Duration = 0;
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UTexture2D> Icon; // UI 아이콘
-	
+
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UNiagaraSystem> EffectFX_Start = nullptr;
 
@@ -419,15 +415,13 @@ struct FPC_StatusEffectTableRow : public FTableRowBase
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UNiagaraSystem> EffectFx_Cascade = nullptr;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FVector RelativePos_EffectFx_Cascade = FVector::ZeroVector;
-
-	
 };
 
 USTRUCT(BlueprintType)
-struct FPC_AnimMontageRootMotionDistanceRow : public  FTableRowBase
+struct FPC_AnimMontageRootMotionDistanceRow : public FTableRowBase
 {
 	GENERATED_BODY()
 
@@ -440,7 +434,7 @@ struct FPC_AnimMontageRootMotionDistanceRow : public  FTableRowBase
 
 
 USTRUCT(BlueprintType)
-struct FPC_PhysicSkeletonBoneNameRow : public  FTableRowBase
+struct FPC_PhysicSkeletonBoneNameRow : public FTableRowBase
 {
 	GENERATED_BODY()
 
@@ -462,4 +456,3 @@ struct FPC_HitPartListRow : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<FPC_HitPartData> HitPartDatas;
 };
-

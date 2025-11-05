@@ -37,17 +37,13 @@ EBTNodeResult::Type UPC_BTTask_TurnToTarget::ExecuteTask(UBehaviorTreeComponent&
 	{
 		AIPawn->TurnInPlace(90.f);
 	}
-	else if (YawDiff >= 135.f)
-	{
-		AIPawn->TurnInPlace(180.f);
-	}
 	else if (YawDiff < -45.f && YawDiff > -135.f)
 	{
 		AIPawn->TurnInPlace(-90.f);
 	}
-	else if (YawDiff < -135.0f)
+	else if(YawDiff >= 135.f && YawDiff < -135.f)
 	{
-		AIPawn->TurnInPlace(-180.f);
+		AIPawn->TurnInPlace(180.f);
 	}
 	else
 	{

@@ -190,7 +190,7 @@ void APC_NonPlayableCharacter::Tick(float DeltaTime)
 		if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
 		{
 			const float CurveValue = AnimInstance->GetCurveValue(TEXT("DistanceToPivot"));
-			UE_LOG(LogTemp, Log, TEXT("%.2f"), CurveValue);
+			
 			//에셋 자체가 -1이기 때문에
 			const float MaxCurveVal = -FMath::Abs(TurnDegree);
 
@@ -308,6 +308,12 @@ void APC_NonPlayableCharacter::OnDashBackMontageEnd(UAnimMontage* Montage, bool 
 	OnMoveMontageFinished.ExecuteIfBound();
 }
 
+void APC_NonPlayableCharacter::OnTurnMontageEnd(UAnimMontage* Montage, bool bInterrupted)
+{
+	OnTurnFinished.ExecuteIfBound();
+	IsTurning = false;
+}
+
 void APC_NonPlayableCharacter::SetAITurnFinishDelegate(const FAICharacterTurnFinished& InOnTurnFinished)
 {
 	OnTurnFinished = InOnTurnFinished;
@@ -315,27 +321,33 @@ void APC_NonPlayableCharacter::SetAITurnFinishDelegate(const FAICharacterTurnFin
 
 void APC_NonPlayableCharacter::TurnInPlace(float TurnAnimDegree)
 {
-	//check(EnemyTableRow);
-	//if (TurnAnimDegree == 90.f)
-	//	TurnAnimMontage = EnemyTableRow->Left90TurnAnim;
-	//else if (TurnAnimDegree == 180.f)
-	//	TurnAnimMontage = EnemyTableRow->Left180TurnAnim;
-	//else if (TurnAnimDegree == -90.f)
-	//	TurnAnimMontage = EnemyTableRow->Right90TurnAnim;
-	//else if (TurnAnimDegree == -180.f)
-	//	TurnAnimMontage = EnemyTableRow->Right180TurnAnim;
-	//
-	//UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	//check(AnimInstance);
-	//
-	//IsTurning = true;
-	//TurnStartYaw = GetActorRotation().Yaw;
-	//TurnDegree = TurnAnimDegree;
-	//
-	//PlayAnimMontage(TurnAnimMontage);
-	//
-	//FOnMontageEnded EndDelegate = FOnMontageEnded::CreateUObject(this, &ThisClass::OnAttackMontageEnd);
-	//GetMesh()->GetAnimInstance()->Montage_SetEndDelegate(EndDelegate);
+	check(EnemyTableRow);
+
+	UAnimMontage* TurnAnimMontage = nullptr;
+	if(TurnAnimDegree == 90.f)
+	{
+		TurnAnimMontage = EnemyTableRow->Left90TurnAnim;
+	}
+	else if(TurnAnimDegree == 180.f)
+	{
+		TurnAnimMontage = EnemyTableRow->Turn180Anim;
+	}
+	else if(TurnAnimDegree == -90.f)
+	{
+		TurnAnimMontage = EnemyTableRow->Right90TurnAnim;
+	}
+	
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	check(AnimInstance);
+	
+	IsTurning = true;
+	TurnStartYaw = GetActorRotation().Yaw;
+	TurnDegree = TurnAnimDegree;
+	
+	PlayAnimMontage(TurnAnimMontage);
+	
+	FOnMontageEnded EndDelegate = FOnMontageEnded::CreateUObject(this, &ThisClass::OnTurnMontageEnd);
+	GetMesh()->GetAnimInstance()->Montage_SetEndDelegate(EndDelegate);
 }
 
 void APC_NonPlayableCharacter::DashBack()
