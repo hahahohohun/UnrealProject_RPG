@@ -59,9 +59,11 @@ public:
 	static void SpawnDamageFloater(ACharacter* DamageCharacter, int32 Damge);
 	
 	static FVector FindSurfacePos(ACharacter* Character, FVector& CurrentPos);
-
-	static bool IsDebugDrawing(UObject* WorldContextObject);
 	
+	//디버그용
+	static bool IsDebugDrawing(UObject* WorldContextObject);
+	static void AddOnScreenDebugMessage(FString msg);
+	//
 	template <typename T>
 	static TArray<T*> GetAllRows(EPC_DataTableType DataTableType);
 

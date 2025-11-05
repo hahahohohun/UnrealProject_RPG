@@ -52,7 +52,6 @@ APC_BaseCharacter::APC_BaseCharacter()
 	Weapon_R_StaticComponent->SetupAttachment(GetMesh());
 
 	SkillComponent = CreateDefaultSubobject<UPC_SkillComponent>(TEXT("SkillComponent"));
-
 	WidgetComponent = CreateDefaultSubobject<UPC_WidgetComponent>(TEXT("WidgetComponent"));
 	WidgetComponent->SetupAttachment(GetMesh());
 

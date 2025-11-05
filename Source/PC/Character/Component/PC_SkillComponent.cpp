@@ -275,7 +275,7 @@ void UPC_SkillComponent::ProcessNonTargetExec(float DeltaTime, FPC_ExecInfo& Exe
 	FPC_ExecTableRow* ExecTableRow = FPC_GameUtil::GetExecData(ExecInfo.ExecData->ExecDataId);
 	check(ExecTableRow);
 
-	if (ExecTableRow->ExecType == EPC_ExecType::GravityOrbProjectile)
+	if (ExecTableRow->ExecType == EPC_ExecType::ArcProjectile)
 	{
 		UWorld* World = GetWorld();
 		if (!World) return;
@@ -313,79 +313,38 @@ void UPC_SkillComponent::ProcessNonTargetExec(float DeltaTime, FPC_ExecInfo& Exe
 			Obj->OwnerCharacter = OwnerCharacter.Get();
 			Obj->SkillObjectId = ExecTableRow->ExecProperty_0;
 			Obj->FinishSpawning(Transform);
-
 			ExecInfo.SpawnedSkillObject = Obj;
-			ExecInfo.bPathDrawing = true; // 경로 표시 시작
-			ExecInfo.PathUpdateAcc = 0.f;
-
-			if (ExecInfo.bPathDrawing)
+			
+			if (ExecInfo.SpawnedSkillObject != nullptr)
 			{
-				ExecInfo.PathUpdateAcc += DeltaTime;
-				const float UpdateInterval = 1.f / 360.f; // 60Hz 표시(원하면 30Hz로)
-
-				if (ExecInfo.PathUpdateAcc >= UpdateInterval - KINDA_SMALL_NUMBER)
+				if (AActor* Spawned = ExecInfo.SpawnedSkillObject.Get())
 				{
-					UE_LOG(LogTemp, Display, TEXT("Skill Spawned"));
-					ExecInfo.PathUpdateAcc = 0.f;
-
-					// 시작점/현재 속도 구하기
-					FVector CurPos;
-					FVector CurVel;
-					if (AActor* Spawned = ExecInfo.SpawnedSkillObject.Get())
+					if (UProjectileMovementComponent* PM = Spawned->FindComponentByClass<
+						UProjectileMovementComponent>())
 					{
-						CurPos = Spawned->GetActorLocation();
-
-						if (UProjectileMovementComponent* PM = Spawned->FindComponentByClass<
-							UProjectileMovementComponent>())
+						FVector Location = SpawnLoc;
+						FRotator Rotation = SpawnRot;
+						if (IPC_PlayerCharacterInterface* PlayerCharacterInterface = Cast<IPC_PlayerCharacterInterface>(
+							GetOwner()))
 						{
-							CurVel = PM->Velocity;
+							if (UPC_ArcSplinePreviewComponent* ArcSplinePreview = PlayerCharacterInterface->
+								GetArcSplinePreviewComponent())
+							{
+								if (ArcSplinePreview->GetLastPathPoint() != FVector::ZeroVector)
+								{
+									// 시작점을 카메라 앞쪽으로 약간 빼서 자기 몸/벽과의 충돌을 피함
+									const FVector Forward = Rotation.Vector();
+									const float ForwardOffset = 30.f; // 필요 시 조정
+									const float UpOffset = -5.f; // 미세 보정
+									const FVector StartPos = Location + Forward * ForwardOffset + FVector(
+										0, 0, UpOffset);
+									const float Speed = 2200.f; // 프리뷰 전용
+									const FVector StartVel = Forward * Speed;
+										
+									PM->Velocity = StartVel;
+								}
+							}
 						}
-					}
-					else
-					{
-						// 예외: 투사체가 사라졌다면 경로 그리기 종료
-						ExecInfo.bPathDrawing = false;
-						ExecInfo.PathPoints.Reset();
-						return;
-					}
-
-					// PredictProjectilePath
-					const float GravityZ = (ExecTableRow->ExecProperty_1 != 0.f)
-						                       ? ExecTableRow->ExecProperty_1
-						                       : -980.f;
-					const float Radius = (ExecTableRow->ExecCollisionProperty_0 > 0.f)
-						                     ? ExecTableRow->ExecCollisionProperty_0
-						                     : 10.f;
-					const float MaxSim = (ExecTableRow->Duration > 0.f) ? ExecTableRow->Duration : 2.5f;
-					const float SimFreq = 20.f;
-
-					FPredictProjectilePathParams P;
-					P.StartLocation = CurPos;
-					P.LaunchVelocity = CurVel;
-					P.ProjectileRadius = Radius;
-					P.bTraceWithCollision = true;
-					P.OverrideGravityZ = GravityZ;
-					P.MaxSimTime = MaxSim;
-					P.SimFrequency = SimFreq;
-					P.TraceChannel = ECC_Visibility;
-					P.ActorsToIgnore.Add(OwnerCharacter.Get());
-
-					if (ExecInfo.SpawnedSkillObject.IsValid())
-						P.ActorsToIgnore.Add(ExecInfo.SpawnedSkillObject.Get());
-
-					FPredictProjectilePathResult R;
-					const bool bHit = UGameplayStatics::PredictProjectilePath(this, P, R);
-
-					// 포인트 캐시
-					ExecInfo.PathPoints.Reset(R.PathData.Num());
-					for (const auto& Pt : R.PathData)
-						ExecInfo.PathPoints.Add(Pt.Location);
-
-					// (가벼운 방법) 디버그 라인으로 즉시 그리기
-					for (int32 i = 1; i < ExecInfo.PathPoints.Num(); ++i)
-					{
-						DrawDebugLine(World, ExecInfo.PathPoints[i - 1], ExecInfo.PathPoints[i],
-						              FColor::Cyan, false, /*LifeTime*/ 1.f, 0, /*Thickness*/ 10.f);
 					}
 				}
 			}

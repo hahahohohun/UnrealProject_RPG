@@ -729,6 +729,11 @@ bool FPC_GameUtil::IsDebugDrawing(UObject* WorldContextObject)
 	return GameMode->DebugDrawing;
 }
 
+void FPC_GameUtil::AddOnScreenDebugMessage(FString msg)
+{
+	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, msg);
+}
+
 EPC_ProximityType FPC_GameUtil::GetTargetProximity(AActor* TargetActor, AActor* CurrentActor, float Near, float Middle)
 {
 	if (!TargetActor || !CurrentActor)

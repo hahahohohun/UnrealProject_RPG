@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "PC/Character/Component/PC_ArcSplinePreviewComponent.h"
 #include "PC/Character/Component/PC_InteractionComponent.h"
 #include "UObject/Interface.h"
 #include "PC_PlayerCharacterInterface.generated.h"
@@ -32,6 +33,7 @@ public:
 	virtual UPC_ActionComponent* GetActionComponent() const = 0;
 	virtual UPC_LockOnComponent* GetLockOnComponent() const = 0;
 	virtual UPC_InteractionComponent* GetInteractionComponent() const = 0;
+	virtual UPC_ArcSplinePreviewComponent* GetArcSplinePreviewComponent() const = 0;
 	virtual UPC_BattleComponent* GetBattleComponent() const = 0;
 	virtual UPC_PlayerDataAsset* GetPlayerData() const = 0;
 	

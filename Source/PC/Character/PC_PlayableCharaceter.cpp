@@ -55,6 +55,8 @@ APC_PlayableCharaceter::APC_PlayableCharaceter()
 	InteractionComponent = CreateDefaultSubobject<UPC_InteractionComponent>(TEXT("InteractionComponent"));
 	InteractionOverlapComponent = CreateDefaultSubobject<USphereComponent>(TEXT("InteractionOverlapComponent"));
 	InteractionOverlapComponent->SetupAttachment(RootComponent);
+
+	ArcSplinePreviewComponent = CreateDefaultSubobject<UPC_ArcSplinePreviewComponent>(TEXT("ArcSplinePreviewComponent"));
 }
 
 void APC_PlayableCharaceter::BeginPlay()
@@ -106,9 +108,9 @@ void APC_PlayableCharaceter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 		EnhancedInputComponent->BindAction(InputData->Num4Action, ETriggerEvent::Triggered, this, &ThisClass::Num4);
 
 		//
+		EnhancedInputComponent->BindAction(InputData->Num5Action, ETriggerEvent::Ongoing, this, &ThisClass::Num5Ongoing);
 		EnhancedInputComponent->BindAction(InputData->Num5Action, ETriggerEvent::Started, this, &ThisClass::Num5Started);
-		EnhancedInputComponent->BindAction(InputData->Num5Action, ETriggerEvent::Triggered, this, &ThisClass::Num5Triggered);
-		EnhancedInputComponent->BindAction(InputData->Num5Action, ETriggerEvent::Completed, this, &APC_PlayableCharaceter::Num5Completed);
+		EnhancedInputComponent->BindAction(InputData->Num5Action, ETriggerEvent::Completed, this, &APC_PlayableCharaceter::Num5Released);
 		EnhancedInputComponent->BindAction(InputData->Num5Action, ETriggerEvent::Canceled, this, &ThisClass::Num5Canceled);
 		
 		EnhancedInputComponent->BindAction(InputData->DebugDrawAction, ETriggerEvent::Triggered, this, &ThisClass::DebugDraw);
@@ -280,7 +282,8 @@ void APC_PlayableCharaceter::Num3(const FInputActionValue& Value)
 }
 
 void APC_PlayableCharaceter::Num4(const FInputActionValue& Value)
-{	const bool IsPressed = Value[0] != 0.f;
+{
+	const bool IsPressed = Value[0] != 0.f;
 	if (!IsPressed)
 		return;
 	
@@ -296,17 +299,49 @@ void APC_PlayableCharaceter::Num4(const FInputActionValue& Value)
 	SkillComponent->RequestPlaySkill(SkillId);
 }
 
+void APC_PlayableCharaceter::Num5Ongoing(const FInputActionValue& Value)
+{
+	const bool IsPressed = Value[0] != 0.f;
+	if (IsPressed)
+		return;
+
+	const uint32 SkillId = FPC_GameUtil::GetSkillId(PlayerData,
+	EPC_SkillSlotType::Num_5,
+	BattleComponent->CharacterStanceType,
+	ActionComponent->IsInSpecialAction);
+	
+	if(SkillId > 0)
+	{
+		check(ArcSplinePreviewComponent);
+		
+		USkeletalMeshComponent* SkeletalMeshComponent = GetMesh();
+		check(SkeletalMeshComponent);
+
+		FVector Location = SkeletalMeshComponent->GetSocketLocation(TEXT("hand_l"));
+		FRotator Rotation = GetControlRotation();
+		
+		// 시작점을 카메라 앞쪽으로 약간 빼서 자기 몸/벽과의 충돌을 피함
+		const FVector Forward = Rotation.Vector();
+		const float   ForwardOffset = 30.f;   // 필요 시 조정
+		const float   UpOffset      = -5.f;   // 미세 보정
+		const FVector StartPos = Location + Forward * ForwardOffset + FVector(0,0,UpOffset);
+		const float   Speed    = 2200.f; // 프리뷰 전용
+		const FVector StartVel = Forward * Speed;
+
+		ArcSplinePreviewComponent->UpdateFromStartVelocity(StartPos, StartVel);
+	}
+}
+
 void APC_PlayableCharaceter::Num5Started(const FInputActionValue& Value)
 {
-	UE_LOG(LogTemp, Log, TEXT(" Num5Started"));
+	FPC_GameUtil::AddOnScreenDebugMessage(TEXT("Num5Started"));
+	
+	check(ArcSplinePreviewComponent);
+	ArcSplinePreviewComponent->BeginPreview();
+	ArcSplinePreviewComponent->AddActorToIgnore(this);
 }
 
-void APC_PlayableCharaceter::Num5Triggered(const FInputActionValue& Value)
-{
-	UE_LOG(LogTemp, Log, TEXT(" Num5Triggered"));
-}
-
-void APC_PlayableCharaceter::Num5Completed(const FInputActionValue& Value)
+void APC_PlayableCharaceter::Num5Released(const FInputActionValue& Value)
 {
 	const bool IsPressed = Value[0] != 0.f;
 	if (IsPressed)
@@ -318,6 +353,8 @@ void APC_PlayableCharaceter::Num5Completed(const FInputActionValue& Value)
 	ActionComponent->IsInSpecialAction);
 	
 	SkillComponent->RequestPlaySkill(SkillId);
+	check(ArcSplinePreviewComponent);
+	ArcSplinePreviewComponent->EndPreview();
 }
 
 void APC_PlayableCharaceter::Num5Canceled(const FInputActionValue& Value)

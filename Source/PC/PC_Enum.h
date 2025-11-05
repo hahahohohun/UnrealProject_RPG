@@ -155,7 +155,7 @@ enum class EPC_ExecType : uint8
 	SentinelProjectile, //감지형 프로젝타일
 	Dot,
 	Pushback,
-	GravityOrbProjectile,        // 
+	ArcProjectile,        // 
 	Num,
 };
 
@@ -188,6 +188,7 @@ enum class EPC_CrowdControlType : uint8
 	Pushback,
 	Stun,
 	Freeze,
+	Pull, //끌어당기기
 	Num
 };
 

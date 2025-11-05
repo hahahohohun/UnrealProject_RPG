@@ -55,9 +55,9 @@ protected:
 	void Num4(const FInputActionValue& Value);
 
 	//TODO NUm1부터 통합처리
+	void Num5Ongoing(const FInputActionValue& Value);
 	void Num5Started(const FInputActionValue& Value);
-	void Num5Triggered(const FInputActionValue& Value);
-	void Num5Completed(const FInputActionValue& Value);
+	void Num5Released(const FInputActionValue& Value);
 	void Num5Canceled(const FInputActionValue& Value);
 	
 	void DebugDraw(const FInputActionValue& Value);
@@ -84,7 +84,7 @@ public:
 	virtual UPC_LockOnComponent* GetLockOnComponent() const override { return LockOnComponent; }
 	virtual UPC_InteractionComponent* GetInteractionComponent() const override { return InteractionComponent; }
 	virtual UPC_StatComponent* GetStatComponent() const override { return StatComponent; }
-
+	virtual UPC_ArcSplinePreviewComponent* GetArcSplinePreviewComponent() const override { return ArcSplinePreviewComponent; }
 	virtual UPC_BattleComponent* GetBattleComponent() const override { return BattleComponent; }
 	virtual UPC_PlayerDataAsset* GetPlayerData() const override { return PlayerData; }
 public:
@@ -114,6 +114,9 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Component, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<USphereComponent> InteractionOverlapComponent;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Component, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UPC_ArcSplinePreviewComponent> ArcSplinePreviewComponent;
+	
 	/** MappingContext */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputMappingContext* DefaultMappingContext;
