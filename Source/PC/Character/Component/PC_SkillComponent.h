@@ -71,7 +71,7 @@ public:
 	virtual void BeginPlay() override;
 
 	void RequestPlaySkill(uint32 SkillId);
-	void FindTarget(uint32 SkillId, TArray<TWeakObjectPtr<AActor>>& Targets);
+	void FindTarget(uint32 SkillId, TArray<TWeakObjectPtr<AActor>>& Targets, bool sort);
 	bool CanPlaySkill(uint32 SkillId);
 	void PlaySkill(FPC_SkillInfo& SkillInfo);
 

@@ -69,6 +69,9 @@ protected:
 	virtual void OnStartSkill(uint32 SkillId) override;
 	virtual void OnEndSkill(uint32 SkillId) override;
 
+	virtual bool IsGuarding(FVector ImpactPoint) override;
+	virtual bool IsRolling() override;
+
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = camera, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UPC_WidgetComponent> IndicatorComponent;
@@ -112,4 +115,9 @@ private:
 
 	TArray<TObjectPtr<UAnimMontage>> AlreadyPlayedAttackMontages;
 	bool bLastAttacking; //마지막 공격
+
+		
+	UPROPERTY(EditAnywhere)
+	bool IsDummy = false; //더미, 테스트용
+	
 };

@@ -95,7 +95,7 @@ private:
 	void EnsurePool();
 
 private:
-	UPROPERTY(Transient)
+	UPROPERTY(EditAnywhere, Transient)
 	USplineComponent* ArcSpline = nullptr;
 
 	UPROPERTY(Transient)

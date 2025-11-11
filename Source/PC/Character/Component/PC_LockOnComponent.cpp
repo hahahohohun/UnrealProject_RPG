@@ -19,7 +19,7 @@ void UPC_LockOnComponent::TickComponent(float DeltaTime, enum ELevelTick TickTyp
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if(IsLockOnMode())
+	if (IsLockOnMode())
 	{
 		ACharacter* Owner = Cast<ACharacter>(GetOwner());
 		check(Owner);
@@ -27,20 +27,20 @@ void UPC_LockOnComponent::TickComponent(float DeltaTime, enum ELevelTick TickTyp
 		APlayerController* PlayerController = Cast<APlayerController>(Owner->GetController());
 		check(PlayerController);
 
-		if(LockedTarget.Get())
+		if (LockedTarget.Get())
 		{
 			const FVector LockTargetLocation = LockedTarget->GetActorLocation();
 			const FVector OwnerLocation = GetOwner()->GetActorLocation();
 
-			const FRotator CurrentRotation = PlayerController->GetControlRotation();
-			const FRotator TargetRot = (LockTargetLocation - OwnerLocation).Rotation();
+			const FRotator CurrentRot = PlayerController->GetControlRotation();
+			FRotator TargetRot = (LockTargetLocation - OwnerLocation).Rotation();
 
-			const FRotator NewRot = FMath::RInterpTo(CurrentRotation, TargetRot, DeltaTime, 10.f);
+			TargetRot.Pitch = FMath::Clamp(TargetRot.Pitch, -15.f, 5.f); // 혹은 고정값 보간
+			FRotator NewRot = FMath::RInterpTo(CurrentRot, TargetRot, DeltaTime, 10.f);
 
 			PlayerController->SetControlRotation(NewRot);
 		}
 	}
-	
 }
 
 void UPC_LockOnComponent::LockOn()

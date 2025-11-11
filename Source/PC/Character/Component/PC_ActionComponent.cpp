@@ -5,6 +5,7 @@
 #include "AnalyticsProviderETEventCache.h"
 #include "PC_BattleComponent.h"
 #include "PC_LockOnComponent.h"
+#include "Components/ArrowComponent.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -13,10 +14,12 @@
 #include "PC/Interface/PC_CharacterAIInterface.h"
 #include "PC/Interface/PC_PlayerCharacterInterface.h"
 #include "PC/SkillObject/PC_SkillObject.h"
+#include "Components/ArrowComponent.h"
 #include "PC/Utills/PC_GameUtill.h"
 
 UPC_ActionComponent::UPC_ActionComponent()
 {
+	
 	PrimaryComponentTick.bCanEverTick = true;
 }
 
@@ -34,11 +37,21 @@ void UPC_ActionComponent::BeginPlay()
 
 	TArray<UAnimMontage*>& AttackMontages = PlayerData->AttackMontages;
 	AttackMaxCount = AttackMontages.Num();
+	
+	if (ACharacter* C = Cast<ACharacter>(GetOwner()))
+	{
+		DebugInputArrow = NewObject<UArrowComponent>(C, TEXT("InputDirArrow"));
+		DebugInputArrow->SetupAttachment(C->GetRootComponent());
+		DebugInputArrow->RegisterComponent();
 
+		DebugInputArrow->ArrowSize = 1.f;              // 작게
+		DebugInputArrow->SetHiddenInGame(true);
+		DebugInputArrow->SetRelativeScale3D(FVector(1.f, 1.f, 1.f));
+	}
 }
 
 void UPC_ActionComponent::TickComponent(float DeltaTime, ELevelTick TickType,
-	FActorComponentTickFunction* ThisTickFunction)
+                                        FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
@@ -50,11 +63,61 @@ void UPC_ActionComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 
 		const FRotator CurrentRot = OwnerCharacter->GetActorRotation();
 		const FRotator NewRot = FMath::RInterpTo(CurrentRot, LookAtRot, GetWorld()->GetDeltaSeconds(), 10.f);
-			 	
+
 		OwnerCharacter->SetActorRotation(NewRot);
 	}
-	
+
 	Tick_Running(DeltaTime);
+
+	if (!DebugInputArrow)
+		return;
+
+	// 입력 없으면 숨김
+	if (InputVector.IsNearlyZero() || !FPC_GameUtil::IsDebugDrawing(this))
+	{
+		DebugInputArrow->SetHiddenInGame(true);
+		return;
+	}
+
+	DebugInputArrow->SetHiddenInGame(false);
+
+	// 1️⃣ 카메라 방향 기준 변환
+	const FRotator ControlRot = OwnerCharacter->GetControlRotation();
+	const FRotator YawOnly(0.f, ControlRot.Yaw, 0.f);
+	const FVector Forward = FRotationMatrix(YawOnly).GetUnitAxis(EAxis::X);
+	const FVector Right   = FRotationMatrix(YawOnly).GetUnitAxis(EAxis::Y);
+	const FVector TargetWorldDir = (Right * InputVector.X + Forward * InputVector.Y).GetSafeNormal();
+
+	// 2️⃣ 방향 스무딩
+	const float SmoothSpeed = 10.f;
+	DebugDirSmoothed = FMath::VInterpTo(DebugDirSmoothed, TargetWorldDir, DeltaTime, SmoothSpeed).GetSafeNormal();
+
+	// 3️⃣ 위치: 허리 소켓 기준 (없으면 루트 기준 + 높이 보정)
+	const USkeletalMeshComponent* Mesh = OwnerCharacter->GetMesh();
+	const FName PelvisSocket(TEXT("pelvis")); // 허리 본 이름
+	FVector Start = OwnerCharacter->GetActorLocation();
+
+	if (Mesh && Mesh->DoesSocketExist(PelvisSocket))
+	{
+		Start = Mesh->GetSocketLocation(PelvisSocket);
+	}
+	else
+	{
+		// 허리쯤 높이로 보정 (대략 +80cm)
+		Start += FVector(0.f, 0.f, 80.f);
+	}
+
+	// 4️⃣ 크기 및 회전 조정
+	const float ArrowLen   = 160.f;             // 짧게
+	const float BaseLen    = 100.f;
+	const float ScaleX     = ArrowLen / BaseLen;
+	const FRotator DirRot  = DebugDirSmoothed.Rotation();
+
+	DebugInputArrow->SetWorldLocation(Start);
+	DebugInputArrow->SetWorldRotation(DirRot);
+	//DebugInputArrow->SetWorldScale3D(FVector(ScaleX, 0.3f, 0.3f)); // 얇고 슬림하게
+
+	DrawFeetSpheres(OwnerCharacter, /*Radius=*/8.f, /*Life=*/GetWorld()->GetDeltaSeconds() * 1.5f);
 }
 
 void UPC_ActionComponent::Tick_Running(float DeltaTime)
@@ -83,7 +146,6 @@ void UPC_ActionComponent::Tick_Running(float DeltaTime)
 	}
 
 }
-
 void UPC_ActionComponent::Move(FVector2D MovementVector)
 {
 	if (!CanAction(EPC_ActionType::Move))
@@ -103,15 +165,13 @@ void UPC_ActionComponent::Move(FVector2D MovementVector)
 	{
 		ProcessLockOnMove();
 	}
-		
+	
 	if (IsAttacking)
 	{
 		if (UAnimInstance* AnimInstance = OwnerCharacter->GetMesh()->GetAnimInstance())
 		{
 			AnimInstance->StopAllMontages(0.1f);
 			ResetCombo();
-
-			
 		}
 	}
 }
@@ -281,6 +341,18 @@ void UPC_ActionComponent::SwapWeapon(bool bPressed)
 	UPC_BattleComponent* BattleComponent = Interface->GetBattleComponent();
 	check(BattleComponent);
 	BattleComponent->SwapWeapon();
+	
+	UPC_PlayerDataAsset* PlayerData = Interface->GetPlayerData();
+	check(PlayerData);
+
+	UAnimInstance* AnimInstance = OwnerCharacter->GetMesh()->GetAnimInstance();
+	check(AnimInstance);
+	AnimInstance->StopAllMontages(0.1f);
+	OwnerCharacter->PlayAnimMontage(PlayerData->WeaponChangeMontage);
+	
+	FOnMontageEnded EndDelegate = FOnMontageEnded::CreateUObject(this, &ThisClass::OnMontageEnd);
+	AnimInstance->Montage_SetEndDelegate(EndDelegate);
+	
 }
 
 void UPC_ActionComponent::Assassinate(bool IsPressed)
@@ -317,27 +389,6 @@ void UPC_ActionComponent::Assassinate(bool IsPressed)
 	AnimInstance->Montage_SetEndDelegate(EndDelegate);
 	
 	AddAllLock(EPC_LockCauseType::Assassinate);
-
-	
-	//UPC_BackstabSystemComponent* BackstabSystemComponent = Interface->GetBackstabSystemComponent();
-	//check(BackstabSystemComponent);
-	//
-	//if(BackstabSystemComponent->ExecuteBackstab())
-	//{
-	//	if(APawn* BackstabTarget = BackstabSystemComponent->GetBackstabTarget())
-	//	{
-	//		if(BackstabTarget)
-	//		{
-	//			if (APC_BaseCharacter* CharacterBase = Cast<APC_BaseCharacter>(BackstabTarget))
-	//			{
-	//				if (FPC_CharacterStatTableRow* StatRow = FPC_GameUtil::GetCharacterStatData(CharacterBase->CharacterDataID))
-	//				{
-	//					BattleComponent->SetTargetDamage(BackstabTarget, StatRow->MaxHp);
-	//				}
-	//			}
-	//		}
-	//	}
-	//}
 }
 
 bool UPC_ActionComponent::CanAction(EPC_ActionType InActionType)
@@ -574,4 +625,25 @@ bool UPC_ActionComponent::TryConsumeStaminaOnActionStart(EPC_ActionType InAction
 	check(StatComponent);
 
 	return StatComponent->TryConsumeStamina(StartCost);
+}
+
+void UPC_ActionComponent::DrawFeetSpheres(ACharacter* Char, float Radius, float Life)
+{
+	if (!Char) return;
+
+	const USkeletalMeshComponent* Mesh = Char->GetMesh();
+	if (!Mesh) return;
+
+	static const FName SockL(TEXT("foot_l"));
+	static const FName SockR(TEXT("foot_r"));
+
+	const FVector L = Mesh->DoesSocketExist(SockL) ? Mesh->GetSocketLocation(SockL) : Char->GetActorLocation();
+	const FVector R = Mesh->DoesSocketExist(SockR) ? Mesh->GetSocketLocation(SockR) : Char->GetActorLocation();
+
+	UWorld* World = Char->GetWorld();
+	if (!World) return;
+
+	// 분할 수(segments) 12~16 정도면 충분
+	DrawDebugSphere(World, L, Radius, 16, FColor::Green, false, Life, 0, 1.f);
+	DrawDebugSphere(World, R, Radius, 16, FColor::Green, false, Life, 0, 1.f);
 }

@@ -5,6 +5,7 @@
 #include "Components/ActorComponent.h"
 #include "PC/PC_Enum.h"
 #include "PC/Data/PC_PlayerDataAsset.h"
+#include "Components/ArrowComponent.h"
 #include "PC_ActionComponent.generated.h"
 
 USTRUCT(BlueprintType)
@@ -79,7 +80,13 @@ public:
 
 	const FPC_ActionStaminaData* GetActionStaminaData(EPC_ActionType Type) const;
 	bool TryConsumeStaminaOnActionStart(EPC_ActionType InActionType);
-
+	
+	void DrawFeetSpheres(ACharacter* Char, float Radius = 8.f, float Life = 0.05f);
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UArrowComponent> DebugInputArrow = nullptr;
+	FVector DebugDirSmoothed = FVector::ForwardVector;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool IsAttacking = false;
 

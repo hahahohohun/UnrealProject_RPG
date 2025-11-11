@@ -4,6 +4,7 @@
 #include "PC_AttackTraceNotify.h"
 
 #include "PC/Interface/PC_CharacterInterface.h"
+#include "PC/Utills/PC_GameUtill.h"
 
 void UPC_AttackTraceNotify::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,
                                    const FAnimNotifyEventReference& EventReference)
@@ -16,6 +17,9 @@ void UPC_AttackTraceNotify::Notify(USkeletalMeshComponent* MeshComp, UAnimSequen
 		{
 			if (AttackCharacter->HasWeapon())
 			{
+				FString log;
+				log.Appendf(TEXT("Trace Start: %s"), bStart ? TEXT("true") : TEXT("false"));
+				FPC_GameUtil::AddOnScreenDebugMessage(log);
 				AttackCharacter->AttackTraceWithWeapon(bStart, bRight);
 			}
 			else

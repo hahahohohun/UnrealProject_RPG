@@ -27,6 +27,8 @@ class PC_API UPC_CharacterDataAsset : public UDataAsset
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TObjectPtr<UNiagaraSystem> HitFx; //피격 당했을떄
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TObjectPtr<UNiagaraSystem> AssasinFx; //암살당했을때
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UNiagaraSystem> GuardFx;
@@ -43,4 +45,8 @@ public:
 	//맞았을때 반짝
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UMaterialInterface> DamgeMaterial = nullptr;
+	
+	UPROPERTY(EditAnywhere)
+	UAnimMontage* HitGuardAnimMontage;
+
 };

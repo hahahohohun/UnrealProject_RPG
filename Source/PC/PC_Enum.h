@@ -223,6 +223,16 @@ enum class EPC_CameraShakeMagnitudeType : uint8
 	Normal,
 	Strong,
 	Assassinate,
+	DashFinish,
+	Num
+};
+
+UENUM(BlueprintType)
+enum class EPC_CameraShakeActionType : uint8
+{
+	None,
+	OnHit,
+	Always,
 	Num
 };
 

@@ -312,10 +312,7 @@ struct FPC_ExecTableRow : public FTableRowBase
 
 	UPROPERTY(EditAnywhere)
 	FName SkillPosBoneName = NAME_None;
-
-	UPROPERTY(EditAnywhere)
-	bool bPlayCameraShake = true;
-
+	
 	UPROPERTY(EditAnywhere)
 	bool bSpawnCollision = true;
 
@@ -327,6 +324,9 @@ struct FPC_ExecTableRow : public FTableRowBase
 
 	UPROPERTY(EditAnywhere)
 	EPC_CameraShakeMagnitudeType ShakeMagnitude = EPC_CameraShakeMagnitudeType::Weak;
+
+	UPROPERTY(EditAnywhere)
+	EPC_CameraShakeActionType CameraShakeAction = EPC_CameraShakeActionType::None;
 };
 
 USTRUCT(BlueprintType)

@@ -104,6 +104,9 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UAnimMontage> BackstabMontage;
+	
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UAnimMontage> WeaponChangeMontage;
 
 	//초당 얼만큼 스테미나를 회복 시킬지
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Stamina", meta=(ClampMin = "0.0"))

@@ -141,7 +141,8 @@ void UPC_CrowdControlComponent::OnStartCC()
 		AaiController->StopMovement();
 	}
 
-	if (CrowdControlInfo.CrowdControlType == EPC_CrowdControlType::Freeze)
+	if (CrowdControlInfo.CrowdControlType == EPC_CrowdControlType::Freeze
+		|| CrowdControlInfo.CrowdControlType == EPC_CrowdControlType::Stun)
 	{
 		USkeletalMeshComponent* SkeletalMeshComponent = OwnerCharacter->GetMesh();
 		check(SkeletalMeshComponent);

@@ -130,6 +130,11 @@ float UPC_StatComponent::ApplyDamage(float InDamage, AActor* DamageCauser, bool 
 		OnCharacterDieDelegate.Broadcast();
 	}
 
+	if(SpawnEffect)
+	{
+		
+	}
+
 	return ActualDamage;
 }
 

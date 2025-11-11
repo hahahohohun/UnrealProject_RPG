@@ -56,7 +56,8 @@ public:
 	virtual void OnDead();
 	virtual void ReactAttackBreak() override;
 	virtual bool IsDead() override;
-
+	virtual bool IsRolling() override;
+	virtual bool IsGuarding(FVector ImpactPoint) override;
 	virtual UStaticMeshComponent* GetWeapon_L_StaticMeshComponent() override { return Weapon_L_StaticComponent; }
 	virtual UStaticMeshComponent* GetWeapon_R_StaticMeshComponent() override { return Weapon_R_StaticComponent; }
 	

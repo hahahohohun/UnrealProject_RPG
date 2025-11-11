@@ -157,53 +157,29 @@ void UPC_BattleComponent::Tick_TraceWeapon(float DeltaTime)
 
 				if (APC_BaseCharacter* HitCharacter = Cast<APC_BaseCharacter>(HitActor))
 				{
-					
-					bool IsPlayerGuard = false;
-					bool IsPlayerRolling = false;
-
-					if(IPC_PlayerCharacterInterface* HitPlayerCharacterInterface = Cast<IPC_PlayerCharacterInterface>(HitActor))
+					if(IPC_CharacterInterface* CharacterInterface = Cast<IPC_CharacterInterface>(HitActor))
 					{
-						 if(UPC_ActionComponent* HitCharActionComp = HitPlayerCharacterInterface->GetActionComponent())
-						 {
-						 	IsPlayerGuard = HitCharActionComp->IsGuarded();
-						 	IsPlayerRolling = HitCharActionComp->IsRolling;
-						 }
+						if(CharacterInterface->IsRolling())
+							continue;
+
+						if(CharacterInterface->IsGuarding(HitResult.ImpactPoint))
+							continue;
 					}
-					
-					if (IsPlayerRolling)
-						continue;
 					
 					if(ShouldHitAction)
 						FPC_GameUtil::PlayStopDilation(this, 0.2f, 0.f);
 					
-					if(IsPlayerGuard)
+					UE_LOG(LogPC, Log, TEXT("Hit!!"));
+					//FPC_GameUtil::CameraShake(EPC_CameraShakeMagnitudeType::Weak);
+					const float Damage = Character->StatComponent->GetTotalStat().Attack;
+					FDamageEvent DamageEvent;
+					DamageEvent.DamageTypeClass = UPC_NormalAttackDamageType::StaticClass();
+					HitActor->TakeDamage(Damage, DamageEvent, Character->GetController(), Character);
+						
+					if (UPC_CharacterDataAsset* HitCharDataAsset = HitCharacter->GetCharacterDataAsset())
 					{
-						if (IPC_CharacterInterface* Interface = Cast<IPC_CharacterInterface>(GetOwner()))
-						{
-							Interface->ReactAttackBreak();
-						}
-						
-						HitCharacter->LaunchCharacter(HitCharacter->GetActorLocation(), HitResult.ImpactPoint, 20);
-						
-						if (UPC_CharacterDataAsset* HitCharDataAsset = HitCharacter->GetCharacterDataAsset())
-						{
-							SpawnEffect(HitResult.ImpactPoint, HitCharDataAsset->GuardFx);
-						}
-					}
-					else
-					{
-						UE_LOG(LogPC, Log, TEXT("Hit!!"));
-						FPC_GameUtil::CameraShake(EPC_CameraShakeMagnitudeType::Weak);
-						const float Damage = Character->StatComponent->GetTotalStat().Attack;
-						FDamageEvent DamageEvent;
-						DamageEvent.DamageTypeClass = UPC_NormalAttackDamageType::StaticClass();
-						HitActor->TakeDamage(Damage, DamageEvent, Character->GetController(), Character);
-						
-						if (UPC_CharacterDataAsset* HitCharDataAsset = HitCharacter->GetCharacterDataAsset())
-						{
-							FPC_GameUtil::SpawnEffectAtLocation(GetWorld(), HitCharDataAsset->HitFx, HitResult.ImpactPoint, FRotator::ZeroRotator, 1);
-							//SpawnEffect(HitResult.ImpactPoint, HitCharDataAsset->HitFx);
-						}
+						FPC_GameUtil::SpawnEffectAtLocation(GetWorld(), HitCharDataAsset->HitFx, HitResult.ImpactPoint, FRotator::ZeroRotator, 1);
+						//SpawnEffect(HitResult.ImpactPoint, HitCharDataAsset->HitFx);
 					}
 				}
 			}
@@ -486,10 +462,10 @@ void UPC_BattleComponent::Assassinate(AActor* Target)
 	AssassinateTarget = Cast<ACharacter>(Target);
 	AssassinatingElapsedTime = 0;
 
-	FVector PlayerLocation = Target->GetActorLocation();
+	FVector PlayerLocation = OwnerCharacter->GetActorLocation();
 	FVector TargetLocation = AssassinateTarget->GetActorLocation();
 
-	FVector LookAtRot = PlayerLocation - TargetLocation;
+	FVector LookAtRot = (TargetLocation - PlayerLocation).GetSafeNormal2D();
 	const FRotator NewRot = LookAtRot.Rotation();
 
 	//각도 보정
@@ -516,29 +492,6 @@ void UPC_BattleComponent::EndTrace()
 	DamagedActor.Empty();
 	bTracing = false;
 	TraceElapsedTime = 0.f;
-}
 
-void UPC_BattleComponent::SpawnEffect(FVector InHitLocation, UNiagaraSystem* HitFx)
-{
-	UWorld* World = GetWorld();
-	if (!World)
-		return;
-
-	if(!HitFx)
-		return;
-
-	UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), HitFx, InHitLocation,  FRotator::ZeroRotator,
-	FVector(1.f),
-	true );
-	//if(Fx)
-	//{
-	//	FTimerHandle TimerHandle;
-	//	GetWorld()->GetTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([Fx]()
-	//	{
-	//		if (IsValid(Fx))
-	//		{
-	//			Fx->DestroyComponent(); // NiagaraComponent 제거
-	//		}
-	//	}), 0.2f, false);
-	//}
+	FPC_GameUtil::AddOnScreenDebugMessage("end trace!!!");
 }

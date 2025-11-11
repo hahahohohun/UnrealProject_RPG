@@ -55,4 +55,7 @@ public:
 	virtual FPC_OnStartSkillDelegate& GetOnStartSkillDelegate() =0;
 	virtual FPC_OnEndSkillDelegate& GetOnEndSkillDelegate() =0;
 
+	//
+	virtual bool IsRolling() = 0;
+	virtual bool IsGuarding(FVector ImpactPoint) = 0;
 };

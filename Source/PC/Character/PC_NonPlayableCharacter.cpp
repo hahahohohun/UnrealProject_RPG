@@ -132,8 +132,6 @@ float APC_NonPlayableCharacter::TakeDamage(float DamageAmount, FDamageEvent cons
 			CrowdControlComponent->RequestPlayerCC(3, DamageCauser);
 		}
 		
-		FPC_GameUtil::SpawnDamageFloater(this, DamageAmount);
-
 		if (UAnimInstance* AnimIns = GetMesh()->GetAnimInstance())
 		{
 			if (EnemyState != EPC_EnemyStateType::SKillUsing && !IsDead()
@@ -141,6 +139,7 @@ float APC_NonPlayableCharacter::TakeDamage(float DamageAmount, FDamageEvent cons
 			{
 				if (EnemyTableRow->HitReactAnim)
 				{
+					
 					AnimIns->Montage_Play(EnemyTableRow->HitReactAnim, 1.f, EMontagePlayReturnType::MontageLength);
 				}
 			}
@@ -187,21 +186,24 @@ void APC_NonPlayableCharacter::Tick(float DeltaTime)
 
 	if (IsTurning && EnemyState != EPC_EnemyStateType::CrowdControlled)
 	{
-		if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
+		if (!EnemyTableRow->IsHitPartUnit)
 		{
-			const float CurveValue = AnimInstance->GetCurveValue(TEXT("DistanceToPivot"));
+			if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
+			{
+				const float CurveValue = AnimInstance->GetCurveValue(TEXT("DistanceToPivot"));
 			
-			//에셋 자체가 -1이기 때문에
-			const float MaxCurveVal = -FMath::Abs(TurnDegree);
+				//에셋 자체가 -1이기 때문에
+				const float MaxCurveVal = -FMath::Abs(TurnDegree);
 
-			// 3. 회전 진행률 (비율)
-			float TurnAlpha = 1.f - FMath::Clamp(CurveValue / MaxCurveVal, 0.f, 1.f); // 0.0 ~ 1.0
+				// 3. 회전 진행률 (비율)
+				float TurnAlpha = 1.f - FMath::Clamp(CurveValue / MaxCurveVal, 0.f, 1.f); // 0.0 ~ 1.0
 
-			// 5. 회전 적용
-			float FinalYaw = TurnStartYaw + (TurnDegree * TurnAlpha);
-			FRotator NewRot = FRotator(0.f, FinalYaw, 0.f);
-			NewRot = FMath::RInterpTo(GetActorRotation(), NewRot, DeltaTime, 10.f);
-			SetActorRotation(NewRot);
+				// 5. 회전 적용
+				float FinalYaw = TurnStartYaw + (TurnDegree * TurnAlpha);
+				FRotator NewRot = FRotator(0.f, FinalYaw, 0.f);
+				NewRot = FMath::RInterpTo(GetActorRotation(), NewRot, DeltaTime, 10.f);
+				SetActorRotation(NewRot);
+			}
 		}
 	}
 
@@ -371,6 +373,7 @@ void APC_NonPlayableCharacter::SetAIMoveMontageFinishedDelegate(
 
 void APC_NonPlayableCharacter::Attack(bool bLastAttack)
 {
+
 	check(EnemyTableRow);
 	TArray<TObjectPtr<UAnimMontage>>& AttackAnims = EnemyTableRow->AttackAnims;
 
@@ -382,14 +385,18 @@ void APC_NonPlayableCharacter::Attack(bool bLastAttack)
 
 	UAnimMontage* Montage = FPC_GameUtil::GetProperAttackMontage(AttackAnims, AlreadyPlayedAttackMontages,
 	                                                             this, Target->GetActorLocation());
-
 	check(Montage);
 
 	bLastAttacking = bLastAttack;
 
+	if(IsDummy)
+	{
+		OnAttackFinished.ExecuteIfBound();
+		bLastAttacking = false;
+		return;
+	}
+	
 	PlayAnimMontage(Montage);
-
-
 	FOnMontageEnded EndDelegate = FOnMontageEnded::CreateUObject(this, &ThisClass::OnAttackMontageEnd);
 	GetMesh()->GetAnimInstance()->Montage_SetEndDelegate(EndDelegate);
 }
@@ -601,6 +608,7 @@ void APC_NonPlayableCharacter::ReactAttackBreak()
 				{
 					if (!IsDead())
 					{
+						FPC_GameUtil::AddOnScreenDebugMessage("End");
 						ChangeState(EPC_EnemyStateType::Battle);
 					}
 				});
@@ -634,6 +642,16 @@ void APC_NonPlayableCharacter::OnEndSkill(uint32 SkillId)
 
 	if (!CrowdControlComponent->IsCrowdControlled())
 		ChangeState(EPC_EnemyStateType::Battle);
+}
+
+bool APC_NonPlayableCharacter::IsGuarding(FVector ImpactPoint)
+{
+	return false;
+}
+
+bool APC_NonPlayableCharacter::IsRolling()
+{
+	return false;
 }
 
 AActor* APC_NonPlayableCharacter::GetPatrolRoute()

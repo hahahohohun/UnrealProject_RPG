@@ -143,8 +143,10 @@ void UPC_ArcSplinePreviewComponent::BuildSplineFromPoints(const TArray<FVector>&
 			const FVector SDir = ArcSpline->GetTangentAtSplinePoint(i, ESplineCoordinateSpace::Local);
 			const FVector EPos = ArcSpline->GetLocationAtSplinePoint(i+1, ESplineCoordinateSpace::Local);
 			const FVector EDir = ArcSpline->GetTangentAtSplinePoint(i+1, ESplineCoordinateSpace::Local);
-
+			
 			Seg->SetStartAndEnd(SPos, SDir, EPos, EDir, true);
+			Seg->SetStartScale(FVector2D(0.2f));
+			Seg->SetEndScale(FVector2D(0.2f));
 			Seg->SetHiddenInGame(false);
 		}
 	}

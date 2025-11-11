@@ -77,6 +77,17 @@ void APC_BaseCharacter::BeginPlay()
 float APC_BaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
                                     AActor* DamageCauser)
 {
+	if(IPC_PlayerCharacterInterface* PlayerCharacter = Cast<IPC_PlayerCharacterInterface>(this))
+	{
+		 if(UPC_ActionComponent* ActionComponent = PlayerCharacter->GetActionComponent())
+		 {
+			 if(ActionComponent->IsGuarded())
+			 {
+			 	return 0;
+			 }
+		 }
+	}
+	
 	const float VariancePercent = 0.035f;
 	const float RandomFactor = FMath::FRandRange(-VariancePercent, VariancePercent);
 	const float FinalDamage = DamageAmount * (1.0f + RandomFactor);
@@ -179,6 +190,16 @@ bool APC_BaseCharacter::IsDead()
 {
 	check(StatComponent);
 	return StatComponent->CurrentHp < KINDA_SMALL_NUMBER;
+}
+
+bool APC_BaseCharacter::IsRolling()
+{
+	return false;
+}
+
+bool APC_BaseCharacter::IsGuarding(FVector ImpactPoint)
+{
+	return false;
 }
 
 TPair<FName, FName> APC_BaseCharacter::GetWeaponTraceNames(bool bRight)

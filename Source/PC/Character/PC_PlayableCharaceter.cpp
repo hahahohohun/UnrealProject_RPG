@@ -15,6 +15,7 @@
 #include "Controller/PC_PlayerController.h"
 //#include "Core/Tests/Containers/TestUtils.h"
 #include "Engine/DamageEvents.h"
+#include "Exporters/TextureExporterPNG.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -385,7 +386,7 @@ float APC_PlayableCharaceter::TakeDamage(float DamageAmount, struct FDamageEvent
 	IPC_CharacterInterface* OwnerCharacterInterface =  Cast<IPC_CharacterInterface>(this);
 	check(OwnerCharacterInterface);
 	
-	IPC_CharacterInterface* CauserInterface =  Cast<IPC_CharacterInterface>(DamageCauser->GetOwner());
+	IPC_CharacterInterface* CauserInterface =  Cast<IPC_CharacterInterface>(DamageCauser);
 	check(CauserInterface);
 
 	UPC_CharacterDataAsset* OwnerDataAsset = OwnerCharacterInterface->GetCharacterDataAsset();
@@ -493,4 +494,54 @@ void APC_PlayableCharaceter::SetGenericTeamId(const FGenericTeamId& TeamID)
 FGenericTeamId APC_PlayableCharaceter::GetGenericTeamId() const
 {
 	return GenericTeamId;
+}
+
+bool APC_PlayableCharaceter::IsGuarding(FVector ImpactPoint)
+{
+	check(ActionComponent);
+	bool bIsGuarding = ActionComponent->IsInSpecialAction;
+	
+	//if (IPC_CharacterInterface* Interface = Cast<IPC_CharacterInterface>(GetOwner()))
+	//{
+	//	Interface->ReactAttackBreak();
+	//	EndTrace();
+	//}
+	if(bIsGuarding)
+	{
+		LaunchCharacter(GetActorLocation(), ImpactPoint, 20);
+	
+		if (UPC_CharacterDataAsset* HitCharDataAsset = GetCharacterDataAsset())
+		{
+			FPC_GameUtil::SpawnEffectAtLocation(this,
+				HitCharDataAsset->GuardFx, ImpactPoint,
+				FRotator::ZeroRotator, 1);
+
+			if(HitCharDataAsset->HitGuardAnimMontage)
+			{
+				UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+				check(AnimInstance);
+
+				AnimInstance->StopAllMontages(0.f);
+				AnimInstance->Montage_Play(HitCharDataAsset->HitGuardAnimMontage, 1.f, EMontagePlayReturnType::MontageLength);
+				FOnMontageEnded EndDelegate;
+				EndDelegate.BindLambda([this](UAnimMontage* Montage, bool bInterrupted)
+				{
+					if (!IsDead())
+					{
+						FPC_GameUtil::AddOnScreenDebugMessage("End");
+					}
+				});
+				AnimInstance->Montage_SetEndDelegate(EndDelegate, HitCharDataAsset->HitGuardAnimMontage);
+			}
+		}
+	}
+
+	return bIsGuarding;
+}
+
+bool APC_PlayableCharaceter::IsRolling()
+{
+	check(ActionComponent);
+	
+	return ActionComponent->IsRolling;
 }
