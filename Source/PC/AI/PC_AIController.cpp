@@ -41,7 +41,7 @@ void APC_AIController::RunAI()
 {
 	UBlackboardComponent* BlackboardPtr = GetBlackboardComponent();
 	
-	ensure(BlackboardPtr);
+	//ensure(BlackboardPtr);
 	
 	//사용준비
 	if (UseBlackboard(BBAsset, BlackboardPtr))

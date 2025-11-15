@@ -67,7 +67,7 @@ void APC_SentinelProjectile::InitSentinel(const FPC_SentinelParams& InParams)
 	if (Collision_Environment)
 	{
 		Collision_Environment->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		Collision_Environment->SetSphereRadius(1.f);
+		Collision_Environment->SetSphereRadius(3.f);
 	}
 
 	// Overlap 바인딩

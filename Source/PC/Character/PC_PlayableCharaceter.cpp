@@ -323,11 +323,14 @@ void APC_PlayableCharaceter::Num5Ongoing(const FInputActionValue& Value)
 		
 		// 시작점을 카메라 앞쪽으로 약간 빼서 자기 몸/벽과의 충돌을 피함
 		const FVector Forward = Rotation.Vector();
-		const float   ForwardOffset = 30.f;   // 필요 시 조정
-		const float   UpOffset      = -5.f;   // 미세 보정
+		const float   ForwardOffset = 60.f;   // 필요 시 조정
+		const float   UpOffset      = 5;//-5.f;   // 미세 보정
 		const FVector StartPos = Location + Forward * ForwardOffset + FVector(0,0,UpOffset);
 		const float   Speed    = 2200.f; // 프리뷰 전용
-		const FVector StartVel = Forward * Speed;
+
+		const float ArcUpBias = 0.35f; // 0.0 ~ 0.6 정도에서 조절
+		FVector Dir = Forward + ArcUpBias * FVector::UpVector;
+		const FVector StartVel = Dir * Speed;
 
 		ArcSplinePreviewComponent->UpdateFromStartVelocity(StartPos, StartVel);
 	}
@@ -528,7 +531,7 @@ bool APC_PlayableCharaceter::IsGuarding(FVector ImpactPoint)
 				{
 					if (!IsDead())
 					{
-						FPC_GameUtil::AddOnScreenDebugMessage("End");
+					
 					}
 				});
 				AnimInstance->Montage_SetEndDelegate(EndDelegate, HitCharDataAsset->HitGuardAnimMontage);

@@ -42,7 +42,7 @@ void UPC_ArcSplinePreviewComponent::TickComponent(float DeltaTime, ELevelTick Ti
 
 void UPC_ArcSplinePreviewComponent::BeginPreview()
 {
-	LastPoint = FVector::ZeroVector;
+	StartVel = FVector::ZeroVector;
 	EnsurePool();
 	bActive = true;
 	Acc = 0.f;
@@ -79,7 +79,9 @@ bool UPC_ArcSplinePreviewComponent::UpdateFromStartVelocity(const FVector& Start
 		if (AActor* A = Weak.Get())
 			Params.ActorsToIgnore.Add(A);
 	}
-
+	
+	StartVel = FVector::ZeroVector;
+	StartVel = LaunchVelocity;
 	return UpdateFromPredictParams(Params);
 }
 
@@ -95,11 +97,6 @@ bool UPC_ArcSplinePreviewComponent::UpdateFromPredictParams(const struct FPredic
 		LastPathPoints.Add(P.Location);
 	}
 
-	LastPoint = FVector::ZeroVector;
-	if(Result.PathData.Num() > 0)
-	{
-		LastPoint = Result.PathData[Result.PathData.Num() - 1].Location;
-	}
 
 	if (FPC_GameUtil::IsDebugDrawing(this))
 	{

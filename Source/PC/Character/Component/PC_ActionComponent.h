@@ -74,6 +74,10 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void ResetCombo();
+	
+	//Notify
+	UFUNCTION()
+	void OnMontageSwapWeaponBegin(FName NotifyName, const FBranchingPointNotifyPayload& Payload);
 
 	void RotateToControlRotation();
 	bool IsLastAttack() const; 
@@ -122,6 +126,7 @@ public:
 
 	UPROPERTY()
 	UAnimMontage* CurrentAttackMontage = nullptr;
+
 
 private:
 	int AttackMaxCount = 0;

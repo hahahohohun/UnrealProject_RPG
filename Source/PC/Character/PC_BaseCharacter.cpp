@@ -114,11 +114,13 @@ void APC_BaseCharacter::ApplyStat(const FPC_CharacterStatTableRow& BaseStat,
 
 void APC_BaseCharacter::SetupCharacterWidget(UPC_UserWidget* InWidget)
 {
-	if (UPC_HPBarWidget* HPBarWidget = Cast<UPC_HPBarWidget>(InWidget))
-	{
-		StatComponent->OnHPChangedDelegate.AddUObject(HPBarWidget, &UPC_HPBarWidget::UpdateHpBar);
-		HPBarWidget->UpdateHpBar(StatComponent->GetCurrentHp(), StatComponent->GetMaxHp());
-	}
+	//액터 생성과 동시에 바로 보여줘야하는 위젯들은 여기서 ㄱㄱ
+	//if (UPC_HPBarWidget* HPBarWidget = Cast<UPC_HPBarWidget>(InWidget))
+	//{
+	//	StatComponent->OnHPChangedDelegate.AddUObject(HPBarWidget, &UPC_HPBarWidget::UpdateHpBar);
+	//	HPBarWidget->UpdateHpBar(StatComponent->GetCurrentHp(), StatComponent->GetMaxHp());
+	//	HPBarWidget->SetVisibility(ESlateVisibility::Collapsed);
+	//}
 }
 
 void APC_BaseCharacter::SetupIndicatorWidget(UPC_UserWidget* InUserWidget)

@@ -92,6 +92,8 @@ void APC_NonPlayableCharacter::BeginPlay()
 	}
 
 	ResetState();
+
+	
 }
 
 void APC_NonPlayableCharacter::PossessedBy(AController* NewController)
@@ -137,10 +139,34 @@ float APC_NonPlayableCharacter::TakeDamage(float DamageAmount, FDamageEvent cons
 			if (EnemyState != EPC_EnemyStateType::SKillUsing && !IsDead()
 				&& !EnemyTableRow->HasSuperAmor)
 			{
-				if (EnemyTableRow->HitReactAnim)
+				if (OwnerDataAsset->HitReactAnim)
 				{
-					
-					AnimIns->Montage_Play(EnemyTableRow->HitReactAnim, 1.f, EMontagePlayReturnType::MontageLength);
+					RequestChangeState(EPC_EnemyStateType::ReactAttackBreak);
+					if(EnemyState == EPC_EnemyStateType::ReactAttackBreak)
+					{
+						//if(AAIController* AIController = Cast<AAIController>(GetController()))
+						//{
+						//	AIController->StopMovement();
+						//
+						//	USkeletalMeshComponent* SkeletalMeshComponent = GetMesh();
+						//	check(SkeletalMeshComponent);
+						//
+						//	GetCharacterMovement()->DisableMovement();
+						//	SkeletalMeshComponent->SetComponentTickEnabled(false);
+						//}
+						
+						FOnMontageEnded EndDelegate;
+						EndDelegate.BindLambda([this](UAnimMontage* Montage, bool bInterrupted)
+						{
+							if (!IsDead())
+							{
+								ChangeState(EPC_EnemyStateType::Battle);
+							}
+						});
+						
+						AnimIns->Montage_Play(OwnerDataAsset->HitReactAnim, 1.f,EMontagePlayReturnType::MontageLength);
+						AnimIns->Montage_SetEndDelegate(EndDelegate, OwnerDataAsset->HitReactAnim);
+					}
 				}
 			}
 		}
@@ -437,6 +463,9 @@ bool APC_NonPlayableCharacter::CanChangeState(EPC_EnemyStateType StateType)
 		StateType == EPC_EnemyStateType::Investigating)
 		return false;
 
+	if (EnemyState == EPC_EnemyStateType::ReactAttackBreak)
+		return false;
+
 	// 4. CC(CrowdControl) 상태에서는 대부분의 상태로 전환 불가
 	if (EnemyState == EPC_EnemyStateType::CrowdControlled)
 	{
@@ -550,6 +579,7 @@ void APC_NonPlayableCharacter::SetupCharacterWidget(class UPC_UserWidget* InWidg
 	{
 		StatComponent->OnHPChangedDelegate.AddUObject(HPBarWidget, &UPC_HPBarWidget::UpdateHpBar);
 		HPBarWidget->UpdateHpBar(StatComponent->GetCurrentHp(), StatComponent->GetMaxHp());
+		HPBarWidget->SetVisibility(ESlateVisibility::Collapsed);
 	}
 	else if (UPC_BossHPBarWidget* BossHPBarWidget = Cast<UPC_BossHPBarWidget>(InWidget))
 	{

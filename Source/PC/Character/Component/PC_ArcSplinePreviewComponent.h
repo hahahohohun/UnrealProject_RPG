@@ -73,7 +73,7 @@ public:
 	const TArray<FVector>& GetLastPathPoints() const { return LastPathPoints; }
 
 	//Begin할때만 지워짐
-	const FVector GetLastPathPoint() const {return LastPoint;}
+	FVector GetStartVelocityPoint() const { return StartVel; }
 	
 	// 설정
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="ArcPreview")
@@ -105,7 +105,7 @@ private:
 	TArray<FVector> LastPathPoints;
 
 	UPROPERTY(Transient)
-	FVector LastPoint;
+	FVector StartVel;
 	
 	UPROPERTY(Transient)
 	TSet<TWeakObjectPtr<AActor>> ActorsToIgnore;

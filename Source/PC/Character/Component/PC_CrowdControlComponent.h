@@ -13,6 +13,7 @@ struct FPC_CrowdControlInfo
 {
 	uint32 CrowdControlDataId = 0;
 	EPC_CrowdControlType CrowdControlType = EPC_CrowdControlType::None;
+	
 	float LifeTime = 0.0f;
 	float ElapsedTime = 0.0f;
 
@@ -22,9 +23,10 @@ struct FPC_CrowdControlInfo
 	FVector StartPos = FVector::ZeroVector;
 	FRotator StartRot = FRotator::ZeroRotator;
 
-	TObjectPtr<UNiagaraComponent> SpawnedFx = nullptr; //cc걸렸을때 머리 뺑뺑 도는거
+	TObjectPtr<UNiagaraComponent> SpawnedFx = nullptr; //ex) cc걸렸을때 머리 뺑뺑 도는거
 	TWeakObjectPtr<AActor> Causer = nullptr; //cc 유발자는 사라질 수 있으니 weak ptr
 
+	bool bDurationCC = false;
 	bool bValid = false;
 	
 };
@@ -44,7 +46,7 @@ public:
 	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	void Tick_PlayCrowdControl(float DeltaTime);
 
-	void ProcessCC();
+	void ProcessCC(float DeltaTime);
 
 	void RequestPlayerCC(uint32 CrowdControlId, AActor* Causer);
 	bool CanPlayCC(FPC_CrowdControlInfo& info);

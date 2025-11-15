@@ -77,6 +77,23 @@ void APC_SkillObject::Tick(float DeltaTime)
 	{
 		ProcessDestroy();
 	}
+
+	if(FPC_GameUtil::IsDebugDrawing(this))
+	{
+		if (Collision_Environment)
+		{
+			const FVector EnvLoc = Collision_Environment->GetComponentLocation();
+			const float EnvRadius = Collision_Environment->GetScaledSphereRadius();
+			DrawDebugSphere(GetWorld(), EnvLoc, EnvRadius, 16, FColor::Green, false, -1.f, 0, 2.f);
+		}
+
+		if (TriggerCollision)
+		{
+			const FVector TriggerLoc = TriggerCollision->GetComponentLocation();
+			const float TriggerRadius = TriggerCollision->GetScaledSphereRadius();
+			DrawDebugSphere(GetWorld(), TriggerLoc, TriggerRadius, 16, FColor::Red, false, -1.f, 0, 2.f);
+		}
+	}
 }
 
 void APC_SkillObject::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
@@ -93,11 +110,9 @@ void APC_SkillObject::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, A
 		                         OwnerCharacter.Get());
 	}
 
-	if(PullTarget)
-	{
-		PullTargets();
-	}
-
+	if(OnDelegateBeginOverlap.IsBound())
+		OnDelegateBeginOverlap.Broadcast(OtherActor);
+	
 	if(SkillObjectTableRow->IsCollisionDestroy)
 	{
 		ProcessDestroy();
@@ -122,33 +137,6 @@ void APC_SkillObject::OnComponentHit(UPrimitiveComponent* HitComponent, AActor* 
 	}
 }
 
-void APC_SkillObject::PullTargets()
-{
-	UWorld* World = GetWorld(); if (!World) return;
-
-	const FVector Center = GetActorLocation();
-	const float Radius   = 800.f;   // 끌어당김 범위
-	const float Force    = 60000.f; // 캐릭터/물체당 당기는 힘(임펄스 크기)
-
-	TArray<FOverlapResult> Overlaps;
-	FCollisionShape Sphere = FCollisionShape::MakeSphere(Radius);
-	FCollisionQueryParams Q;
-	Q.AddIgnoredActor(this);
-	Q.AddIgnoredActor(OwnerCharacter.Get());
-
-	if (World->OverlapMultiByChannel(Overlaps, Center, FQuat::Identity, ECC_WorldDynamic, Sphere, Q))
-	{
-		for (const FOverlapResult& Hit : Overlaps)
-		{
-			ACharacter* C = Cast<ACharacter>(Hit.GetActor());
-			if (!C)
-				continue;
-
-			
-		}
-	}
-}
-
 void APC_SkillObject::PlaySound()
 {
 	FVector ActorLocation = GetActorLocation();
@@ -163,15 +151,35 @@ void APC_SkillObject::PlayFX(FVector InHitLocation)
 
 void APC_SkillObject::PlayImpactPointDecal()
 {
+	if (!ProjectileMovementComponent)
+		return;
+
+	UWorld* World = GetWorld();
+	if (!World)
+		return;
+
 	FVector StartLoc = GetActorLocation();
-	FVector LaunchVel = GetActorForwardVector() * ProjectileMovementComponent->MaxSpeed;
+
+	// 1. 실제 발사 속도를 사용
+	FVector LaunchVel = ProjectileMovementComponent->Velocity;
 
 	FPredictProjectilePathParams Params;
-	Params.StartLocation = StartLoc;
-	Params.LaunchVelocity = LaunchVel;
+	Params.StartLocation       = StartLoc;
+	Params.LaunchVelocity      = LaunchVel;
 	Params.bTraceWithCollision = true;
-	Params.SimFrequency = 1.f; //값이 낮을 수록 정교
-	Params.TraceChannel = ECC_Visibility;
+	Params.SimFrequency        = 15.f; // 더 촘촘히
+	Params.TraceChannel        = ECC_Visibility;
+	Params.ProjectileRadius    = Collision_Environment
+								 ? Collision_Environment->GetScaledSphereRadius()
+								 : 0.f;
+
+	// 2. 중력 맞춰주기
+	const float WorldGravityZ      = World->GetGravityZ();
+	const float ProjectileGravityZ = WorldGravityZ * ProjectileMovementComponent->ProjectileGravityScale;
+	Params.OverrideGravityZ = ProjectileGravityZ;
+
+	// 3. 수명에 맞게 시뮬레이션 시간 확장
+	Params.MaxSimTime = LifeTime > 0.f ? LifeTime : 5.f;
 
 	FPredictProjectilePathResult Result;
 	if (UGameplayStatics::PredictProjectilePath(this, Params, Result))
@@ -197,7 +205,8 @@ void APC_SkillObject::ProcessDestroy()
 	Collision_Environment->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	ProjectileMovementComponent->Deactivate();
 	StaticMeshComponent->SetVisibility(false);
-
+	OnDelegateBeginOverlap.Clear();
+	ActiveCrowdId = -1;
 	PlaySound();
 	PlayFX(GetActorLocation());
 
@@ -206,4 +215,10 @@ void APC_SkillObject::ProcessDestroy()
 	{
 		Destroy();
 	}), 0.5f, false);
+}
+
+void APC_SkillObject::SetCrowdControl(FPC_OnBeginOverlap OnBeginOverlap)
+{
+	OnDelegateBeginOverlap.Clear();
+	OnDelegateBeginOverlap = OnBeginOverlap;
 }

@@ -3,6 +3,8 @@
 #include "CoreMinimal.h"
 #include "CoreMinimal.h"
 #include "NiagaraComponent.h"
+#include "PC/Data/PC_TableRows.h"
+#include "PC/SkillObject/PC_SkillObject.h"
 #include "PC_SkillComponent.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPC_OnStartSkillDelegate, uint32, SkillId);
@@ -91,7 +93,7 @@ public:
 	void OnStartExec(FPC_SkillInfo& SkillInfo, FPC_ExecInfo& ExecInfo);
 	void OnEndExec(FPC_SkillInfo& SkillInfo, FPC_ExecInfo& ExecInfo);
 
-	
+	APC_SkillObject* CreateSkillObject(const FTransform Transform, UClass& SkillObject, FPC_ExecTableRow& TableRow);
 public:
 	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 

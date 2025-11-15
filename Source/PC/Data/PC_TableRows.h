@@ -134,8 +134,6 @@ struct FPC_EnemyTableRow : public FTableRowBase
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UAnimMontage> DashBackAnim = nullptr;
 
-	UPROPERTY(EditAnywhere)
-	TObjectPtr<UAnimMontage> HitReactAnim = nullptr; //TODO 방향별 리액트 
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UAnimMontage> AttackBreakAnim = nullptr; //공격이 막혔을때 ex)플레이어 Guard중 
@@ -367,6 +365,9 @@ struct FPC_CrowdControlTableRow : public FTableRowBase
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UNiagaraSystem> CrowdControlFX = nullptr;
 
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UNiagaraSystem> EndCrowdControlFX = nullptr;
+	
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UMaterialInstance> MaterialInstance = nullptr; //메테리얼중 가장 상위 클래스
 

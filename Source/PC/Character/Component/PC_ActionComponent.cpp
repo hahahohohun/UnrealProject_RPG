@@ -2,6 +2,8 @@
 
 #include "PC_ActionComponent.h"
 
+#include <string>
+
 #include "AnalyticsProviderETEventCache.h"
 #include "PC_BattleComponent.h"
 #include "PC_LockOnComponent.h"
@@ -209,11 +211,20 @@ void UPC_ActionComponent::Attack(bool IsPressed)
 	UPC_PlayerDataAsset* PlayerData = Interface->GetPlayerData();
 	check(PlayerData);
 
+	UCharacterMovementComponent* MoveComp = OwnerCharacter->GetCharacterMovement();
+	float MaxAcceleration = MoveComp->MaxAcceleration;
+
+	// 현재 가속의 크기 (length)
+	float CurrentAccelSize = MoveComp->GetCurrentAcceleration().Size();
+
+	bool IsMaxAcceleration = PlayerData->RunAttackMontage
+		&& CurrentAccelSize >= MaxAcceleration;
+	
 	TArray<UAnimMontage*>& AttackMontages = PlayerData->AttackMontages;
 	if(AttackMaxCount == 0)
 		AttackMaxCount = AttackMontages.Num();
 
-	if (IsAttacking)
+	if (IsAttacking && IsMaxAcceleration == false)
 	{
 		SaveAttack = true;
 	}
@@ -233,11 +244,39 @@ void UPC_ActionComponent::Attack(bool IsPressed)
 		UAnimInstance* AnimInstance = OwnerCharacter->GetMesh()->GetAnimInstance();
 		check(AnimInstance);
 
-		if (AttackMontages.IsValidIndex(AttackCount - 1))
+		UAnimMontage* AttackMontage = nullptr;
+		if(IsMaxAcceleration)
 		{
-			OwnerCharacter->PlayAnimMontage(AttackMontages[AttackCount - 1]);
+			AttackMontage = PlayerData->RunAttackMontage;
+			// 달리기 공격(run 공격)일 때 살짝 앞으로 미끄러지기
+			//auto* MoveComp = OwnerCharacter->GetCharacterMovement();
+			//check(MoveComp);
+
+			const FVector Forward = OwnerCharacter->GetActorForwardVector();
+
+			// 얼마나 미끄러질지 속도값으로 조절 (적당히 600~900 정도부터 테스트)
+			const float SlideSpeed = 1800.f;
+
+			// Z는 유지하고, X/Y 방향만 앞으로
+			FVector NewVelocity = Forward * SlideSpeed;
+			NewVelocity.Z = MoveComp->Velocity.Z;
+
+			MoveComp->Velocity = NewVelocity;
+			FString strLog;
+			strLog.Append(NewVelocity.ToString());
+			FPC_GameUtil::AddOnScreenDebugMessage(strLog);
+		}
+		else
+		{
+			if (AttackMontages.IsValidIndex(AttackCount - 1))
+			{
+				AttackMontage = AttackMontages[AttackCount - 1];
+			}
 		}
 
+		if(AttackMontage)
+			OwnerCharacter->PlayAnimMontage(AttackMontage);
+		
 		RotateToControlRotation();
 
 		AddLock(EPC_LockCauseType::Attack, EPC_ActionType::Move);
@@ -340,8 +379,8 @@ void UPC_ActionComponent::SwapWeapon(bool bPressed)
 	const IPC_PlayerCharacterInterface* Interface = CastChecked<IPC_PlayerCharacterInterface>(GetOwner());
 	UPC_BattleComponent* BattleComponent = Interface->GetBattleComponent();
 	check(BattleComponent);
-	BattleComponent->SwapWeapon();
-	
+	BattleComponent->EndTrace();
+
 	UPC_PlayerDataAsset* PlayerData = Interface->GetPlayerData();
 	check(PlayerData);
 
@@ -349,10 +388,7 @@ void UPC_ActionComponent::SwapWeapon(bool bPressed)
 	check(AnimInstance);
 	AnimInstance->StopAllMontages(0.1f);
 	OwnerCharacter->PlayAnimMontage(PlayerData->WeaponChangeMontage);
-	
 	FOnMontageEnded EndDelegate = FOnMontageEnded::CreateUObject(this, &ThisClass::OnMontageEnd);
-	AnimInstance->Montage_SetEndDelegate(EndDelegate);
-	
 }
 
 void UPC_ActionComponent::Assassinate(bool IsPressed)
@@ -528,6 +564,17 @@ void UPC_ActionComponent::OnMontageEnd(UAnimMontage* Montage, bool bInterrupted)
 		IsAssassinating = false;
 		ForceReleaseLock(EPC_LockCauseType::Assassinate);
 	}
+
+	if(Montage == PlayerData->WeaponChangeMontage)
+	{
+		if (USkeletalMeshComponent* MeshComp = OwnerCharacter ? OwnerCharacter->GetMesh() : nullptr)
+		{
+			if (UAnimInstance* AnimInst = MeshComp->GetAnimInstance())
+			{
+				AnimInst->OnPlayMontageNotifyBegin.RemoveDynamic(this, &ThisClass::UPC_ActionComponent::OnMontageSwapWeaponBegin);
+			}
+		}
+	}
 	
 	//if (Montage == CurrentAttackMontage)
 	//{
@@ -647,3 +694,18 @@ void UPC_ActionComponent::DrawFeetSpheres(ACharacter* Char, float Radius, float 
 	DrawDebugSphere(World, L, Radius, 16, FColor::Green, false, Life, 0, 1.f);
 	DrawDebugSphere(World, R, Radius, 16, FColor::Green, false, Life, 0, 1.f);
 }
+
+void UPC_ActionComponent::OnMontageSwapWeaponBegin(FName NotifyName, const FBranchingPointNotifyPayload& Payload)
+{
+	if (NotifyName != FName("SwapWeaponPoint"))
+		return;
+
+	const IPC_PlayerCharacterInterface* Interface = CastChecked<IPC_PlayerCharacterInterface>(GetOwner());
+	if(Interface)
+	{
+		UPC_BattleComponent* BattleComponent = Interface->GetBattleComponent();
+		check(BattleComponent);
+		BattleComponent->SwapWeapon();
+	}
+}
+

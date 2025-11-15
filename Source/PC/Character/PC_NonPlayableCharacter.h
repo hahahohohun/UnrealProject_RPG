@@ -10,6 +10,7 @@
 #include "PC/Interface/PC_CharacterHUDInterface.h"
 #include "PC_NonPlayableCharacter.generated.h"
 
+
 UCLASS()
 class PC_API APC_NonPlayableCharacter : public APC_BaseCharacter, public IPC_CharacterAIInterface
 {
@@ -115,8 +116,7 @@ private:
 
 	TArray<TObjectPtr<UAnimMontage>> AlreadyPlayedAttackMontages;
 	bool bLastAttacking; //마지막 공격
-
-		
+	
 	UPROPERTY(EditAnywhere)
 	bool IsDummy = false; //더미, 테스트용
 	

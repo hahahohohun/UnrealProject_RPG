@@ -13,6 +13,8 @@ class USphereComponent;
 class UProjectileMovementComponent;
 class UNiagaraComponent;
 
+DECLARE_MULTICAST_DELEGATE_OneParam(FPC_OnBeginOverlap, AActor* Causer)
+
 UCLASS()
 class PC_API APC_SkillObject : public AActor
 {
@@ -36,8 +38,6 @@ public:
 
 	UFUNCTION()
 	void OnComponentHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
-
-	void PullTargets();
 	
 	void PlaySound();
 	void PlayFX(FVector InHitLocation);
@@ -45,10 +45,12 @@ public:
 	void PlayImpactPointDecal();
 	
 	void ProcessDestroy();
+
+	void SetCrowdControl(FPC_OnBeginOverlap OnBeginOverlap);
 public:
 	UPROPERTY(EditAnywhere)
-
 	uint32 SkillObjectId = 0;
+	
 	UPROPERTY(EditAnywhere)
 	EPC_SkillObjectType SkillObjectType = EPC_SkillObjectType::None;
 
@@ -67,6 +69,8 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UProjectileMovementComponent* ProjectileMovementComponent;
 
+	FPC_OnBeginOverlap OnDelegateBeginOverlap;
+	
 	UPROPERTY()
 	TWeakObjectPtr<ACharacter>  OwnerCharacter = nullptr;
 
@@ -81,21 +85,19 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	bool ShowImpactPointDecal = false;
-
-	UPROPERTY(EditAnywhere)
-	bool PullTarget  = false;
 	
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UMaterialInterface> ImpactPointDecalMaterial = nullptr;
 	
 	UPROPERTY(EditAnywhere)
 	float LifeTime = 0.f;
-	float ElapsedTime = 0.f;
-
-	float ExplodeRadius = 0.f;
-
-	FVector PreviousLocation = FVector::ZeroVector;
-
+	
 	UPROPERTY(EditAnywhere)
 	int32 BounceCount = 0;
+
+	
+	float ElapsedTime = 0.f;
+	float ExplodeRadius = 0.f;
+
+	int32 ActiveCrowdId;
 };

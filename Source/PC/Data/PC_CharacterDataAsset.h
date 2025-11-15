@@ -49,4 +49,7 @@ public:
 	UPROPERTY(EditAnywhere)
 	UAnimMontage* HitGuardAnimMontage;
 
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UAnimMontage> HitReactAnim = nullptr; //TODO 방향별 리액트 
+
 };

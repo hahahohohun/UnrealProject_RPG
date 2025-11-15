@@ -30,7 +30,7 @@ void UPC_CrowdControlComponent::TickComponent(float DeltaTime, enum ELevelTick T
 
 void UPC_CrowdControlComponent::Tick_PlayCrowdControl(float DeltaTime)
 {
-	ProcessCC();
+	ProcessCC(DeltaTime);
 
 	CrowdControlInfo.ElapsedTime += DeltaTime;
 	//
@@ -40,8 +40,52 @@ void UPC_CrowdControlComponent::Tick_PlayCrowdControl(float DeltaTime)
 	}
 }
 
-void UPC_CrowdControlComponent::ProcessCC()
+void UPC_CrowdControlComponent::ProcessCC(float DeltaTime)
 {
+    if(CrowdControlInfo.bValid)
+    {
+    	FPC_CrowdControlTableRow* CrowdControlTableRow = FPC_GameUtil::GetCrowdControlData(CrowdControlInfo.CrowdControlDataId);
+    	if (!CrowdControlTableRow)
+    		return;
+
+    	if(CrowdControlInfo.CrowdControlType == EPC_CrowdControlType::Pull)
+    	{
+    		const FVector StartPos  = CrowdControlInfo.StartPos;    // CC 시작 시 피격자 위치
+    		const FVector CauserPos = CrowdControlInfo.CauserPos;   // CC 시작 시 시전자 위치
+
+    		// 최대 이동 시간(수명)
+    		float LifeTime  = CrowdControlInfo.LifeTime;
+    		float Elapsed   = CrowdControlInfo.ElapsedTime;
+
+    		// 경과 비율 (0 → 1)
+    		float Alpha = LifeTime > 0.f ? FMath::Clamp(Elapsed / LifeTime, 0.f, 1.f) : 1.f;
+
+    		// 최종적으로 Causer 위치까지 끌려오기
+    		FVector TargetPos = CauserPos;
+
+    		// 수평 이동만 할거면 Z 맞춰주기
+    		FVector CurrentPos = OwnerCharacter->GetActorLocation();
+    		TargetPos.Z = CurrentPos.Z;
+
+    		// 경로: StartPos → CauserPos
+    		FVector NewPos = FMath::Lerp(StartPos, TargetPos, Alpha);
+
+    		// 바닥 위치 보정
+    		NewPos = FPC_GameUtil::FindSurfacePos(OwnerCharacter.Get(), NewPos);
+
+    		// 회전: 시전자 쪽을 바라보게
+    		FVector DirToCauser = (CauserPos - CurrentPos);
+    		DirToCauser.Z = 0.f;
+    		if (!DirToCauser.IsNearlyZero())
+    		{
+    			DirToCauser.Normalize();
+    			OwnerCharacter->SetActorRotation(DirToCauser.Rotation());
+    		}
+
+    		// 실제 이동
+    		OwnerCharacter->SetActorLocation(NewPos, true); // bSweep=true 로 충돌 체크
+    	}
+    }
 }
 
 void UPC_CrowdControlComponent::RequestPlayerCC(uint32 CrowdControlId, AActor* Causer)
@@ -104,7 +148,7 @@ void UPC_CrowdControlComponent::PlayCC(FPC_CrowdControlInfo& info)
 		|| !CrowdControlInfo.bValid;
 
 	//캐싱
-	CrowdControlInfo = info;
+	//CrowdControlInfo = info;
 	OnStartCC();
 
 	if (ShouldPlayFx)
@@ -150,7 +194,7 @@ void UPC_CrowdControlComponent::OnStartCC()
 		OwnerCharacter->GetCharacterMovement()->DisableMovement();
 		SkeletalMeshComponent->SetComponentTickEnabled(false);
 	}
-
+	
 	if (CrowdControlTableRow->CrowdControlAnim)
 	{
 		OwnerCharacter->PlayAnimMontage(CrowdControlTableRow->CrowdControlAnim);
@@ -170,7 +214,7 @@ void UPC_CrowdControlComponent::OnStartCC()
 		//	AnimInstance->Montage_Play(AnimMontage);
 		//}
 	}
-
+	
 	if (CrowdControlInfo.CrowdControlType == EPC_CrowdControlType::Pushback)
 	{
 		const FVector StartPos = CrowdControlInfo.StartPos;
@@ -184,12 +228,16 @@ void UPC_CrowdControlComponent::OnStartCC()
 		OwnerCharacter->GetCharacterMovement()->Velocity += ForceDir * Power;
 		//OwnerCharacter->LaunchCharacter(ForceDir * Power, true, true);
 	}
+
+
+
 }
 
 void UPC_CrowdControlComponent::OnStopCC()
 {
 	FPC_CrowdControlTableRow* CrowdControlTableRow = FPC_GameUtil::GetCrowdControlData(
 		CrowdControlInfo.CrowdControlDataId);
+	
 	check(CrowdControlTableRow);
 
 	if (CrowdControlInfo.SpawnedFx && CrowdControlInfo.SpawnedFx->IsActive())
@@ -223,6 +271,15 @@ void UPC_CrowdControlComponent::OnStopCC()
 
 		OwnerCharacter->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 		skeletalMeshComponent->SetComponentTickEnabled(true);
+	}
+
+	if(UNiagaraSystem* NiagaraSystem = CrowdControlTableRow->EndCrowdControlFX)
+	{
+		FVector RelativePos = FVector(0.f, 0.f, OwnerCharacter->GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
+		FPC_GameUtil::SpawnEffectAttached(NiagaraSystem, OwnerCharacter->GetCapsuleComponent(),
+												   NAME_None,
+												   RelativePos, FRotator::ZeroRotator,
+												   EAttachLocation::SnapToTarget, true);
 	}
 }
 
@@ -263,9 +320,10 @@ void UPC_CrowdControlComponent::PlayFX(FPC_CrowdControlInfo& Info)
 
 void UPC_CrowdControlComponent::StopFX()
 {
+	
 }
 
 bool UPC_CrowdControlComponent::IsCrowdControlled()
 {
-	return false;
+	return CrowdControlInfo.bValid;
 }

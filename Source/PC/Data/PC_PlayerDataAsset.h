@@ -94,6 +94,9 @@ public:
 	TArray<UAnimMontage*> AttackMontages;
 
 	UPROPERTY(EditAnywhere)
+	TObjectPtr<UAnimMontage> RunAttackMontage;
+	
+	UPROPERTY(EditAnywhere)
 	TObjectPtr<UAnimMontage> RollMontage;
 
 	UPROPERTY(EditAnywhere)

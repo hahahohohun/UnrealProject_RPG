@@ -15,6 +15,7 @@
 //#include "PC/Data/PC_CameraDataAsset.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "PC/Character/PC_BaseCharacter.h"
 #include "PC/Interface/PC_CharacterInterface.h"
 #include "PC/Interface/PC_PlayerCharacterInterface.h"
 #include "PC/SkillObject/PC_SentinelProjectile.h"
@@ -317,42 +318,29 @@ void UPC_SkillComponent::ProcessNonTargetExec(float DeltaTime, FPC_ExecInfo& Exe
 			Transform.SetLocation(SpawnLoc + ExecTableRow->ProjectileAdditivePos);
 			Transform.SetRotation(SpawnRot.Quaternion());
 
-			APC_SkillObject* Obj = World->SpawnActorDeferred<APC_SkillObject>(
-				ObjClass, Transform, GetOwner(), nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
-
-			Obj->OwnerCharacter = OwnerCharacter.Get();
-			Obj->SkillObjectId = ExecTableRow->ExecProperty_0;
-			Obj->FinishSpawning(Transform);
-			ExecInfo.SpawnedSkillObject = Obj;
-			
-			if (ExecInfo.SpawnedSkillObject != nullptr)
+			APC_SkillObject* Obj = CreateSkillObject(Transform, *ObjClass, *ExecTableRow);
+			if (Obj != nullptr)
 			{
-				if (AActor* Spawned = ExecInfo.SpawnedSkillObject.Get())
+				ExecInfo.SpawnedSkillObject = Obj;
+				Obj->OwnerCharacter = OwnerCharacter.Get();
+				Obj->SkillObjectId = ExecTableRow->ExecProperty_0;
+				FVector Location = SpawnLoc;
+				FRotator Rotation = SpawnRot;
+				if (IPC_PlayerCharacterInterface* PlayerCharacterInterface = Cast<IPC_PlayerCharacterInterface>(
+					GetOwner()))
 				{
-					if (UProjectileMovementComponent* PM = Spawned->FindComponentByClass<
-						UProjectileMovementComponent>())
+					if (UPC_ArcSplinePreviewComponent* ArcSplinePreview = PlayerCharacterInterface->
+						GetArcSplinePreviewComponent())
 					{
-						FVector Location = SpawnLoc;
-						FRotator Rotation = SpawnRot;
-						if (IPC_PlayerCharacterInterface* PlayerCharacterInterface = Cast<IPC_PlayerCharacterInterface>(
-							GetOwner()))
+						FVector StartVel = ArcSplinePreview->GetStartVelocityPoint();
+						if (StartVel != FVector::ZeroVector)
 						{
-							if (UPC_ArcSplinePreviewComponent* ArcSplinePreview = PlayerCharacterInterface->
-								GetArcSplinePreviewComponent())
+							Obj->FinishSpawning(Transform);
+							if (UProjectileMovementComponent* PM = Obj->FindComponentByClass<
+								UProjectileMovementComponent>())
 							{
-								if (ArcSplinePreview->GetLastPathPoint() != FVector::ZeroVector)
-								{
-									// 시작점을 카메라 앞쪽으로 약간 빼서 자기 몸/벽과의 충돌을 피함
-									const FVector Forward = Rotation.Vector();
-									const float ForwardOffset = 30.f; // 필요 시 조정
-									const float UpOffset = -5.f; // 미세 보정
-									const FVector StartPos = Location + Forward * ForwardOffset + FVector(
-										0, 0, UpOffset);
-									const float Speed = 2200.f; // 프리뷰 전용
-									const FVector StartVel = Forward * Speed;
-										
-									PM->Velocity = StartVel;
-								}
+								PM->Velocity = StartVel;
+								//Obj->PlayImpactPointDecal();
 							}
 						}
 					}
@@ -727,7 +715,7 @@ void UPC_SkillComponent::ProcessMultipleExec(float DeltaTime, FPC_SkillInfo& Ski
 				FVector Location = FVector::ZeroVector;
 				if (ExecTableRow->SkillPosBoneName != NAME_None)
 				{
-					Location = SkeletalMeshComponent->GetSocketLocation(ExecTableRow->SkillPosBoneName);
+					Location = FPC_GameUtil::GetSocketTransform(OwnerCharacter.Get(),ExecTableRow->SkillPosBoneName).GetLocation();//SkeletalMeshComponent->GetSocketLocation(ExecTableRow->SkillPosBoneName);
 				}
 				else
 				{
@@ -854,46 +842,54 @@ void UPC_SkillComponent::CheckCollision(const FPC_ExecInfo& ExecInfo, FCollision
 	if (FPC_GameUtil::IsDebugDrawing(OwnerCharacter.Get()))
 		DrawDebugBox(World, Pos, CollisionShape.GetExtent(), Rot.Quaternion(), FColor::Red, false);
 
-	//todo 몬스터도 스킬을 사용하기 떄문에 처리 필요
-	if (World->OverlapMultiByProfile(OverlapResults, Pos, Rot.Quaternion(), TEXT("EnemyPreset"),
-	                                 CollisionShape, QueryParams))
+	if (APC_BaseCharacter* BaseCharacter = Cast<APC_BaseCharacter>(OwnerCharacter.Get()))
 	{
-		for (FOverlapResult& OverlapResult : OverlapResults)
+		//몬스터도 스킬을 사용하기 떄문에 처리 필요
+		QueryParams.AddIgnoredActor(OwnerCharacter.Get());
+		if (World->OverlapMultiByChannel(OverlapResults, Pos, Rot.Quaternion(),
+		                                 FPC_GameUtil::GetAttackCollisionChannel(BaseCharacter->CharacterDataID),
+		                                 CollisionShape, QueryParams))
 		{
-			if (ACharacter* HitCharacter = Cast<ACharacter>(OverlapResult.GetActor()))
+			for (FOverlapResult& OverlapResult : OverlapResults)
 			{
-				FDamageEvent DamageEvent;
-				HitCharacter->TakeDamage(ExecTableRow->Damage, DamageEvent,
-				                         OwnerCharacter->GetController(), OwnerCharacter.Get());
-
-				if (ExecTableRow->CameraShakeAction == EPC_CameraShakeActionType::OnHit)
+				if (ACharacter* HitCharacter = Cast<ACharacter>(OverlapResult.GetActor()))
 				{
-					FPC_GameUtil::CameraShake(ExecTableRow->ShakeMagnitude);
-				}
+					FDamageEvent DamageEvent;
+					HitCharacter->TakeDamage(ExecTableRow->Damage, DamageEvent,
+					                         OwnerCharacter->GetController(), OwnerCharacter.Get());
 
-				if (ExecTableRow->HitFX_Niagara)
-				{
-					FPC_GameUtil::SpawnEffectAtLocation(GetWorld(), ExecTableRow->HitFX_Niagara, ExecInfo.ExecStartPos,
-					                                    ExecInfo.ExecStartRot, ExecTableRow->HitEffectScale);
-				}
-
-				if (IPC_CharacterInterface* CharacterInterface = Cast<IPC_CharacterInterface>(OverlapResult.GetActor()))
-				{
-					UPC_CrowdControlComponent* CrowdControlComponent = CharacterInterface->GetCrowdControlComponent();
-					check(CrowdControlComponent);
-
-					const float CrowdControlId = ExecTableRow->CrowdControlId;
-					if (CrowdControlId > INDEX_NONE)
+					if (ExecTableRow->CameraShakeAction == EPC_CameraShakeActionType::OnHit)
 					{
-						CrowdControlComponent->RequestPlayerCC(CrowdControlId, GetOwner());
+						FPC_GameUtil::CameraShake(ExecTableRow->ShakeMagnitude);
+					}
+
+					if (ExecTableRow->HitFX_Niagara)
+					{
+						FPC_GameUtil::SpawnEffectAtLocation(GetWorld(), ExecTableRow->HitFX_Niagara,
+						                                    ExecInfo.ExecStartPos,
+						                                    ExecInfo.ExecStartRot, ExecTableRow->HitEffectScale);
+					}
+
+					if (IPC_CharacterInterface* CharacterInterface = Cast<IPC_CharacterInterface>(
+						OverlapResult.GetActor()))
+					{
+						UPC_CrowdControlComponent* CrowdControlComponent = CharacterInterface->
+							GetCrowdControlComponent();
+						check(CrowdControlComponent);
+
+						const float CrowdControlId = ExecTableRow->CrowdControlId;
+						if (CrowdControlId > INDEX_NONE)
+						{
+							CrowdControlComponent->RequestPlayerCC(CrowdControlId, GetOwner());
+						}
 					}
 				}
 			}
 		}
-	}
 
-	if (ExecTableRow->CameraShakeAction == EPC_CameraShakeActionType::Always)
-		FPC_GameUtil::CameraShake(ExecTableRow->ShakeMagnitude);
+		if (ExecTableRow->CameraShakeAction == EPC_CameraShakeActionType::Always)
+			FPC_GameUtil::CameraShake(ExecTableRow->ShakeMagnitude);
+	}
 }
 
 void UPC_SkillComponent::OnStartExec(FPC_SkillInfo& SkillInfo, FPC_ExecInfo& ExecInfo)
@@ -949,6 +945,21 @@ void UPC_SkillComponent::OnStartExec(FPC_SkillInfo& SkillInfo, FPC_ExecInfo& Exe
 		FPC_GameUtil::SpawnEffectAtLocation(GetWorld(), ExecTableRow->ExecFX_Niagara_Start, FXSpawnPos, ExecInfo.ExecStartRot, 1.f);
 		FPC_GameUtil::SpawnEffectAtLocation(GetWorld(), ExecTableRow->ExecFX_Cascade_Start, FXSpawnPos, ExecInfo.ExecStartRot, 1.f);
 	}
+	else
+	{
+		FVector FXSpawnPos;
+		if (ExecTableRow->SkillPosBoneName != NAME_None)
+		{
+			FXSpawnPos = FPC_GameUtil::GetSocketTransform(OwnerCharacter.Get(), ExecTableRow->SkillPosBoneName).GetLocation();
+		}
+		else
+		{
+			FXSpawnPos = ExecInfo.ExecStartPos;
+		}
+		
+		FPC_GameUtil::SpawnEffectAtLocation(GetWorld(), ExecTableRow->ExecFX_Niagara_Start, FXSpawnPos, ExecInfo.ExecStartRot);
+		FPC_GameUtil::SpawnEffectAtLocation(GetWorld(), ExecTableRow->ExecFX_Cascade_Start, FXSpawnPos, ExecInfo.ExecStartRot);
+	}
 	
 	if (ExecTableRow->ExecType == EPC_ExecType::DashToTarget)
 	{
@@ -995,6 +1006,44 @@ void UPC_SkillComponent::OnEndExec(FPC_SkillInfo& SkillInfo, FPC_ExecInfo& ExecI
 	{
 		ExecInfo.AttachedFx->Deactivate(); //Deactivate : 
 	}
+}
+
+APC_SkillObject* UPC_SkillComponent::CreateSkillObject(const FTransform Transform, UClass& SkillObj, FPC_ExecTableRow& ExecTableRow)
+{
+	UWorld* World = GetWorld();
+	check(World);
+	
+	APC_SkillObject* Obj = World->SpawnActorDeferred<APC_SkillObject>(
+			&SkillObj, Transform, GetOwner(), nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+
+	if(ExecTableRow.CrowdControlId > 0)
+	{
+		const int32 CrowdControlId = ExecTableRow.CrowdControlId;
+		FPC_OnBeginOverlap Delegate;
+		Delegate.AddLambda(
+			[Obj, CrowdControlId](AActor* HitActor)
+			{
+				if (!Obj)
+					return;
+
+				if (!IsValid(HitActor))
+					return;
+
+				if(IPC_CharacterInterface* CharacterInterface = Cast<IPC_CharacterInterface>(HitActor))
+				{
+					UPC_CrowdControlComponent* CrowdControlComponent = CharacterInterface->
+						GetCrowdControlComponent();
+					check(CrowdControlComponent);
+					//스킬오브젝트 기준으로 
+					CrowdControlComponent->RequestPlayerCC(CrowdControlId, Obj);
+				}
+				FPC_GameUtil::AddOnScreenDebugMessage("피격!!!!!!!!!!!");
+			});
+
+		Obj->SetCrowdControl(Delegate);
+	}
+	
+	return Obj;
 }
 
 void UPC_SkillComponent::TickComponent(float DeltaTime, enum ELevelTick TickType,
