@@ -29,4 +29,7 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	FName TraceEndBoneName;
+
+	UPROPERTY(EditAnywhere)
+	bool PowerAttack;
 };

@@ -21,7 +21,6 @@
 
 UPC_ActionComponent::UPC_ActionComponent()
 {
-	
 	PrimaryComponentTick.bCanEverTick = true;
 }
 
@@ -215,16 +214,15 @@ void UPC_ActionComponent::Attack(bool IsPressed)
 	float MaxAcceleration = MoveComp->MaxAcceleration;
 
 	// 현재 가속의 크기 (length)
-	float CurrentAccelSize = MoveComp->GetCurrentAcceleration().Size();
-
-	bool IsMaxAcceleration = PlayerData->RunAttackMontage
-		&& CurrentAccelSize >= MaxAcceleration;
+	float CurrentSpeed = MoveComp->Velocity.Size();
+	bool IsMaxSpeed = PlayerData->RunAttackMontage
+		&& CurrentSpeed >= PlayerData->MovementSpeed_Sprint;
 	
 	TArray<UAnimMontage*>& AttackMontages = PlayerData->AttackMontages;
 	if(AttackMaxCount == 0)
 		AttackMaxCount = AttackMontages.Num();
 
-	if (IsAttacking && IsMaxAcceleration == false)
+	if (IsAttacking && IsMaxSpeed == false)
 	{
 		SaveAttack = true;
 	}
@@ -245,26 +243,9 @@ void UPC_ActionComponent::Attack(bool IsPressed)
 		check(AnimInstance);
 
 		UAnimMontage* AttackMontage = nullptr;
-		if(IsMaxAcceleration)
+		if(IsMaxSpeed)
 		{
 			AttackMontage = PlayerData->RunAttackMontage;
-			// 달리기 공격(run 공격)일 때 살짝 앞으로 미끄러지기
-			//auto* MoveComp = OwnerCharacter->GetCharacterMovement();
-			//check(MoveComp);
-
-			const FVector Forward = OwnerCharacter->GetActorForwardVector();
-
-			// 얼마나 미끄러질지 속도값으로 조절 (적당히 600~900 정도부터 테스트)
-			const float SlideSpeed = 1800.f;
-
-			// Z는 유지하고, X/Y 방향만 앞으로
-			FVector NewVelocity = Forward * SlideSpeed;
-			NewVelocity.Z = MoveComp->Velocity.Z;
-
-			MoveComp->Velocity = NewVelocity;
-			FString strLog;
-			strLog.Append(NewVelocity.ToString());
-			FPC_GameUtil::AddOnScreenDebugMessage(strLog);
 		}
 		else
 		{

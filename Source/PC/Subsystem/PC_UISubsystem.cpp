@@ -2,7 +2,6 @@
 
 
 #include "PC/Subsystem/PC_UISubsystem.h"
-
 #include "PC/UI/PC_HPBarWidget.h"
 #include "PC/UI/PC_HUDWidget.h"
 #include "PC/UI/PC_StatusEffectWidget.h"
@@ -26,8 +25,12 @@ UPC_UISubsystem::UPC_UISubsystem()
 	{
 		DamageFloaterWidgetClass = DamageFloaterWidgetAsset.Class;
 	}
-	
-	//static ConstructorHelpers::FClassFinder<upc_dam>
+
+	static ConstructorHelpers::FClassFinder<UPC_OptionSettingWidget> OptionSettingWidgetAsset(TEXT("/Game/ProjectClass/UI/WBP_Option.WBP_Option_C"));
+	if(OptionSettingWidgetAsset.Succeeded())
+	{
+		OptionSettingWidgetClass = OptionSettingWidgetAsset.Class;
+	}
 }
 
 void UPC_UISubsystem::Initialize(FSubsystemCollectionBase& Collection)
@@ -37,11 +40,38 @@ void UPC_UISubsystem::Initialize(FSubsystemCollectionBase& Collection)
 
 void UPC_UISubsystem::CreateHUD()
 {
-	if (UPC_HUDWidget* Widget = Cast<UPC_HUDWidget>(CreateUI(HUDWidgetClass.Get())))
+	if (UPC_HUDWidget* Widget = Cast<UPC_HUDWidget>
+		(CreateUI(HUDWidgetClass.Get())))
 	{
 		Widget->AddToViewport();
 		HUDWidget = Widget;
 	}
+}
+
+
+UPC_OptionSettingWidget* UPC_UISubsystem::CreateOptionSettingWidget()
+{
+	if(GetOptionsWidget())
+	{
+		return OptionSettingWidget;
+	}
+	
+	if (UPC_OptionSettingWidget* Widget = Cast<UPC_OptionSettingWidget>
+		(CreateUI(OptionSettingWidgetClass.Get())))
+	{
+		Widget->AddToViewport();
+		OptionSettingWidget = Widget;
+		return Widget;
+	}
+
+	return nullptr;
+}
+
+
+
+const UPC_OptionSettingWidget* UPC_UISubsystem::GetOptionsWidget()
+{
+	return OptionSettingWidget;
 }
 
 UPC_DamageFloaterWidget* UPC_UISubsystem::CreateDamageFloater(AActor* Owner)

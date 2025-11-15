@@ -265,10 +265,10 @@ void APC_BaseCharacter::AttackTrace(bool bStart, FName TraceStartBoneName, FName
 		BattleComponent->EndTrace();
 }
 
-void APC_BaseCharacter::AttackTraceWithWeapon(bool bStart, bool bRight)
+void APC_BaseCharacter::AttackTraceWithWeapon(bool bStart, bool bRight, bool PowerAttack)
 {
 	if (bStart)
-		BattleComponent->StartTraceWithWeapon(bRight);
+		BattleComponent->StartTraceWithWeapon(bRight,PowerAttack);
 	else
 		BattleComponent->EndTrace();
 }

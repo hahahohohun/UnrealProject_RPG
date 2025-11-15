@@ -17,10 +17,7 @@ void UPC_AttackTraceNotify::Notify(USkeletalMeshComponent* MeshComp, UAnimSequen
 		{
 			if (AttackCharacter->HasWeapon())
 			{
-				FString log;
-				log.Appendf(TEXT("Trace Start: %s"), bStart ? TEXT("true") : TEXT("false"));
-				FPC_GameUtil::AddOnScreenDebugMessage(log);
-				AttackCharacter->AttackTraceWithWeapon(bStart, bRight);
+				AttackCharacter->AttackTraceWithWeapon(bStart, bRight, PowerAttack);
 			}
 			else
 			{

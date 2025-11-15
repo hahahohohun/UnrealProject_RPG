@@ -146,7 +146,11 @@ void UPC_BattleComponent::Tick_TraceWeapon(float DeltaTime)
 	{
 		FHitResult HitResult;
 		ECollisionChannel CollisionChannel = FPC_GameUtil::GetAttackCollisionChannel(Character->CharacterDataID);
-		
+
+		//FPC_GameUtil::CameraShake(EPC_CameraShakeMagnitudeType::Weak);
+		const float Damage = bPowerAttack ?  Character->StatComponent->GetTotalStat().PowerAttack
+		: Character->StatComponent->GetTotalStat().Attack;
+
 		if (World->LineTraceSingleByChannel(HitResult, Line.Key, Line.Value, CollisionChannel, Params))
 		{
 			AActor* HitActor = HitResult.GetActor();
@@ -169,11 +173,15 @@ void UPC_BattleComponent::Tick_TraceWeapon(float DeltaTime)
 					if(ShouldHitAction)
 						FPC_GameUtil::PlayStopDilation(this, 0.2f, 0.f);
 					
-					UE_LOG(LogPC, Log, TEXT("Hit!!"));
-					//FPC_GameUtil::CameraShake(EPC_CameraShakeMagnitudeType::Weak);
-					const float Damage = Character->StatComponent->GetTotalStat().Attack;
-					FDamageEvent DamageEvent;
-					DamageEvent.DamageTypeClass = UPC_NormalAttackDamageType::StaticClass();
+
+					UE_LOG(LogPC, Log, TEXT("Hit!! %f"), Damage);
+					
+					//UPC_NormalAttackDamageType DamageEvent;
+					//auto AttackType = UPC_NormalAttackDamageType::StaticClass();
+
+					FNormalAttackDamageEvent DamageEvent;
+					DamageEvent.bPowerAttack = bPowerAttack; // 여기서 세팅
+					
 					HitActor->TakeDamage(Damage, DamageEvent, Character->GetController(), Character);
 						
 					if (UPC_CharacterDataAsset* HitCharDataAsset = HitCharacter->GetCharacterDataAsset())
@@ -198,7 +206,6 @@ void UPC_BattleComponent::Tick_TraceWeapon(float DeltaTime)
 				if (ACharacter* HitCharacter = Cast<ACharacter>(HitActor))
 				{
 					DamagedActor.Add(HitActor);
-					const float Damage = Character->StatComponent->GetTotalStat().Attack;
 
 					FPointDamageEvent DamageEvent;
 					DamageEvent.DamageTypeClass = UPC_NormalAttackDamageType::StaticClass();
@@ -251,11 +258,12 @@ void UPC_BattleComponent::BeginPlay()
 	SwapWeapon();
 }
 
-void UPC_BattleComponent::StartTraceWithWeapon(bool bRight)
+void UPC_BattleComponent::StartTraceWithWeapon(bool bRight, bool bPowerAtk)
 {
 	bTracing = true;
 	bTraceRightWeapon = bRight;
-
+	bPowerAttack = bPowerAtk;
+	
 	FPC_WeaponTableRow* WeaponTableRow = bRight ? Weapon_R_TableRow : Weapon_L_TableRow;
 	if(!WeaponTableRow)
 		return;
@@ -491,6 +499,7 @@ void UPC_BattleComponent::EndTrace()
 {
 	DamagedActor.Empty();
 	bTracing = false;
+	bPowerAttack = false;
 	TraceElapsedTime = 0.f;
 
 	FPC_GameUtil::AddOnScreenDebugMessage("end trace!!!");

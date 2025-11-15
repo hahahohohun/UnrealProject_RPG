@@ -129,11 +129,18 @@ float APC_NonPlayableCharacter::TakeDamage(float DamageAmount, FDamageEvent cons
 
 	if (DamageAmount > KINDA_SMALL_NUMBER)
 	{
-		if(DamageEvent.DamageTypeClass == UPC_NormalAttackDamageType::StaticClass())
+		if (DamageEvent.IsOfType(FNormalAttackDamageEvent::ClassID))
 		{
 			CrowdControlComponent->RequestPlayerCC(3, DamageCauser);
-		}
+
+			const FNormalAttackDamageEvent& AttackDamageEven =
+				static_cast<const FNormalAttackDamageEvent&>(DamageEvent);
 		
+			bool bPowerAttack = AttackDamageEven.bPowerAttack;
+			if(bPowerAttack)
+				FPC_GameUtil::CameraShake( EPC_CameraShakeMagnitudeType::Strong);
+		}
+
 		if (UAnimInstance* AnimIns = GetMesh()->GetAnimInstance())
 		{
 			if (EnemyState != EPC_EnemyStateType::SKillUsing && !IsDead()
@@ -167,6 +174,8 @@ float APC_NonPlayableCharacter::TakeDamage(float DamageAmount, FDamageEvent cons
 						AnimIns->Montage_Play(OwnerDataAsset->HitReactAnim, 1.f,EMontagePlayReturnType::MontageLength);
 						AnimIns->Montage_SetEndDelegate(EndDelegate, OwnerDataAsset->HitReactAnim);
 					}
+
+					
 				}
 			}
 		}

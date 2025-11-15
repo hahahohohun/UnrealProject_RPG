@@ -31,7 +31,7 @@ public:
 	virtual bool HasWeapon() = 0;
 	virtual void AttackTrace(bool bStart, FName TraceStartBoneName, FName TraceEndBoneName) = 0;
 
-	virtual void AttackTraceWithWeapon(bool bStart, bool bRight) = 0;
+	virtual void AttackTraceWithWeapon(bool bStart, bool bRight, bool PowerAttack) = 0;
 	virtual void OnApplyStatusEffect(uint32 StatusEffectID) = 0;
 	virtual void ReactAttackBreak() = 0;
 	

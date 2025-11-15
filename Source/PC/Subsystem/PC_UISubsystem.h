@@ -3,11 +3,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "PC/UI/PC_DamageFloaterWidget.h"
-#include "PC/UI/PC_UserWidget.h"
-#include "PC/UI/PC_HUDWidget.h"
-#include "PC/UI/PC_StatusEffectWidget.h"
 #include "Subsystems/GameInstanceSubsystem.h"
+
+#include "PC/UI/PC_UserWidget.h"
+#include "PC/UI/PC_DamageFloaterWidget.h"
+#include "PC/UI/PC_HUDWidget.h"
+#include "PC/UI/PC_OptionSettingWidget.h"        // 위젯 클래스
+#include "PC/UI/PC_StatusEffectWidget.h"
 #include "PC_UISubsystem.generated.h"
 
 /**
@@ -20,13 +22,17 @@ class PC_API UPC_UISubsystem : public UGameInstanceSubsystem
 public:
 	UPC_UISubsystem();
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
-
-	void CreateHUD();
-
-	UPC_DamageFloaterWidget* CreateDamageFloater(AActor* Owner);
 	
 	template<typename T>
 	UPC_UserWidget* CreateUI(T* ClassType);
+
+	void CreateHUD();
+	
+	UPC_OptionSettingWidget* CreateOptionSettingWidget();
+	const UPC_OptionSettingWidget* GetOptionsWidget();
+	//
+	
+	UPC_DamageFloaterWidget* CreateDamageFloater(AActor* Owner);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<UPC_HUDWidget> HPBarWidgetClass;
@@ -34,15 +40,21 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<UPC_StatusEffectWidget> StatusEffectWidgetClass;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<UPC_OptionSettingWidget> OptionSettingWidgetClass;
+
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = HUD)
 	TSubclassOf<UPC_HUDWidget> HUDWidgetClass;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = HUD)
-	TObjectPtr<UPC_HUDWidget> HUDWidget;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<UPC_DamageFloaterWidget> DamageFloaterWidgetClass;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = HUD)
+	TObjectPtr<UPC_HUDWidget> HUDWidget;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UPC_OptionSettingWidget> OptionSettingWidget;
 	
 };
 

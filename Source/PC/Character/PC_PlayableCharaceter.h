@@ -36,7 +36,8 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-	
+	virtual void Tick(float DeltaTime) override;
+
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
 	void Jump(const FInputActionValue& Value);
@@ -59,6 +60,8 @@ protected:
 	void Num5Started(const FInputActionValue& Value);
 	void Num5Released(const FInputActionValue& Value);
 	void Num5Canceled(const FInputActionValue& Value);
+
+	void OpenOptionSetting(const FInputActionValue& Value);
 	
 	void DebugDraw(const FInputActionValue& Value);
 
@@ -91,6 +94,7 @@ public:
 
 	virtual bool IsGuarding(FVector ImpactPoint) override;
 	virtual bool IsRolling() override;
+	
 public:
 	/** Camera boom positioning the camera behind the character */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
@@ -134,6 +138,7 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AActor> ProjectileClass;
+
 
 	FPC_OnEnCounterBossMonster OnEnCounterBossMonsterDelegate;
 };

@@ -1,0 +1,90 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+
+#include "PC/Subsystem/PC_OptionSubsystem.h"
+
+#include "Kismet/GameplayStatics.h"
+#include "PC/OptionSetting/PC_OptionConfigDataAsset.h"
+#include "PC/OptionSetting/PC_OptionSaveGame.h"
+
+UPC_OptionSubsystem::UPC_OptionSubsystem()
+{
+	// 정확한 경로 (Copy Reference로 가져와!)
+	static ConstructorHelpers::FObjectFinder<UPC_OptionConfigDataAsset> ConfigAssetObj(
+		TEXT("DataAsset'/Game/ProjectClass/Data/DataAsset/Option/DA_Option_Default.DA_Option_Default'"));
+
+	if (ConfigAssetObj.Succeeded())
+	{
+		ConfigAsset = ConfigAssetObj.Object;
+		UE_LOG(LogTemp, Log, TEXT("Option DataAsset 생성자 로드 성공"));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Option DataAsset 생성자 로드 실패! 경로: %s"), *ConfigAssetObj.GetReferencerName());
+	}
+}
+
+void UPC_OptionSubsystem::Initialize(FSubsystemCollectionBase& Collection)
+{
+	Super::Initialize(Collection);
+	
+	LoadOption();
+	ApplyGraphicsOptions();
+	ApplyAudioOptions();
+}
+
+void UPC_OptionSubsystem::LoadOption()
+{
+	if (USaveGame* Loaded = UGameplayStatics::LoadGameFromSlot(SaveSlotName, SaveUserIndex))
+	{
+		if (UPC_OptionSaveGame* OptionSave = Cast<UPC_OptionSaveGame>(Loaded))
+		{
+			CurrentOption = OptionSave->SavedOption;
+			return;
+		}
+	}
+
+	// SaveGame 없으면 DataAsset 기본값 사용
+	if (ConfigAsset)
+	{
+		CurrentOption = ConfigAsset->DefaultOption;
+	}
+}
+
+void UPC_OptionSubsystem::SaveOption()
+{
+	UPC_OptionSaveGame* SaveObj = Cast<UPC_OptionSaveGame>(
+	UGameplayStatics::CreateSaveGameObject(UPC_OptionSaveGame::StaticClass()));
+
+	SaveObj->SavedOption = CurrentOption;
+	UGameplayStatics::SaveGameToSlot(SaveObj, SaveSlotName, SaveUserIndex);
+}
+
+void UPC_OptionSubsystem::ApplyAndSaveOption(const FPC_OptionData& NewOption)
+{
+	CurrentOption = NewOption;
+
+	ApplyGraphicsOptions();
+	ApplyAudioOptions();
+	// 카메라/키는 필요 시 따로 호출
+
+	SaveOption();
+}
+
+void UPC_OptionSubsystem::ApplyGraphicsOptions()
+{
+}
+
+void UPC_OptionSubsystem::ApplyAudioOptions()
+{
+}
+
+//카메라
+void UPC_OptionSubsystem::ApplyCameraOptions(APlayerController* PC)
+{
+}
+
+//키 입력
+void UPC_OptionSubsystem::ApplyKeyBindings(class ULocalPlayer* LocalPlayer)
+{
+}

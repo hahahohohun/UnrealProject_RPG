@@ -23,6 +23,7 @@
 #include "PC/Data/PC_InputDataAsset.h"
 #include "PC/Data/PC_PlayerDataAsset.h"
 #include "PC/Misc/GameMode/PCGameMode.h"
+#include "PC/Subsystem/PC_UISubsystem.h"
 #include "PC/UI/PC_HUDWidget.h"
 #include "PC/Utills/PC_GameUtill.h"
 #include "Perception/AIPerceptionStimuliSourceComponent.h"
@@ -32,6 +33,8 @@
 // Sets default values
 APC_PlayableCharaceter::APC_PlayableCharaceter()
 {
+	PrimaryActorTick.bCanEverTick = true;
+
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
@@ -113,10 +116,19 @@ void APC_PlayableCharaceter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 		EnhancedInputComponent->BindAction(InputData->Num5Action, ETriggerEvent::Started, this, &ThisClass::Num5Started);
 		EnhancedInputComponent->BindAction(InputData->Num5Action, ETriggerEvent::Completed, this, &APC_PlayableCharaceter::Num5Released);
 		EnhancedInputComponent->BindAction(InputData->Num5Action, ETriggerEvent::Canceled, this, &ThisClass::Num5Canceled);
-		
+
+		//
+		EnhancedInputComponent->BindAction(InputData->OpenOptionAction, ETriggerEvent::Triggered, this, &ThisClass::OpenOptionSetting);
+
+		//Debug
 		EnhancedInputComponent->BindAction(InputData->DebugDrawAction, ETriggerEvent::Triggered, this, &ThisClass::DebugDraw);
 
 	}
+}
+
+void APC_PlayableCharaceter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
 }
 
 void APC_PlayableCharaceter::Move(const FInputActionValue& Value)
@@ -363,6 +375,38 @@ void APC_PlayableCharaceter::Num5Released(const FInputActionValue& Value)
 
 void APC_PlayableCharaceter::Num5Canceled(const FInputActionValue& Value)
 {
+}
+
+void APC_PlayableCharaceter::OpenOptionSetting(const FInputActionValue& Value)
+{
+	const bool IsPressed = Value[0] != 0.f;
+	if (!IsPressed)
+		return;
+
+	if (GEngine)
+	{
+		if (UGameInstance* GameInstance = UGameplayStatics::GetGameInstance(GEngine->GetCurrentPlayWorld()))
+		{
+			if (UPC_UISubsystem* UISubsystem = GameInstance->GetSubsystem<UPC_UISubsystem>())
+			{
+
+				UPC_OptionSettingWidget* OptionSettingWidget =
+					UISubsystem->CreateOptionSettingWidget();
+				
+				if (!OptionSettingWidget)
+					return;
+
+				if(OptionSettingWidget->bIsActive)
+				{
+					OptionSettingWidget->OnClosed();
+				}
+				else
+				{
+					OptionSettingWidget->OnOpened();
+				}
+			}
+		}
+	}
 }
 
 

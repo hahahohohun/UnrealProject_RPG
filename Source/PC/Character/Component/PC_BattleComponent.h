@@ -25,7 +25,7 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	virtual void BeginPlay() override;
-	void StartTraceWithWeapon(bool bRight);
+	void StartTraceWithWeapon(bool bRight, bool bPowerAttack);
 	void StartTrace(FName InTraceStartBoneName, FName InTraceEndBoneName);
 	void EndTrace();
 
@@ -44,6 +44,7 @@ public:
 
 	bool bTracing = false;
 	bool bTraceRightWeapon = false;
+	bool bPowerAttack = false;
 	
 	FName TraceStartBoneName;
 	FName TraceEndBoneName;

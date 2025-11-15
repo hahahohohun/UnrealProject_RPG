@@ -35,7 +35,7 @@ protected:
 	virtual void PostInitializeComponents() override;
 
 	virtual void AttackTrace(bool bStart, FName TraceStartBoneName, FName TraceEndBoneName) override;
-	virtual void AttackTraceWithWeapon(bool bStart, bool bRight) override;
+	virtual void AttackTraceWithWeapon(bool bStart, bool bRight,bool PowerAttack) override;
 	virtual bool HasWeapon() override;
 
 	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,

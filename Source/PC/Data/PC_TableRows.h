@@ -48,7 +48,7 @@ struct FPC_CharacterStatTableRow : public FTableRowBase
 	GENERATED_BODY()
 
 public:
-	FPC_CharacterStatTableRow() : MaxHp(0.0f), MaxStamina(0.0f), Attack(0.0f), MovementSpeed(0.0f)
+	FPC_CharacterStatTableRow() : MaxHp(0.0f), MaxStamina(0.0f), Attack(0.0f),PowerAttack(0.0f), MovementSpeed(0.0f)
 	{
 	}
 
@@ -62,6 +62,9 @@ public:
 	float Attack;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Stat")
+	float PowerAttack;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Stat")
 	float MovementSpeed;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Stat")
@@ -73,6 +76,7 @@ public:
 
 		Result.MaxHp = this->MaxHp + Other.MaxHp;
 		Result.Attack = this->Attack + Other.Attack;
+		Result.PowerAttack = this->PowerAttack + Other.PowerAttack;
 		Result.MaxStamina = this->MaxStamina + Other.MaxStamina;
 		Result.MovementSpeed = this->MovementSpeed + Other.MovementSpeed;
 
