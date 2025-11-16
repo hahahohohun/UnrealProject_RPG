@@ -95,14 +95,14 @@ float APC_BaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Dama
 	const float Damage = StatComponent->ApplyDamage(FinalDamage, DamageCauser, false);
 	if (Damage > KINDA_SMALL_NUMBER)
 	{
-		if(DamageEvent.DamageTypeClass == UPC_NormalAttackDamageType::StaticClass())
+		if (DamageEvent.IsOfType(FNormalAttackDamageEvent::ClassID))
 		{
 			//노말머테리얼일때만
 			FPC_GameUtil::PlayHitMaterial(this);
 		}
 	}
 
-	return Super::TakeDamage(FinalDamage, DamageEvent, EventInstigator, DamageCauser);
+	return Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
 }
 
 void APC_BaseCharacter::ApplyStat(const FPC_CharacterStatTableRow& BaseStat,

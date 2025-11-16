@@ -28,8 +28,7 @@ public:
 
 	void CreateHUD();
 	
-	UPC_OptionSettingWidget* CreateOptionSettingWidget();
-	const UPC_OptionSettingWidget* GetOptionsWidget();
+	UPC_OptionSettingWidget* ToggleOptionsWidget();
 	//
 	
 	UPC_DamageFloaterWidget* CreateDamageFloater(AActor* Owner);
@@ -55,6 +54,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UPC_OptionSettingWidget> OptionSettingWidget;
+
+private:
+	UPC_OptionSettingWidget* CreateOptionSettingWidget();
 	
 };
 

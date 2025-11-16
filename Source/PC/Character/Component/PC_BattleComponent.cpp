@@ -142,15 +142,13 @@ void UPC_BattleComponent::Tick_TraceWeapon(float DeltaTime)
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(GetOwner());
 
+	//FPC_GameUtil::CameraShake(EPC_CameraShakeMagnitudeType::Weak);
+
 	for (const auto& Line : TraceLines)
 	{
 		FHitResult HitResult;
 		ECollisionChannel CollisionChannel = FPC_GameUtil::GetAttackCollisionChannel(Character->CharacterDataID);
-
-		//FPC_GameUtil::CameraShake(EPC_CameraShakeMagnitudeType::Weak);
-		const float Damage = bPowerAttack ?  Character->StatComponent->GetTotalStat().PowerAttack
-		: Character->StatComponent->GetTotalStat().Attack;
-
+		
 		if (World->LineTraceSingleByChannel(HitResult, Line.Key, Line.Value, CollisionChannel, Params))
 		{
 			AActor* HitActor = HitResult.GetActor();
@@ -172,16 +170,21 @@ void UPC_BattleComponent::Tick_TraceWeapon(float DeltaTime)
 					
 					if(ShouldHitAction)
 						FPC_GameUtil::PlayStopDilation(this, 0.2f, 0.f);
-					
+
+					const float Damage = bPowerAttack ?  Character->StatComponent->GetTotalStat().PowerAttack
+						: Character->StatComponent->GetTotalStat().Attack;
 
 					UE_LOG(LogPC, Log, TEXT("Hit!! %f"), Damage);
 					
 					//UPC_NormalAttackDamageType DamageEvent;
 					//auto AttackType = UPC_NormalAttackDamageType::StaticClass();
 
+					//FNormalAttackDamageEvent DamageEvent;
+					//DamageEvent.bPowerAttack = bPowerAttack; // 여기서 세팅
 					FNormalAttackDamageEvent DamageEvent;
-					DamageEvent.bPowerAttack = bPowerAttack; // 여기서 세팅
-					
+					DamageEvent.DamageTypeClass = UDamageType::StaticClass(); 
+					DamageEvent.bPowerAttack = bPowerAttack;
+
 					HitActor->TakeDamage(Damage, DamageEvent, Character->GetController(), Character);
 						
 					if (UPC_CharacterDataAsset* HitCharDataAsset = HitCharacter->GetCharacterDataAsset())
@@ -210,6 +213,10 @@ void UPC_BattleComponent::Tick_TraceWeapon(float DeltaTime)
 					FPointDamageEvent DamageEvent;
 					DamageEvent.DamageTypeClass = UPC_NormalAttackDamageType::StaticClass();
 					DamageEvent.HitInfo = HitResult;
+
+					const float Damage = bPowerAttack ?  Character->StatComponent->GetTotalStat().PowerAttack
+						: Character->StatComponent->GetTotalStat().Attack;
+
 					HitActor->TakeDamage(Damage, DamageEvent, Character->GetController(), Character);
 
 					FPC_GameUtil::CameraShake(EPC_CameraShakeMagnitudeType::Weak);

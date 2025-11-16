@@ -48,30 +48,43 @@ void UPC_UISubsystem::CreateHUD()
 	}
 }
 
-
-UPC_OptionSettingWidget* UPC_UISubsystem::CreateOptionSettingWidget()
+UPC_OptionSettingWidget* UPC_UISubsystem::ToggleOptionsWidget()
 {
-	if(GetOptionsWidget())
-	{
-		return OptionSettingWidget;
-	}
+	if (!OptionSettingWidget)
+		OptionSettingWidget = CreateOptionSettingWidget();
+
+	if (!OptionSettingWidget)
+		return nullptr;
 	
-	if (UPC_OptionSettingWidget* Widget = Cast<UPC_OptionSettingWidget>
-		(CreateUI(OptionSettingWidgetClass.Get())))
+	if (OptionSettingWidget->bIsActive)
 	{
-		Widget->AddToViewport();
-		OptionSettingWidget = Widget;
-		return Widget;
+		OptionSettingWidget->OnClosed(); 
+	}
+	else
+	{
+		OptionSettingWidget->OnOpened();
 	}
 
-	return nullptr;
+	return OptionSettingWidget;
 }
 
 
-
-const UPC_OptionSettingWidget* UPC_UISubsystem::GetOptionsWidget()
+UPC_OptionSettingWidget* UPC_UISubsystem::CreateOptionSettingWidget()
 {
-	return OptionSettingWidget;
+	if (!OptionSettingWidget && OptionSettingWidgetClass)
+	{
+		if (UPC_UserWidget* Created = CreateUI(OptionSettingWidgetClass.Get()))
+		{
+			if (UPC_OptionSettingWidget* Widget = Cast<UPC_OptionSettingWidget>(Created))
+			{
+				OptionSettingWidget = Widget;
+				Widget->AddToViewport();
+				return Widget;
+			}
+		}
+	}
+
+	return OptionSettingWidget; 
 }
 
 UPC_DamageFloaterWidget* UPC_UISubsystem::CreateDamageFloater(AActor* Owner)

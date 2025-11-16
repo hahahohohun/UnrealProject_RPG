@@ -389,21 +389,7 @@ void APC_PlayableCharaceter::OpenOptionSetting(const FInputActionValue& Value)
 		{
 			if (UPC_UISubsystem* UISubsystem = GameInstance->GetSubsystem<UPC_UISubsystem>())
 			{
-
-				UPC_OptionSettingWidget* OptionSettingWidget =
-					UISubsystem->CreateOptionSettingWidget();
-				
-				if (!OptionSettingWidget)
-					return;
-
-				if(OptionSettingWidget->bIsActive)
-				{
-					OptionSettingWidget->OnClosed();
-				}
-				else
-				{
-					OptionSettingWidget->OnOpened();
-				}
+				UISubsystem->ToggleOptionsWidget();
 			}
 		}
 	}
@@ -446,7 +432,7 @@ float APC_PlayableCharaceter::TakeDamage(float DamageAmount, struct FDamageEvent
 
 	if(Damage > KINDA_SMALL_NUMBER)
 	{
-		if(DamageEvent.DamageTypeClass == UPC_NormalAttackDamageType::StaticClass())
+		if (DamageEvent.IsOfType(FNormalAttackDamageEvent::ClassID))
 		{
 			CrowdControlComponent->RequestPlayerCC(4, DamageCauser);
 		}
