@@ -58,6 +58,25 @@ void UPC_OptionSubsystem::SaveOption()
 
 	SaveObj->SavedOption = CurrentOption;
 	UGameplayStatics::SaveGameToSlot(SaveObj, SaveSlotName, SaveUserIndex);
+
+	if(ConfigAsset)
+	{
+		ConfigAsset->SaveOption = CurrentOption;
+	}
+}
+
+void UPC_OptionSubsystem::RestOption()
+{
+	UPC_OptionSaveGame* SaveObj = Cast<UPC_OptionSaveGame>(
+		UGameplayStatics::CreateSaveGameObject(UPC_OptionSaveGame::StaticClass()));
+
+	if (ConfigAsset)
+	{
+		SaveObj->SavedOption = ConfigAsset->DefaultOption;
+		CurrentOption = ConfigAsset->DefaultOption;
+	}
+
+	UGameplayStatics::SaveGameToSlot(SaveObj, SaveSlotName, SaveUserIndex);
 }
 
 void UPC_OptionSubsystem::ApplyAndSaveOption(const FPC_OptionData& NewOption)
@@ -66,7 +85,6 @@ void UPC_OptionSubsystem::ApplyAndSaveOption(const FPC_OptionData& NewOption)
 
 	ApplyGraphicsOptions();
 	ApplyAudioOptions();
-	// 카메라/키는 필요 시 따로 호출
 
 	SaveOption();
 }
@@ -82,9 +100,11 @@ void UPC_OptionSubsystem::ApplyAudioOptions()
 //카메라
 void UPC_OptionSubsystem::ApplyCameraOptions(APlayerController* PC)
 {
+	
 }
 
 //키 입력
 void UPC_OptionSubsystem::ApplyKeyBindings(class ULocalPlayer* LocalPlayer)
 {
+	
 }

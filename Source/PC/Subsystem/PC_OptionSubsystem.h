@@ -29,6 +29,7 @@ public:
 	
 	void ApplyCameraOptions(APlayerController* PC);
 	void ApplyKeyBindings(class ULocalPlayer* LocalPlayer);
+	void RestOption();
 
 private:
 	void LoadOption();

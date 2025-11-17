@@ -4,13 +4,18 @@
 
 #include "Components/CheckBox.h"
 #include "Components/TextBlock.h"
+#include "PC/Subsystem/PC_OptionSubsystem.h"
+#include "PC/Subsystem/PC_UISubsystem.h"
 #include "PC/Utills/PC_GameUtill.h"
 
 void UPC_OptionSettingWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	// --- 텍스트 설정 ---
+	//그래픽
+	if (Title1TextBlock)
+		Title1TextBlock->SetText(FText::FromString(TEXT("Graphic")));
+
 	if (FoliageTextBlock)
 		FoliageTextBlock->SetText(FText::FromString(TEXT("Foliage")));
 
@@ -22,7 +27,8 @@ void UPC_OptionSettingWidget::NativeConstruct()
 
 	if (PostProcessTextBlock)
 		PostProcessTextBlock->SetText(FText::FromString(TEXT("Post Process")));
-	
+
+
 	if (FoliageCheckBox)
 		FoliageCheckBox->OnCheckStateChanged.AddDynamic(this, &UPC_OptionSettingWidget::OnFoliageChanged);
 
@@ -34,13 +40,111 @@ void UPC_OptionSettingWidget::NativeConstruct()
 
 	if (PostProcessCheckBox)
 		PostProcessCheckBox->OnCheckStateChanged.AddDynamic(this, &UPC_OptionSettingWidget::OnPostProcessChanged);
+
+	//사운드
+	if (Title2TextBlock)
+		Title2TextBlock->SetText(FText::FromString(TEXT("Sound")));
+
+	if (BGMSoundTextBlock)
+		BGMSoundTextBlock->SetText(FText::FromString(TEXT("BGM")));
+
+	if (FXSoundTextBlock)
+		FXSoundTextBlock->SetText(FText::FromString(TEXT("FX")));
+
+	if (FXSlider)
+	{
+		FXSlider->OnValueChanged.AddDynamic(
+			this, &UPC_OptionSettingWidget::OnFXSoundValueChanged
+		);
+	}
+
+	if (BGMSlider)
+	{
+		BGMSlider->OnValueChanged.AddDynamic(
+			this, &UPC_OptionSettingWidget::OnBGMSoundValueChanged
+		);
+	}
+
+	//카메라
+	if (Title3TextBlock)
+		Title3TextBlock->SetText(FText::FromString(TEXT("Camera")));
+
+	if (CameraRotTextBlock)
+		CameraRotTextBlock->SetText(FText::FromString(TEXT("sensitivity")));
+
+	if (CameraSlider)
+	{
+		CameraSlider->OnValueChanged.AddDynamic(
+			this, &UPC_OptionSettingWidget::OnCameraRotValueChanged
+		);
+	}
+
+	//Save , Cancel
+	if (SaveTextBlock)
+		SaveTextBlock->SetText(FText::FromString("Save"));
+
+	if (CloseTextBlock)
+		CloseTextBlock->SetText(FText::FromString("Close"));
+
+	if (SaveButton)
+		SaveButton->OnClicked.AddDynamic(this, &UPC_OptionSettingWidget::UPC_OptionSettingWidget::SaveSetting);
+
+	if (CloseButton)
+		CloseButton->OnClicked.AddDynamic(this, &UPC_OptionSettingWidget::UPC_OptionSettingWidget::OnClosed);
+
+
+	//reset
+	if (ResetTextBlock)
+		ResetTextBlock->SetText(FText::FromString("Reset"));
+
+	if (ResetButton)
+		ResetButton->OnClicked.AddDynamic(this, &UPC_OptionSettingWidget::UPC_OptionSettingWidget::RestSetting);
 	
-	InitializeGraphicSettings();
+	if (UGameInstance* GameInstance = GetGameInstance())
+	{
+		if (UPC_OptionSubsystem* subsystem = GameInstance->GetSubsystem<UPC_OptionSubsystem>())
+		{
+			OptionSubsystem = subsystem;
+		}
+	}
+
+	if (OptionSubsystem.IsValid())
+	{
+		RefreshSetting();
+	}
 }
 
 void UPC_OptionSettingWidget::InitializeGraphicSettings()
 {
-	
+	if (FoliageCheckBox)
+		FoliageCheckBox->SetIsChecked(ApplyOption.bUseFoliage);
+
+	if (ShadowCheckBox)
+		ShadowCheckBox->SetIsChecked(ApplyOption.bUseShadow);
+
+	if (AACheckBox)
+		AACheckBox->SetIsChecked(ApplyOption.bUseAA);
+
+	if (PostProcessCheckBox)
+		PostProcessCheckBox->SetIsChecked(ApplyOption.bUsePostProcess);
+}
+
+void UPC_OptionSettingWidget::InitializeSoundSettings()
+{
+	OnFXSoundValueChanged(ApplyOption.SFXVolume);
+	if (FXSlider)
+		FXSlider->SetValue(ApplyOption.SFXVolume);
+
+	OnBGMSoundValueChanged(ApplyOption.BGMVolume);
+	if (BGMSlider)
+		BGMSlider->SetValue(ApplyOption.BGMVolume);
+}
+
+void UPC_OptionSettingWidget::InitializeCameraSettings()
+{
+	OnCameraRotValueChanged(ApplyOption.MouseSensitivity);
+	if (CameraSlider)
+		CameraSlider->SetValue(ApplyOption.MouseSensitivity);
 }
 
 void UPC_OptionSettingWidget::OnOpened()
@@ -66,9 +170,7 @@ void UPC_OptionSettingWidget::OnOpened()
 		// 4. 혹시 남는 입력을 완전히 막고 싶으면 (카메라 회전, 이동 등)
 		PlayerController->SetIgnoreLookInput(true);
 		PlayerController->SetIgnoreMoveInput(true);
-
-		// 필요하면 게임 일시정지까지
-		// PC->SetPause(true);
+		PlayerController->SetPause(true);
 	}
 }
 
@@ -87,31 +189,85 @@ void UPC_OptionSettingWidget::OnClosed()
 		PlayerController->SetIgnoreLookInput(false);
 		PlayerController->SetIgnoreMoveInput(false);
 
-		// 게임을 일시정지 했었다면 해제
-		// PC->SetPause(false);
+		PlayerController->SetPause(false);
 	}
+}
+
+void UPC_OptionSettingWidget::SaveSetting()
+{
+	OptionSubsystem->ApplyAndSaveOption(ApplyOption);
+}
+
+void UPC_OptionSettingWidget::RefreshSetting()
+{
+	ApplyOption = OptionSubsystem->GetCurrentOption();
+
+	InitializeGraphicSettings();
+	InitializeSoundSettings();
+	InitializeCameraSettings();
+}
+
+void UPC_OptionSettingWidget::RestSetting()
+{
+	OptionSubsystem->RestOption();
+	RefreshSetting();
 }
 
 void UPC_OptionSettingWidget::OnFoliageChanged(bool bIsChecked)
 {
-	FString Msg = FString::Printf(TEXT("OnFoliageChanged : %s"), bIsChecked ? TEXT("true") : TEXT("false"));
-	FPC_GameUtil::AddOnScreenDebugMessage(Msg);
+	ApplyOption.bUseFoliage = bIsChecked;
 }
 
 void UPC_OptionSettingWidget::OnShadowChanged(bool bIsChecked)
 {
-	FString Msg = FString::Printf(TEXT("OnShadowChanged : %s"), bIsChecked ? TEXT("true") : TEXT("false"));
-	FPC_GameUtil::AddOnScreenDebugMessage(Msg);
+	ApplyOption.bUseShadow = bIsChecked;
 }
 
 void UPC_OptionSettingWidget::OnAAChanged(bool bIsChecked)
 {
-	FString Msg = FString::Printf(TEXT("OnAAChanged : %s"), bIsChecked ? TEXT("true") : TEXT("false"));
-	FPC_GameUtil::AddOnScreenDebugMessage(Msg);
+	ApplyOption.bUseAA = bIsChecked;
 }
 
 void UPC_OptionSettingWidget::OnPostProcessChanged(bool bIsChecked)
 {
-	FString Msg = FString::Printf(TEXT("OnPostProcessChanged : %s"), bIsChecked ? TEXT("true") : TEXT("false"));
-	FPC_GameUtil::AddOnScreenDebugMessage(Msg);
+	ApplyOption.bUsePostProcess = bIsChecked;
+}
+
+void UPC_OptionSettingWidget::OnCameraRotValueChanged(float Value)
+{
+	if (CameraRotValueTextBlock)
+	{
+		int32 IntValue = FMath::RoundToInt(Value);
+
+		FString DisplayText = FString::FromInt(IntValue);
+		CameraRotValueTextBlock->SetText(FText::FromString(DisplayText));
+
+		ApplyOption.MouseSensitivity = IntValue;
+	}
+}
+
+void UPC_OptionSettingWidget::OnFXSoundValueChanged(float Value)
+{
+	if (FXValueTextBlock)
+	{
+		int32 IntValue = FMath::RoundToInt(Value);
+
+		FString DisplayText = FString::FromInt(IntValue);
+		FXValueTextBlock->SetText(FText::FromString(DisplayText));
+
+		ApplyOption.SFXVolume = IntValue;
+	}
+}
+
+void UPC_OptionSettingWidget::OnBGMSoundValueChanged(float Value)
+{
+	if (BGMValueTextBlock)
+	{
+		int32 IntValue = FMath::RoundToInt(Value);
+
+		FString DisplayText = FString::FromInt(IntValue);
+		BGMValueTextBlock->SetText(FText::FromString(DisplayText));
+		
+		ApplyOption.BGMVolume = IntValue;
+	}
 }

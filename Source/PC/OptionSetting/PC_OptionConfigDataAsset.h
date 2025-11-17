@@ -18,5 +18,7 @@ class PC_API UPC_OptionConfigDataAsset : public UPrimaryDataAsset
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FPC_OptionData DefaultOption;
-	
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FPC_OptionData SaveOption;
 };
