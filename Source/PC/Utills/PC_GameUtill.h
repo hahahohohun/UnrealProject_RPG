@@ -40,11 +40,13 @@ public:
 	
 	static uint32 GetSkillId(UPC_PlayerDataAsset* PlayerDataAsset, EPC_SkillSlotType SlotType, EPC_CharacterStanceType CharacterStance
 	,bool bInSpecialAttack);
-	
+
+	//전투효과
 	static void CameraShake(EPC_CameraShakeMagnitudeType Type);
 	static void PlayStopDilation(const UObject* WorldObject, float Duration, float Dilation);
 	static void PlayHitMaterial(ACharacter* DamageCharacter);
-
+	//
+	
 	//todo
 	static void ApplyHitReactionKnockback(const UObject* WorldObject, float Amount);
 	

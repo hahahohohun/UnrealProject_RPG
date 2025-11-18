@@ -131,7 +131,7 @@ float APC_NonPlayableCharacter::TakeDamage(float DamageAmount, FDamageEvent cons
 	{
 		if (DamageEvent.IsOfType(FNormalAttackDamageEvent::ClassID))
 		{
-			CrowdControlComponent->RequestPlayerCC(3, DamageCauser);
+			//CrowdControlComponent->RequestPlayerCC(3, DamageCauser);
 
 			const FNormalAttackDamageEvent& AttackDamageEven =
 				static_cast<const FNormalAttackDamageEvent&>(DamageEvent);
@@ -310,6 +310,8 @@ void APC_NonPlayableCharacter::Tick_DrawHitPart()
 		}
 	}
 }
+
+
 
 float APC_NonPlayableCharacter::GetAIAttackRange()
 {
@@ -527,6 +529,11 @@ void APC_NonPlayableCharacter::SetDeadType(EPC_DeadType NewDeadType)
 	this->DeadType = NewDeadType;
 }
 
+void APC_NonPlayableCharacter::WeaponSparkEffect(bool bStart, bool bRight)
+{
+	Super::WeaponSparkEffect(bStart, bRight);
+}
+
 void APC_NonPlayableCharacter::OnStartCrowdControl(EPC_CrowdControlType CrowdControlType, AActor* Causer)
 {
 	Super::OnStartCrowdControl(CrowdControlType, Causer);
@@ -588,7 +595,7 @@ void APC_NonPlayableCharacter::SetupCharacterWidget(class UPC_UserWidget* InWidg
 	{
 		StatComponent->OnHPChangedDelegate.AddUObject(HPBarWidget, &UPC_HPBarWidget::UpdateHpBar);
 		HPBarWidget->UpdateHpBar(StatComponent->GetCurrentHp(), StatComponent->GetMaxHp());
-		HPBarWidget->SetVisibility(ESlateVisibility::Collapsed);
+		HPBarWidget->SetVisibility(ESlateVisibility::HitTestInvisible);
 	}
 	else if (UPC_BossHPBarWidget* BossHPBarWidget = Cast<UPC_BossHPBarWidget>(InWidget))
 	{

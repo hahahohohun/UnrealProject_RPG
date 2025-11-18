@@ -3,7 +3,10 @@
 
 #include "PC/Character/Controller/PC_PlayerController.h"
 
+#include "PC/Misc/GameMode/PCGameMode.h"
 #include "PC/Subsystem/PC_UISubsystem.h"
+
+class APCGameMode;
 
 void APC_PlayerController::PostInitializeComponents()
 {
@@ -13,7 +16,7 @@ void APC_PlayerController::PostInitializeComponents()
 void APC_PlayerController::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
 	FInputModeGameOnly GameOnlyInputMode;
 	SetInputMode(GameOnlyInputMode);
 
@@ -26,7 +29,13 @@ void APC_PlayerController::BeginPlay()
 	}
 }
 
+void APC_PlayerController::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+}
+
 void APC_PlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
 }
+

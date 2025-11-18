@@ -14,6 +14,8 @@
 #include "Component/PC_WidgetComponent.h"
 #include "Controller/PC_PlayerController.h"
 //#include "Core/Tests/Containers/TestUtils.h"
+#include <string>
+
 #include "Engine/DamageEvents.h"
 #include "Exporters/TextureExporterPNG.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -81,6 +83,22 @@ void APC_PlayableCharaceter::BeginPlay()
 
 	if(!InteractionOverlapComponent->OnComponentEndOverlap.IsAlreadyBound(InteractionComponent.Get(), &UPC_InteractionComponent::OnEndOverlap))
 		InteractionOverlapComponent->OnComponentEndOverlap.AddDynamic(InteractionComponent.Get(), &UPC_InteractionComponent::OnEndOverlap);
+
+	InitPPFromGameMode();
+
+	// 커브가 세팅되어 있으면 타임라인 초기화
+	if (PPBlurCurve)
+	{
+		FOnTimelineFloat UpdateCallback;
+		UpdateCallback.BindUFunction(this, FName("OnPPBlurUpdate"));
+
+		FOnTimelineEvent FinishedCallback;
+		FinishedCallback.BindUFunction(this, FName("OnPPBlurFinished"));
+
+		PPBlurTimeline.AddInterpFloat(PPBlurCurve, UpdateCallback);
+		PPBlurTimeline.SetTimelineFinishedFunc(FinishedCallback);
+		PPBlurTimeline.SetLooping(false);
+	}
 }
 
 void APC_PlayableCharaceter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -129,6 +147,8 @@ void APC_PlayableCharaceter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 void APC_PlayableCharaceter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	PPBlurTimeline.TickTimeline(DeltaTime);
 }
 
 void APC_PlayableCharaceter::Move(const FInputActionValue& Value)
@@ -456,6 +476,42 @@ void APC_PlayableCharaceter::OnSensedByBossMonster(ACharacter* Incharacter) cons
 	OnEnCounterBossMonsterDelegate.Broadcast(Incharacter);
 }
 
+void APC_PlayableCharaceter::OnPPBlurUpdate(float Value)
+{
+	if (CombatPPMID)
+	{
+		CombatPPMID->SetScalarParameterValue(TEXT("EffectIntensity"), Value);
+	}
+}
+
+void APC_PlayableCharaceter::OnPPBlurFinished()
+{
+	if (CombatPPMID)
+	{
+		CombatPPMID->SetScalarParameterValue(TEXT("EffectIntensity"), 0.0f);
+	}
+}
+
+void APC_PlayableCharaceter::InitPPFromGameMode()
+{
+	if (UWorld* World = GetWorld())
+	{
+		if (APCGameMode* GM = World->GetAuthGameMode<APCGameMode>())
+		{
+			CombatPPVolume = GM->GetCombatPPVolume();
+			CombatPPMID = GM->GetCombatPPMID();
+		}
+	}
+}
+
+void APC_PlayableCharaceter::PlayHitBlurEffect()
+{
+	if (!PPBlurCurve || !CombatPPMID)
+		return;
+
+	PPBlurTimeline.PlayFromStart();
+}
+
 void APC_PlayableCharaceter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
@@ -484,6 +540,11 @@ void APC_PlayableCharaceter::SetupHUDWidget(UPC_HUDWidget* InWidget)
 void APC_PlayableCharaceter::ReactAttackBreak()
 {
 	
+}
+
+void APC_PlayableCharaceter::WeaponSparkEffect(bool bStart, bool bRight)
+{
+	Super::WeaponSparkEffect(bStart, bRight);
 }
 
 //bOrientRotationToMovement : true 가속을 받는 방향으로 캐릭터가 회전

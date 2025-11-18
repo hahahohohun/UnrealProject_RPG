@@ -176,6 +176,9 @@ struct FPC_WeaponTableRow : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TObjectPtr<UStaticMesh> WeaponMesh = nullptr;
 
+	UPROPERTY(EditAnywhere)
+	UNiagaraSystem* WeaponSparkFX_Niagara = nullptr;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float Damage = 0.f;
 

@@ -20,7 +20,9 @@ public:
 	// Sets default values for this character's properties
 	APC_NonPlayableCharacter();
 	virtual void SetDeadType(EPC_DeadType NewDeadType) override;
+	virtual void WeaponSparkEffect(bool bStart, bool bRight) override;
 
+	EPC_EnemyStateType GetEnemyStateType() {return EnemyState;}
 protected:
 	virtual void BeginPlay() override;
 	virtual void PossessedBy(AController* NewController) override;
@@ -29,7 +31,6 @@ protected:
 
 	virtual void Tick(float DeltaTime) override;
 	virtual void Tick_DrawHitPart();
-
 	virtual float GetAIAttackRange() override;
 	virtual float GetAITurnSpeed() override;
 	virtual FPC_EnemyTableRow* GetEnemyData() override;;

@@ -13,8 +13,18 @@ class APCGameMode : public AGameModeBase
 
 public:
 	APCGameMode();
+	virtual void BeginPlay() override;
 
 	bool DebugDrawing = false;
+	APostProcessVolume* GetCombatPPVolume() const { return CombatPPVolume; }
+	UMaterialInstanceDynamic* GetCombatPPMID() const { return CombatPPMID; }
+
+protected:
+	UPROPERTY()
+	APostProcessVolume* CombatPPVolume = nullptr;
+
+	UPROPERTY()
+	UMaterialInstanceDynamic* CombatPPMID = nullptr;
 };
 
 

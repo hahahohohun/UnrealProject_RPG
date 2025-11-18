@@ -35,6 +35,7 @@ public:
 	void EquipWeapon(uint8 InWeaponId, bool bRightHand);
 	void UnEquipWeapon();
 	bool HasWeapon();
+	void ShowWeaponSparkEffect(bool bStart, bool bRight);
 
 	void FireProjectile(bool IsPressed);
 
@@ -62,8 +63,13 @@ public:
 	FPC_WeaponTableRow* Weapon_L_TableRow = nullptr;
 	FPC_WeaponTableRow* Weapon_R_TableRow = nullptr;
 	
+	UNiagaraSystem* Weapon_Spark_Effect = nullptr;
+	
 	UPROPERTY(BlueprintReadOnly)
 	EPC_CharacterStanceType CharacterStanceType;
+
+	UPROPERTY()
+	UNiagaraComponent* WeaponSparkNiagara;
 	
 	int32 CurWeaponIdx = 0;
 	TArray<FPC_WeaponData> Weapons;

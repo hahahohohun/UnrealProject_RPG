@@ -188,6 +188,14 @@ void APC_BaseCharacter::ReactAttackBreak()
 	//TODO 공통 Cam shake 넣어도 될듯
 }
 
+void APC_BaseCharacter::WeaponSparkEffect(bool bStart, bool bRight)
+{
+	if(BattleComponent)
+	{
+		BattleComponent->ShowWeaponSparkEffect(bStart, bRight);
+	}
+}
+
 bool APC_BaseCharacter::IsDead()
 {
 	check(StatComponent);

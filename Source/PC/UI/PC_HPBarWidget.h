@@ -18,7 +18,7 @@ public:
 
 protected:
 	virtual void NativeConstruct() override;
-	
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 public:
 	void UpdateHpBar(float NewCurrentHp, float MaxHp);
 	FString GetHPText();
@@ -29,6 +29,9 @@ protected:
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidgetOptional))
 	TObjectPtr<class UTextBlock> TB_HP;
+
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidgetOptional))
+	TObjectPtr<class UTextBlock> TB_Debug;
 
 	UPROPERTY()
 	float CurrentHp;

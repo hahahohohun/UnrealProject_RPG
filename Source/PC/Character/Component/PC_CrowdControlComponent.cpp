@@ -264,7 +264,8 @@ void UPC_CrowdControlComponent::OnStopCC()
 		}
 	}
 
-	if (CrowdControlInfo.CrowdControlType == EPC_CrowdControlType::Freeze)
+	if (CrowdControlInfo.CrowdControlType == EPC_CrowdControlType::Freeze ||
+		CrowdControlInfo.CrowdControlType == EPC_CrowdControlType::Stun)
 	{
 		USkeletalMeshComponent* skeletalMeshComponent = OwnerCharacter->GetMesh();
 		check(skeletalMeshComponent);

@@ -10,6 +10,7 @@
 #include "Component/PC_InteractionComponent.h"
 #include "Component/PC_SkillComponent.h"
 #include "Components/SphereComponent.h"
+#include "Components/TimelineComponent.h"
 #include "PC/Interface/PC_CharacterHUDInterface.h"
 #include "PC/Interface/PC_PlayerCharacterInterface.h"
 #include "PC_PlayableCharaceter.generated.h"
@@ -68,12 +69,38 @@ protected:
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 	//보스몬스터에게 감지됐을때
 	void OnSensedByBossMonster(ACharacter* Incharacter) const override;
+
+
+	//포스트프로세싱 블러
+	
+	UPROPERTY()
+	APostProcessVolume* CombatPPVolume = nullptr;
+
+	UPROPERTY()
+	UMaterialInstanceDynamic* CombatPPMID = nullptr;
+
+	// 커브 + 타임라인
+	UPROPERTY(EditAnywhere, Category="PostProcess")
+	UCurveFloat* PPBlurCurve = nullptr;   // 에디터에서 세팅
+
+	FTimeline PPBlurTimeline;
+
+	UFUNCTION()
+	void OnPPBlurUpdate(float Value);     // 타임라인 업데이트 콜백
+	UFUNCTION()
+	void OnPPBlurFinished();              // 끝났을 때(옵션)
+	void InitPPFromGameMode();
+	//
 	
 public:
-
+	UFUNCTION(Category="PostProcess")
+	void PlayHitBlurEffect();
+	
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void SetupHUDWidget(UPC_HUDWidget* InWidget) override;
 	virtual void ReactAttackBreak() override;
+	virtual void WeaponSparkEffect(bool bStart, bool bRight) override;
+	
 	void AdjustMovement(bool IsPressed);
 	void AdjustCamera(bool bIsPressed);
 	

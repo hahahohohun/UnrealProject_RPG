@@ -30,7 +30,8 @@ class PC_API IPC_CharacterInterface
 public:
 	virtual bool HasWeapon() = 0;
 	virtual void AttackTrace(bool bStart, FName TraceStartBoneName, FName TraceEndBoneName) = 0;
-
+	virtual void WeaponSparkEffect(bool bStart, bool bRight) = 0;
+	
 	virtual void AttackTraceWithWeapon(bool bStart, bool bRight, bool PowerAttack) = 0;
 	virtual void OnApplyStatusEffect(uint32 StatusEffectID) = 0;
 	virtual void ReactAttackBreak() = 0;
@@ -38,7 +39,7 @@ public:
 	virtual void LaunchCharacter(FVector StartPos, FVector CauserPos, float Power) = 0;
 	virtual  UStaticMeshComponent* GetWeapon_L_StaticMeshComponent() = 0;
 	virtual  UStaticMeshComponent* GetWeapon_R_StaticMeshComponent() = 0;
-	
+
 	virtual UPC_CrowdControlComponent* GetCrowdControlComponent() = 0;
 
 	virtual UPC_SkillComponent* GetSkillComponent() const = 0;

@@ -8,6 +8,7 @@
 #include "PC_ActionComponent.h"
 #include "PC_StatComponent.h"
 #include "Engine/DamageEvents.h"
+#include "NiagaraSystem.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystem.h"
 #include "PC/PC.h"
@@ -192,6 +193,13 @@ void UPC_BattleComponent::Tick_TraceWeapon(float DeltaTime)
 						FPC_GameUtil::SpawnEffectAtLocation(GetWorld(), HitCharDataAsset->HitFx, HitResult.ImpactPoint, FRotator::ZeroRotator, 1);
 						//SpawnEffect(HitResult.ImpactPoint, HitCharDataAsset->HitFx);
 					}
+					
+
+					if(APC_PlayableCharaceter* PlayableCharaceter = Cast<APC_PlayableCharaceter>(OwnerCharacter))
+					{
+						PlayableCharaceter->PlayHitBlurEffect();
+					}
+	
 				}
 			}
 		}
@@ -372,6 +380,9 @@ void UPC_BattleComponent::EquipWeapon(uint8 InWeaponId, bool bRightHand)
 		
 		check(WeaponStaticMeshComponent);
 
+		if(WeaponTableRow->WeaponSparkFX_Niagara)
+			Weapon_Spark_Effect = WeaponTableRow->WeaponSparkFX_Niagara;
+		
 		WeaponStaticMeshComponent->DetachFromComponent(FDetachmentTransformRules::KeepRelativeTransform);
 		WeaponStaticMeshComponent->AttachToComponent(SkeletalMeshComponent, FAttachmentTransformRules::KeepRelativeTransform, WeaponSocketName);
 		
@@ -413,6 +424,56 @@ bool UPC_BattleComponent::HasWeapon()
 		return true;
 
 	return false;
+}
+
+void UPC_BattleComponent::ShowWeaponSparkEffect(bool bStart, bool bRight)
+{
+	if (HasWeapon() == false)
+		return;
+
+	// NiagaraComponent가 없다면 생성
+	if (!WeaponSparkNiagara)
+	{
+		if (Weapon_Spark_Effect != nullptr)
+		{
+			WeaponSparkNiagara = UNiagaraFunctionLibrary::SpawnSystemAttached(
+				Weapon_Spark_Effect,
+				GetOwner()->GetRootComponent(),
+				NAME_None,
+				FVector::ZeroVector,
+				FRotator::ZeroRotator,
+				EAttachLocation::KeepRelativeOffset,
+				false   // AutoDestroy NO (재활용)
+			);
+
+			WeaponSparkNiagara->Deactivate(); // 기본은 꺼진 상태
+		}
+		else
+		{
+			return;
+		}
+	}
+
+	// 소켓명 결정
+	FName SocketName = bRight ? TEXT("TraceStart") : TEXT("TraceStart");
+
+	// 소켓 Transform 가져오기
+	FTransform SocketTransform = FPC_GameUtil::GetSocketTransform(GetOwner(), SocketName);
+
+	if (!SocketTransform.Equals(FTransform()))
+	{
+		WeaponSparkNiagara->SetWorldTransform(SocketTransform);
+	}
+
+	// ON / OFF
+	if (bStart)
+	{
+		WeaponSparkNiagara->Activate(true);
+	}
+	else
+	{
+		WeaponSparkNiagara->Deactivate();
+	}
 }
 
 void UPC_BattleComponent::FireProjectile(bool IsPressed)
