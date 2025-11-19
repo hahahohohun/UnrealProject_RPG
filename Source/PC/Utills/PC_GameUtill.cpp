@@ -3,10 +3,12 @@
 #include "NiagaraFunctionLibrary.h"
 #include "Logging/LogMacros.h"
 #include  "CoreMinimal.h"
+#include "AIController.h"
 #include "PC/PC.h"
 #include "PC/Cometic/PC_LegacyCameraShake.h"
 #include "CoreTypes.h"
 #include "NavigationSystem.h"
+#include "BehaviorTree/BlackboardComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "DSP/MidiNoteQuantizer.h"
 #include "DynamicMesh/MeshTransforms.h"
@@ -324,31 +326,39 @@ EPC_HitPartType FPC_GameUtil::GetHitPartTypeByName(FName BoneName, UDataAsset* D
 	return EPC_HitPartType::None;
 }
 
-UAnimMontage* FPC_GameUtil::GetProperAttackMontage(TArray<TObjectPtr<UAnimMontage>>& AnimMontages,
-                                                   TArray<TObjectPtr<UAnimMontage>>& AlreadyPlayedMontage,
-                                                   AActor* AttackActor, FVector TargetPos)
+UAnimMontage* FPC_GameUtil::GetProperAttackMontage(TArray<TObjectPtr<UAnimMontage>>& AlreadyPlayedMontage,
+	AActor* AttackActor, FVector TargetPos)
 {
-	auto BuildCandidates = [&]()-> TArray<UAnimMontage*>
-	{
+	IPC_CharacterAIInterface* CharacterAIInterface = Cast<IPC_CharacterAIInterface>(AttackActor);
+	if (!CharacterAIInterface)
+		return nullptr;
+
+	FPC_EnemyTableRow* EnemyTableRow = CharacterAIInterface->GetEnemyData();
+	if (!EnemyTableRow)
+		return nullptr;
+
+	bool IsHitPartUnit = EnemyTableRow->IsHitPartUnit;
+
+	TArray<TObjectPtr<UAnimMontage>>& AnimMontages = EnemyTableRow->AttackAnims;
+	//TMap<EPC_ProximityType, FPC_HitPartUnitAttackAnims>& HitPartAnimMontages = EnemyTableRow->IsHitPartUnit;
+	
+	auto BuildCandidates = [&]() {
 		TArray<UAnimMontage*> Out;
 		Out.Reserve(AnimMontages.Num());
-
+		
 		for (UAnimMontage* Montage : AnimMontages)
 		{
 			if (Montage && !AlreadyPlayedMontage.Contains(Montage))
-			{
 				Out.Add(Montage);
-			}
 		}
+		
 		return Out;
 	};
 
 	TArray<UAnimMontage*> Candidates = BuildCandidates();
 
-	//후보군이 없으면
 	if (Candidates.Num() == 0)
 	{
-		//마지막 했던거 제외 시키도록
 		if (AlreadyPlayedMontage.Num() > 0)
 		{
 			UAnimMontage* Last = AlreadyPlayedMontage.Last();
@@ -361,58 +371,73 @@ UAnimMontage* FPC_GameUtil::GetProperAttackMontage(TArray<TObjectPtr<UAnimMontag
 		if (Candidates.Num() == 0)
 		{
 			if (AnimMontages.Num() == 1 && AnimMontages[0])
-			{
 				return AnimMontages[0];
-			}
 
-			return nullptr;
+			if (!IsHitPartUnit)
+				return nullptr;
 		}
 	}
 
+	ACharacter* Character = Cast<ACharacter>(AttackActor);
+	if (!Character)
+		return nullptr;
+
+	AAIController* Controller = Cast<AAIController>(Character->GetController());
+	if (!Controller)
+		return nullptr;
+
 	FVector CurrentPos = AttackActor->GetActorLocation();
-	float DisFromTarget = FVector::Dist(CurrentPos, TargetPos);
+	float DistFromTarget = FVector::Dist(CurrentPos, TargetPos);
 
-	TArray<TPair<UAnimMontage*, float>> Montages;
-	Montages.Reserve(Candidates.Num());
+	TArray<TPair<UAnimMontage*, float>> MontageInfos;
+	MontageInfos.Reserve(Candidates.Num());
+	
+	UAnimMontage* ProperMontage = nullptr;
 
-	TArray<FPC_AnimMontageRootMotionDistanceRow*> RootMotionDistanceTableRows = GetAllRows<
-		FPC_AnimMontageRootMotionDistanceRow>(EPC_DataTableType::RootMotionDistance);
-	for (UAnimMontage* Montage : Candidates)
+	if (IsHitPartUnit)
 	{
-		FString PathStr = Montage->GetPathName();
-		FSoftObjectPath SoftObjectPath(PathStr);
-		const float Dist = GetRootMotionDistanceData(SoftObjectPath);
-		Montages.Emplace(Montage, Dist);
+		const EPC_ProximityType TargetProximity = static_cast<EPC_ProximityType>(Controller->GetBlackboardComponent()->GetValueAsEnum(TEXT("TargetProximityType")));
+
+		if (FPC_HitPartUnitAttackAnims* HitPartUnitAttackAnims = EnemyTableRow->HitPartAttackAnims.Find(TargetProximity))
+		{
+			int32 ArrayNum = HitPartUnitAttackAnims->AnimsMontages.Num();
+			const int32 PickIdx = FMath::RandRange(0, ArrayNum - 1);
+
+			ProperMontage = HitPartUnitAttackAnims->AnimsMontages[PickIdx];
+		}
+	}
+	else
+	{
+		for (UAnimMontage* AnimMontage : Candidates)
+		{
+			FString PathString = AnimMontage->GetPathName();
+			FSoftObjectPath SoftPath(PathString);
+		
+			const float Dist = GetRootMotionDistanceData(SoftPath);
+			MontageInfos.Emplace(AnimMontage, Dist);
+		}
+
+		Algo::Sort(MontageInfos, [DistFromTarget](TPair<UAnimMontage*, float>& A, TPair<UAnimMontage*, float>& B)
+		{
+			return FMath::Abs(DistFromTarget - A.Value) < FMath::Abs(DistFromTarget - B.Value);
+		});
+
+		const int32 TopK = FMath::Min(2, MontageInfos.Num());
+		const int32 PickIdx = FMath::RandRange(0, TopK - 1);
+
+		ProperMontage = MontageInfos[PickIdx].Key;
 	}
 
-	//Algo::Sort(Montages, [DisFromTarget](TPair<UAnimMontage*, float>& A, TPair<UAnimMontage*, float>& B)
-	//{
-	//	return FMath::Abs(DisFromTarget - A.Value < FMath::Abs(DisFromTarget - B.Value));
-	//});
-
-	Algo::Sort(Montages, [DisFromTarget](TPair<UAnimMontage*, float>& A, TPair<UAnimMontage*, float>& B)
-	{
-		return FMath::Abs(DisFromTarget - A.Value) < FMath::Abs(DisFromTarget - B.Value);
-	});
-
-
-	const int32 TopK = FMath::Min(1, Montages.Num()); //몽타주 풀이 작을수도.
-	const int32 PickIdx = FMath::RandRange(0, TopK - 1);
-
-	UAnimMontage* ProperMontage = Montages[PickIdx].Key;
 	AlreadyPlayedMontage.Add(ProperMontage);
 
 	if (IsDebugDrawing(AttackActor))
 	{
 		float DebugDist = CalculateRootMotionDistance(ProperMontage);
-
+		
 		DrawDebugSphere(AttackActor->GetWorld(), CurrentPos, 10.f, 10, FColor::Blue, false, 3.f);
-		DrawDebugSphere(AttackActor->GetWorld(), CurrentPos + AttackActor->GetActorRotation().Vector() * DebugDist,
-		                10.f, 10, FColor::Red, false, 3.f);
-		DrawDebugLine(AttackActor->GetWorld(), CurrentPos,
-		              CurrentPos + AttackActor->GetActorRotation().Vector() * DebugDist, FColor::Red, false, 3.f);
+		DrawDebugSphere(AttackActor->GetWorld(), CurrentPos + AttackActor->GetActorRotation().Vector() * DebugDist, 10.f, 10, FColor::Red, false, 3.f);
+		DrawDebugLine(AttackActor->GetWorld(), CurrentPos, CurrentPos +  AttackActor->GetActorRotation().Vector() * DebugDist, FColor::Red, false, 3.f);
 	}
-
 
 	return ProperMontage;
 }
@@ -736,7 +761,7 @@ void FPC_GameUtil::AddOnScreenDebugMessage(FString msg)
 	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, msg);
 }
 
-EPC_ProximityType FPC_GameUtil::GetTargetProximity(AActor* TargetActor, AActor* CurrentActor, float Near, float Middle)
+EPC_ProximityType FPC_GameUtil::GetTargetProximity(AActor* TargetActor, AActor* CurrentActor, float Near, float Middle, FVector CurrentActorOffset)
 {
 	if (!TargetActor || !CurrentActor)
 	{
@@ -744,7 +769,7 @@ EPC_ProximityType FPC_GameUtil::GetTargetProximity(AActor* TargetActor, AActor* 
 	}
 
 	const FVector TargetLocation = TargetActor->GetActorLocation();
-	const FVector CurrentLocation = CurrentActor->GetActorLocation();
+	const FVector CurrentLocation = CurrentActor->GetActorLocation() + CurrentActorOffset;
 
 	const float Distance = FVector::Dist2D(TargetLocation, CurrentLocation);
 
@@ -770,14 +795,20 @@ EPC_ProximityType FPC_GameUtil::GetTargetProximity(AActor* TargetActor, AActor* 
 
 	if (Distance <= Middle)
 	{
-		const float ForwardThres = 0.7f; // cos(45°) ≈ 0.707
+		const float AngleThreshold = 45.f;
 
-		if (ForwardDot >= ForwardThres)
+		if (ForwardAngle < AngleThreshold)
+		{
 			return EPC_ProximityType::Front;
-		else if (ForwardDot <= -ForwardThres)
+		}
+		else if (ForwardAngle > 180.f - AngleThreshold)
+		{
 			return EPC_ProximityType::Back;
+		}
 		else
-			return RightDot >= 0.f ? EPC_ProximityType::Right : EPC_ProximityType::Left;
+		{
+			return (RightDot >= 0.f) ? EPC_ProximityType::Right : EPC_ProximityType::Left;
+		};
 	}
 
 	return EPC_ProximityType::None;

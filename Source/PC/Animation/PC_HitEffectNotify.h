@@ -24,5 +24,8 @@ public:
 	UNiagaraSystem* HitFX;
 
 	UPROPERTY(EditAnywhere)
+	bool bForwardRot = true;
+
+	UPROPERTY(EditAnywhere)
 	FName EffectBoneName;
 };

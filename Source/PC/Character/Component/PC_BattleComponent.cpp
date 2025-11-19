@@ -453,12 +453,9 @@ void UPC_BattleComponent::ShowWeaponSparkEffect(bool bStart, bool bRight)
 			return;
 		}
 	}
-
-	// 소켓명 결정
-	FName SocketName = bRight ? TEXT("TraceStart") : TEXT("TraceStart");
-
-	// 소켓 Transform 가져오기
-	FTransform SocketTransform = FPC_GameUtil::GetSocketTransform(GetOwner(), SocketName);
+	
+	// 소켓 Transform 가져오기, 칼끝에서 터지게
+	FTransform SocketTransform = FPC_GameUtil::GetSocketTransform(GetOwner(), TEXT("TraceStart"));
 
 	if (!SocketTransform.Equals(FTransform()))
 	{

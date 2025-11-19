@@ -25,11 +25,17 @@ void UPC_HitEffectNotify::Notify(USkeletalMeshComponent* MeshComp, UAnimSequence
 		APawn* ControllingPawn = Cast<APawn>(MeshComp->GetOwner());
 		if(!ControllingPawn) return;
 
-		
+		FRotator Rot  = FRotator::ZeroRotator;
+		if(bForwardRot)
+		{
+			FVector OwnerForward = owner->GetActorForwardVector(); 
+			Rot = OwnerForward.Rotation();  
+		}
+
 		FVector RelativePos = FVector(0.f, 0.f, ControllingPawn->GetActorScale3D().Z);
 		FPC_GameUtil::SpawnEffectAttached(NiagaraSystem, MeshComp,
 														   EffectBoneName,
-														   RelativePos, FRotator::ZeroRotator,
+														   RelativePos, Rot,
 														   EAttachLocation::SnapToTarget, true);
 	
 	}

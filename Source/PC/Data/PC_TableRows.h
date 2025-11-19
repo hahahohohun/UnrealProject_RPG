@@ -133,7 +133,7 @@ struct FPC_EnemyTableRow : public FTableRowBase
 	TArray<TObjectPtr<UAnimMontage>> AttackAnims;
 
 	UPROPERTY(EditAnywhere)
-	TMap<EPC_SkillTargetingType, FPC_HitPartUnitAttackAnims> HitPartAttackAnims;
+	TMap<EPC_ProximityType, FPC_HitPartUnitAttackAnims> HitPartAttackAnims;
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UAnimMontage> DashBackAnim = nullptr;
@@ -332,6 +332,9 @@ struct FPC_ExecTableRow : public FTableRowBase
 
 	UPROPERTY(EditAnywhere)
 	EPC_CameraShakeActionType CameraShakeAction = EPC_CameraShakeActionType::None;
+
+	UPROPERTY(EditAnywhere)
+	FRotator ExecCollisionRelativeRot = FRotator::ZeroRotator;
 };
 
 USTRUCT(BlueprintType)

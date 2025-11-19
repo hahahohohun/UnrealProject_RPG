@@ -184,7 +184,6 @@ void APC_PlayableCharaceter::Look(const FInputActionValue& Value)
 	}
 }
 
-
 void APC_PlayableCharaceter::Attack(const FInputActionValue& Value)
 {
 	const bool IsPressed = Value[0] != 0.f;
@@ -201,9 +200,7 @@ void APC_PlayableCharaceter::Attack(const FInputActionValue& Value)
 	{
 		ActionComponent->Attack(IsPressed);
 	}
-	
 }
-
 
 void APC_PlayableCharaceter::SpecialAction(const FInputActionValue& Value)
 {
@@ -356,7 +353,7 @@ void APC_PlayableCharaceter::Num5Ongoing(const FInputActionValue& Value)
 		// 시작점을 카메라 앞쪽으로 약간 빼서 자기 몸/벽과의 충돌을 피함
 		const FVector Forward = Rotation.Vector();
 		const float   ForwardOffset = 60.f;   // 필요 시 조정
-		const float   UpOffset      = 5;//-5.f;   // 미세 보정
+		const float   UpOffset      = 5;
 		const FVector StartPos = Location + Forward * ForwardOffset + FVector(0,0,UpOffset);
 		const float   Speed    = 2200.f; // 프리뷰 전용
 
@@ -595,11 +592,6 @@ bool APC_PlayableCharaceter::IsGuarding(FVector ImpactPoint)
 	check(ActionComponent);
 	bool bIsGuarding = ActionComponent->IsInSpecialAction;
 	
-	//if (IPC_CharacterInterface* Interface = Cast<IPC_CharacterInterface>(GetOwner()))
-	//{
-	//	Interface->ReactAttackBreak();
-	//	EndTrace();
-	//}
 	if(bIsGuarding)
 	{
 		LaunchCharacter(GetActorLocation(), ImpactPoint, 20);

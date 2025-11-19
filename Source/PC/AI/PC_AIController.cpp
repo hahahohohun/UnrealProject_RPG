@@ -332,6 +332,7 @@ void APC_AIController::Tick(float DeltaSeconds)
 
 	const float NearRange = 450.f;
 	const float MiddleRange = 1000.f;
+	FVector CurrentActorOffset = GetPawn()->GetActorRotation().Vector() * Cast<ACharacter>(GetPawn())->GetMesh()->GetRelativeScale3D().GetMax() * 50.f;
 
 	if(FPC_GameUtil::IsDebugDrawing(this))
 	{
@@ -369,7 +370,7 @@ void APC_AIController::Tick(float DeltaSeconds)
 	if(EnemyTableRow->IsHitPartUnit)
 	{
 		EPC_ProximityType TargetProximity = FPC_GameUtil::GetTargetProximity(
-			TargetActor, GetPawn(), NearRange, MiddleRange);
+			TargetActor, GetPawn(), NearRange, MiddleRange, CurrentActorOffset);
 
 		GetBlackboardComponent()->SetValueAsEnum(TEXT("TargetProximityType"), static_cast<uint8>(TargetProximity));
 		

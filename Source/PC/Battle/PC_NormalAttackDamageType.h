@@ -5,7 +5,7 @@
 #include "GameFramework/DamageType.h"
 #include "PC_NormalAttackDamageType.generated.h"
 
-class UPC_NormalAttackDamageType;  // forward 선언 추가!
+class UPC_NormalAttackDamageType;
 
 
 // 2) DamageType 은 타입 구분용

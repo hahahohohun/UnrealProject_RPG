@@ -262,9 +262,10 @@ void UPC_ActionComponent::Attack(bool IsPressed)
 
 		AddLock(EPC_LockCauseType::Attack, EPC_ActionType::Move);
 		AddLock(EPC_LockCauseType::Attack, EPC_ActionType::Jump);
+		AddLock(EPC_LockCauseType::Attack, EPC_ActionType::Guard);
 	}
 }
-
+//Guard or Aim
 void UPC_ActionComponent::SpecialAction(bool bPressed)
 {
 	if (bPressed && !IsInSpecialAction)

@@ -138,7 +138,7 @@ float APC_NonPlayableCharacter::TakeDamage(float DamageAmount, FDamageEvent cons
 		
 			bool bPowerAttack = AttackDamageEven.bPowerAttack;
 			if(bPowerAttack)
-				FPC_GameUtil::CameraShake( EPC_CameraShakeMagnitudeType::Strong);
+				FPC_GameUtil::CameraShake(EPC_CameraShakeMagnitudeType::Strong);
 		}
 
 		if (UAnimInstance* AnimIns = GetMesh()->GetAnimInstance())
@@ -174,8 +174,6 @@ float APC_NonPlayableCharacter::TakeDamage(float DamageAmount, FDamageEvent cons
 						AnimIns->Montage_Play(OwnerDataAsset->HitReactAnim, 1.f,EMontagePlayReturnType::MontageLength);
 						AnimIns->Montage_SetEndDelegate(EndDelegate, OwnerDataAsset->HitReactAnim);
 					}
-
-					
 				}
 			}
 		}
@@ -420,8 +418,8 @@ void APC_NonPlayableCharacter::Attack(bool bLastAttack)
 	AActor* Target = Cast<AActor>(AIController->GetBlackboardComponent()->GetValueAsObject(TEXT("Target")));
 	check(Target);
 
-	UAnimMontage* Montage = FPC_GameUtil::GetProperAttackMontage(AttackAnims, AlreadyPlayedAttackMontages,
-	                                                             this, Target->GetActorLocation());
+	UAnimMontage* Montage = FPC_GameUtil::GetProperAttackMontage(AlreadyPlayedAttackMontages, this, Target->GetActorLocation());
+	
 	check(Montage);
 
 	bLastAttacking = bLastAttack;
@@ -675,7 +673,7 @@ void APC_NonPlayableCharacter::OnStartSkill(uint32 SkillId)
 		AIContoller->StopMovement();
 	}
 
-	GetCharacterMovement()->DisableMovement();
+	//GetCharacterMovement()->DisableMovement();
 }
 
 void APC_NonPlayableCharacter::OnEndSkill(uint32 SkillId)

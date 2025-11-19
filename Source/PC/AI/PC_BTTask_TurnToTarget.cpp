@@ -30,35 +30,28 @@ EBTNodeResult::Type UPC_BTTask_TurnToTarget::ExecuteTask(UBehaviorTreeComponent&
 	const FRotator TargetRot = FRotationMatrix::MakeFromX(LookVector).Rotator();
 	const FRotator CurrentRot = ControllingPawn->GetActorRotation();
 
-	//-180 ~ 180 정규화
+	// -180 ~ 180 정규화
 	float YawDiff = FMath::UnwindDegrees(TargetRot.Yaw - CurrentRot.Yaw);
-
+	
 	if (YawDiff > 45.f && YawDiff < 135.f)
-	{
 		AIPawn->TurnInPlace(90.f);
-	}
 	else if (YawDiff < -45.f && YawDiff > -135.f)
-	{
 		AIPawn->TurnInPlace(-90.f);
-	}
-	else if(YawDiff >= 135.f && YawDiff < -135.f)
-	{
+	else if (YawDiff >= 135.f || YawDiff < -135.f)
 		AIPawn->TurnInPlace(180.f);
-	}
 	else
 	{
 		Result = EBTNodeResult::Succeeded;
 		return Result;
 	}
-
-	FAICharacterAttackFinished FaiCharacterTurnFinishDelegate;
+	
+	FAICharacterTurnFinished FaiCharacterTurnFinishDelegate;
 	FaiCharacterTurnFinishDelegate.BindLambda(
-		[&]
+		[&]()
 		{
 			FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
 		}
 	);
-
 	AIPawn->SetAITurnFinishDelegate(FaiCharacterTurnFinishDelegate);
 	
 	Result = EBTNodeResult::InProgress;

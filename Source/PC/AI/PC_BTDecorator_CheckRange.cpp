@@ -21,7 +21,7 @@ bool UPC_BTDecorator_CheckRange::CalculateRawConditionValue(UBehaviorTreeCompone
 	APawn* Target = Cast<APawn>(OwnerComp.GetBlackboardComponent()->GetValueAsObject(TEXT("Target")));
 	if (!Target)
 		return false;
-
+ 
 	const float Dis = ControllingPawn->GetDistanceTo(Target);
 	return Range >= Dis;
 }

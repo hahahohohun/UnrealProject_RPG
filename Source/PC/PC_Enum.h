@@ -247,7 +247,7 @@ enum class EPC_SkillFxAttachType : uint8
 };
 
 UENUM(BlueprintType)
-enum EPC_ProximityType : uint8
+enum class EPC_ProximityType : uint8
 {
 	None,
 	Near_l,

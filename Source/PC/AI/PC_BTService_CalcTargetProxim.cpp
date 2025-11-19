@@ -31,7 +31,7 @@ void UPC_BTService_CalcTargetProxim::TickNode(UBehaviorTreeComponent& OwnerComp,
 	if(!Target)
 		return;
 
-	EPC_ProximityType TargetProximity = FPC_GameUtil::GetTargetProximity(ControllingPawn, Target, NearRange, MiddleRange);
+	EPC_ProximityType TargetProximity = FPC_GameUtil::GetTargetProximity(ControllingPawn, Target, NearRange, MiddleRange,FVector::ZeroVector);
 
 	OwnerComp.GetBlackboardComponent()->SetValueAsEnum(TEXT("TargetProximityType"), static_cast<uint8>(TargetProximity));
 	

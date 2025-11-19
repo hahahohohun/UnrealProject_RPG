@@ -10,6 +10,7 @@
 #include "NiagaraFunctionLibrary.h"
 #include "Engine/DamageEvents.h"
 #include "GameFramework/Character.h"
+#include "PC/Battle/PC_NormalAttackDamageType.h"
 #include "PC/Interface/PC_CharacterInterface.h"
 #include "PC/Utills/PC_GameUtill.h"
 
@@ -105,7 +106,9 @@ void APC_SkillObject::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, A
 
 	if (ACharacter* HitCharacter = Cast<ACharacter>(OtherActor))
 	{
-		FDamageEvent DamageEvent;
+		FNormalAttackDamageEvent DamageEvent;
+		DamageEvent.DamageTypeClass = UDamageType::StaticClass(); 
+		
 		HitCharacter->TakeDamage(SkillObjectTableRow->Damage, DamageEvent, OwnerCharacter->GetController(),
 		                         OwnerCharacter.Get());
 	}

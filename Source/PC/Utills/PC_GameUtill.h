@@ -31,10 +31,8 @@ public:
 
 	static FPC_HitPartListRow* GetHitPartData(FSoftObjectPath& ObjectPath);
 	static EPC_HitPartType GetHitPartTypeByName(FName BoneName, UDataAsset* DataAsset);
+	static UAnimMontage* GetProperAttackMontage(TArray<TObjectPtr<UAnimMontage>>& AlreadyPlayedMontage, AActor* AttackActor, FVector TargetPos);
 	
-	
-	static UAnimMontage* GetProperAttackMontage(TArray<TObjectPtr<UAnimMontage>>& AnimMontages, TArray<TObjectPtr<UAnimMontage>>& AlreadyPlayedMontage,
-		AActor* AttackActor, FVector TargetPos);
 	static AActor* GetBestTargetByViewAngle(APlayerController* PlayerController, TArray<AActor*> TargetActors, bool ShouldGetNotInBattleActor, float MaxAngle);
 	static ECollisionChannel GetAttackCollisionChannel(uint32 Dataid);
 	
@@ -69,7 +67,7 @@ public:
 	template <typename T>
 	static TArray<T*> GetAllRows(EPC_DataTableType DataTableType);
 
-	static EPC_ProximityType GetTargetProximity(AActor* TargetActor, AActor* CurrentActor, float Near, float Middle);
+	static EPC_ProximityType GetTargetProximity(AActor* TargetActor, AActor* CurrentActor, float Near, float Middle, FVector CurrentActorOffset);
 	static FColor GetHitPartColor(EPC_HitPartType PartType);
 	static FColor GetHitPartColor(FPC_HitPartListRow* ListRow, FName BoneName);
 	static FTransform GetSocketTransform(AActor* Actor, FName BoneName); //소켓찾고 없으면 무기소켓도
