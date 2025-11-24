@@ -99,3 +99,11 @@ UPC_DamageFloaterWidget* UPC_UISubsystem::CreateDamageFloater(AActor* Owner)
 
 	return nullptr;
 }
+
+void UPC_UISubsystem::HideBossHPWidget()
+{
+	if(HUDWidget)
+	{
+		HUDWidget->OnEnCounterBossMonster(nullptr);
+	}
+}

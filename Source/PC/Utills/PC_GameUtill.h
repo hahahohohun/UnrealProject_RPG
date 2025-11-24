@@ -4,6 +4,8 @@
 #include "PC/Character/Component/PC_StatComponent.h"
 #include "PC/Data/PC_PlayerDataAsset.h"
 #include "PC/Data/PC_TableRows.h"
+#include "Sound/SoundCue.h"
+#include "Sound/SoundWave.h"
 #include "PC/Subsystem/PC_DataSubsystem.h"
 //#include "PC/Cometic/PC_LegacyCameraShake.h"
 //#include "PC/Data/PC_PlayerDataAsset.h"
@@ -44,9 +46,10 @@ public:
 	static void PlayStopDilation(const UObject* WorldObject, float Duration, float Dilation);
 	static void PlayHitMaterial(ACharacter* DamageCharacter);
 	//
-	
+	static void PlaySFXAtLocation(UObject* WorldContextObject, USoundBase* SFX, const FVector& Location);
+
 	//todo
-	static void ApplyHitReactionKnockback(const UObject* WorldObject, float Amount);
+	//static void ApplyHitReactionKnockback(const UObject* WorldObject, float Amount);
 	
 	static FPC_CharacterStatModifier MakeCharacterStatModifierFromRow(const FPC_StatusEffectTableRow& Row, const FPC_CharacterStatTableRow& BaseStat);
 	
@@ -70,6 +73,9 @@ public:
 	static EPC_ProximityType GetTargetProximity(AActor* TargetActor, AActor* CurrentActor, float Near, float Middle, FVector CurrentActorOffset);
 	static FColor GetHitPartColor(EPC_HitPartType PartType);
 	static FColor GetHitPartColor(FPC_HitPartListRow* ListRow, FName BoneName);
+	static float GetHitPartAddDamage(FPC_HitPartListRow* ListRow, FName BoneName);
+	//static float GetCalcTotalHitPartDamage(float Damage, FPC_HitPartListRow* ListRow, FName BoneName);
+	static float GetCalcTotalNormalDamage(float Damage, AActor* HitActor, FName BoneName);
 	static FTransform GetSocketTransform(AActor* Actor, FName BoneName); //소켓찾고 없으면 무기소켓도
 private:
 

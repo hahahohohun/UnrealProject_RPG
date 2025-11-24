@@ -56,6 +56,7 @@ public:
 	virtual void OnDead();
 	virtual void ReactAttackBreak() override;
 	virtual void WeaponSparkEffect(bool bStart,bool bRight) override;
+	
 	virtual bool IsDead() override;
 	virtual bool IsRolling() override;
 	virtual bool IsGuarding(FVector ImpactPoint) override;

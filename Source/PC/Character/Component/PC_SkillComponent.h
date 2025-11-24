@@ -23,7 +23,7 @@ struct FPC_ExecInfo
 	bool bExecCollisionSpawned = false; //한번 콜리전 관련 함수
 
 	TWeakObjectPtr<AActor>  SpawnedSkillObject = nullptr; // 스폰된 투사체
-
+	TSet<TWeakObjectPtr<AActor>> HitActors; //이미 맞은애들
 	float AnimStartTime = 0.0f;
 	float ExecStartTime = 0.0f;
 	float EndTime = 0.f;
@@ -68,7 +68,8 @@ public:
 	UPC_SkillComponent();
 
 	void Tick_PlaySkill(float DeltaTime);
-	
+
+
 public:
 	virtual void BeginPlay() override;
 
@@ -94,6 +95,9 @@ public:
 	void OnEndExec(FPC_SkillInfo& SkillInfo, FPC_ExecInfo& ExecInfo);
 
 	APC_SkillObject* CreateSkillObject(const FTransform Transform, UClass& SkillObject, FPC_ExecTableRow& TableRow);
+
+	void SpawnCollisionDecal(UMaterialInterface* DecalMaterial, const FVector& Shape, const FVector& Pos,
+						 const FRotator& Rot, float LifeTime);
 public:
 	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 

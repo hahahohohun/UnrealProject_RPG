@@ -23,6 +23,7 @@ public:
 	virtual void WeaponSparkEffect(bool bStart, bool bRight) override;
 
 	EPC_EnemyStateType GetEnemyStateType() {return EnemyState;}
+	
 protected:
 	virtual void BeginPlay() override;
 	virtual void PossessedBy(AController* NewController) override;
@@ -33,8 +34,9 @@ protected:
 	virtual void Tick_DrawHitPart();
 	virtual float GetAIAttackRange() override;
 	virtual float GetAITurnSpeed() override;
-	virtual FPC_EnemyTableRow* GetEnemyData() override;;
-
+	virtual FPC_EnemyTableRow* GetEnemyData() override;
+	virtual FPC_HitPartListRow* GetHitPartList() override;
+	
 	virtual void SetAIAttackFinishDelegate(const FAICharacterAttackFinished& InOnAttackFinished) override;
 	virtual void SetAIMoveMontageFinishedDelegate(const FAICharacterMoveMontageFinished& InOnMoveMontageFinished) override;
 	virtual void Attack(bool bLastAttack) override;
@@ -77,8 +79,9 @@ protected:
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = camera, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UPC_WidgetComponent> IndicatorComponent;
-
-
+	
+	FPC_HitPartListRow* HitPartList;
+	
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<USkinnedDecalSampler> SkinnedDecalSampler;
 	

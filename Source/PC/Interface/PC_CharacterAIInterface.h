@@ -8,6 +8,7 @@
 #include "PC_CharacterAIInterface.generated.h"
 
 struct FPC_EnemyTableRow;
+struct FPC_HitPartListRow;
 DECLARE_DELEGATE(FAICharacterAttackFinished);
 //움직이 끝났을때 호출되는 델리게이트
 DECLARE_DELEGATE(FAICharacterMoveMontageFinished);
@@ -40,7 +41,7 @@ public:
 	
 	virtual EPC_EnemyStateType GetState() = 0;
 	virtual EPC_DeadType GetDeadType() = 0;
-
+	virtual FPC_HitPartListRow* GetHitPartList() = 0;
 	virtual AActor* GetPatrolRoute() = 0;
 	virtual void IncrementPatrolIndex() = 0;
 	

@@ -165,7 +165,10 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AActor> ProjectileClass;
-
-
+	
 	FPC_OnEnCounterBossMonster OnEnCounterBossMonsterDelegate;
+	void SetMouseSensitivity(float InSens)   { MouseSensitivity = InSens; }
+
+private:
+	float MouseSensitivity = 1.0f;
 };

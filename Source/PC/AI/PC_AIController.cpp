@@ -366,13 +366,48 @@ void APC_AIController::Tick(float DeltaSeconds)
 		HandleLoseTarget(TargetActor);
 	}
 
-
 	if(EnemyTableRow->IsHitPartUnit)
 	{
 		EPC_ProximityType TargetProximity = FPC_GameUtil::GetTargetProximity(
 			TargetActor, GetPawn(), NearRange, MiddleRange, CurrentActorOffset);
 
 		GetBlackboardComponent()->SetValueAsEnum(TEXT("TargetProximityType"), static_cast<uint8>(TargetProximity));
-		
+
+		if (FPC_GameUtil::IsDebugDrawing(this))
+        {
+            FVector CurrentLocation = GetPawn()->GetActorLocation() + CurrentActorOffset;
+            FVector TargetLocation  = TargetActor->GetActorLocation();
+        
+            FColor DrawColor = FColor::White;
+        
+            switch (TargetProximity)
+            {
+            case EPC_ProximityType::Near_l: DrawColor = FColor::Red;      break;
+            case EPC_ProximityType::Near_r: DrawColor = FColor::Green;    break;
+            case EPC_ProximityType::Front:  DrawColor = FColor::Yellow;   break;
+            case EPC_ProximityType::Back:   DrawColor = FColor::Blue;     break;
+            case EPC_ProximityType::Left:   DrawColor = FColor::Cyan;     break;
+            case EPC_ProximityType::Right:  DrawColor = FColor::Magenta;  break;
+            case EPC_ProximityType::Far:    DrawColor = FColor::Silver;   break;
+            default: break;
+            }
+        
+            DrawDebugLine(GetWorld(), CurrentLocation, TargetLocation, DrawColor, false, -1, 0, 5.f);
+        
+            const FRotator CurrentRot = GetPawn()->GetActorRotation();
+            const FRotator TargetRot  = (TargetLocation - CurrentLocation).Rotation();
+            const float YawDiff = FMath::UnwindDegrees(TargetRot.Yaw - CurrentRot.Yaw);
+        
+            const FString ProximityName = UEnum::GetValueAsString(TargetProximity);
+            const FString DebugText = FString::Printf(TEXT("%s (YawDiff: %.1f°)"), *ProximityName, YawDiff);
+        
+            DrawDebugString(
+                GetWorld(),
+                TargetLocation + FVector(0, 0, 200),
+                DebugText,
+                nullptr, DrawColor, 0.f, true
+            );
+        }
+
 	}
 }

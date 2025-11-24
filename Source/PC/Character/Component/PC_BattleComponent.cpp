@@ -73,7 +73,7 @@ void UPC_BattleComponent::Tick_Assassinate(float DeltaTime)
 
 void UPC_BattleComponent::Tick_TraceWeapon(float DeltaTime)
 {
-		if (!bTracing)
+	if (!bTracing)
 		return;
 
 	TraceElapsedTime += DeltaTime;
@@ -96,7 +96,7 @@ void UPC_BattleComponent::Tick_TraceWeapon(float DeltaTime)
 
 	FVector CurStartBoneLocation = FVector::ZeroVector;
 	FVector CurEndBoneLocation = FVector::ZeroVector;
-	//1:28
+	
 	if (HasWeapon())
 	{
 		if (IPC_CharacterInterface * Interface = Cast<IPC_CharacterInterface>(GetOwner()))
@@ -160,14 +160,14 @@ void UPC_BattleComponent::Tick_TraceWeapon(float DeltaTime)
 
 				if (APC_BaseCharacter* HitCharacter = Cast<APC_BaseCharacter>(HitActor))
 				{
-					if(IPC_CharacterInterface* CharacterInterface = Cast<IPC_CharacterInterface>(HitActor))
-					{
-						if(CharacterInterface->IsRolling())
-							continue;
+					IPC_CharacterInterface* CharacterInterface = Cast<IPC_CharacterInterface>(HitActor);
+					check(CharacterInterface);
+					
+					if(CharacterInterface->IsRolling())
+						continue;
 
-						if(CharacterInterface->IsGuarding(HitResult.ImpactPoint))
-							continue;
-					}
+					if(CharacterInterface->IsGuarding(HitResult.ImpactPoint))
+						continue;
 					
 					if(ShouldHitAction)
 						FPC_GameUtil::PlayStopDilation(this, 0.2f, 0.f);
@@ -194,12 +194,13 @@ void UPC_BattleComponent::Tick_TraceWeapon(float DeltaTime)
 						//SpawnEffect(HitResult.ImpactPoint, HitCharDataAsset->HitFx);
 					}
 					
+					if(HasWeapon())
+						PlayWeaponHitSound();
 
-					if(APC_PlayableCharaceter* PlayableCharaceter = Cast<APC_PlayableCharaceter>(OwnerCharacter))
+					if(APC_PlayableCharaceter* PlayerCharacter = Cast<APC_PlayableCharaceter>(OwnerCharacter))
 					{
-						PlayableCharaceter->PlayHitBlurEffect();
+						PlayerCharacter->PlayHitBlurEffect();
 					}
-	
 				}
 			}
 		}
@@ -279,7 +280,7 @@ void UPC_BattleComponent::StartTraceWithWeapon(bool bRight, bool bPowerAtk)
 	bTraceRightWeapon = bRight;
 	bPowerAttack = bPowerAtk;
 	
-	FPC_WeaponTableRow* WeaponTableRow = bRight ? Weapon_R_TableRow : Weapon_L_TableRow;
+	const FPC_WeaponTableRow* WeaponTableRow = GetCurWeaponTableRow(bRight);
 	if(!WeaponTableRow)
 		return;
 	
@@ -368,7 +369,7 @@ void UPC_BattleComponent::EquipWeapon(uint8 InWeaponId, bool bRightHand)
 		UPC_CharacterDataAsset* CharacterData = Interface->GetCharacterDataAsset();
 		check(CharacterData);
 
-		FPC_WeaponTableRow* WeaponTableRow = bRightHand ? Weapon_R_TableRow : Weapon_L_TableRow;
+		const FPC_WeaponTableRow* WeaponTableRow = GetCurWeaponTableRow(bRightHand);
 		FName WeaponSocketName = bRightHand ? CharacterData->WeaponSocketName_R : CharacterData->WeaponSocketName_L;
 
 		const ACharacter* Character = CastChecked<ACharacter>(GetOwner());
@@ -505,6 +506,15 @@ void UPC_BattleComponent::FireProjectile(bool IsPressed)
 		APC_SkillObject* SkillObject = GetWorld()->SpawnActorDeferred<APC_SkillObject>(PlayableCharacter->ProjectileClass, Transform, GetOwner(), nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
 		SkillObject->OwnerCharacter = OwnerCharacter.Get();
 		SkillObject->FinishSpawning(Transform);
+
+		if(HasWeapon())
+		{
+			auto WeaponTableRow = GetCurWeaponTableRow(true);
+			if(WeaponTableRow->SwingSound)
+			{
+				FPC_GameUtil::PlaySFXAtLocation(this, WeaponTableRow->SwingSound,Location);
+			}
+		}
 	}
 }
 
@@ -560,6 +570,53 @@ void UPC_BattleComponent::Assassinate(AActor* Target)
 	StatComponent->ApplyDamage(MaxHP, OwnerCharacter.Get(), true);
 }
 
+void UPC_BattleComponent::PlayWeaponHitSound()
+{
+	if (IPC_CharacterInterface * Interface = Cast<IPC_CharacterInterface>(GetOwner()))
+	{
+		const FPC_WeaponTableRow* WeaponTableRow = GetCurWeaponTableRow(bTraceRightWeapon);
+
+		if (WeaponTableRow && WeaponTableRow->HitSound)
+		{
+			UStaticMeshComponent* WeaponMesh = bTraceRightWeapon? Interface->GetWeapon_R_StaticMeshComponent() : Interface->GetWeapon_L_StaticMeshComponent();
+			check(WeaponMesh);
+
+			FVector SpawnSound = WeaponMesh->GetSocketLocation(TraceStartBoneName);
+			FPC_GameUtil::PlaySFXAtLocation(this, WeaponTableRow->HitSound, SpawnSound);
+		}
+	}
+}
+
+void UPC_BattleComponent::PlayWeaponSwingSound()
+{
+	if (IPC_CharacterInterface * Interface = Cast<IPC_CharacterInterface>(GetOwner()))
+	{
+		const FPC_WeaponTableRow* WeaponTableRow = GetCurWeaponTableRow(bTraceRightWeapon);
+		if (WeaponTableRow && WeaponTableRow->SwingSound)
+		{
+			UStaticMeshComponent* WeaponMesh = bTraceRightWeapon? Interface->GetWeapon_R_StaticMeshComponent() : Interface->GetWeapon_L_StaticMeshComponent();
+			check(WeaponMesh);
+
+			FVector SpawnSound = WeaponMesh->GetSocketLocation(TraceStartBoneName);
+			FPC_GameUtil::PlaySFXAtLocation(this, WeaponTableRow->SwingSound, SpawnSound);
+		}
+	}
+}
+
+const FPC_WeaponTableRow* UPC_BattleComponent::GetCurWeaponTableRow(bool bRight)
+{
+	const FPC_WeaponTableRow* WeaponTableRow = nullptr;;
+	if (HasWeapon())
+	{
+		if (bRight)
+			WeaponTableRow = Weapon_R_TableRow;
+		else
+			WeaponTableRow = Weapon_L_TableRow;
+	}
+
+	return WeaponTableRow;
+}
+
 void UPC_BattleComponent::EndTrace()
 {
 	DamagedActor.Empty();
@@ -567,5 +624,6 @@ void UPC_BattleComponent::EndTrace()
 	bPowerAttack = false;
 	TraceElapsedTime = 0.f;
 
-	FPC_GameUtil::AddOnScreenDebugMessage("end trace!!!");
+	if(FPC_GameUtil::IsDebugDrawing(this))
+		FPC_GameUtil::AddOnScreenDebugMessage("end trace!!!");
 }

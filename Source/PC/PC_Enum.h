@@ -189,6 +189,8 @@ enum class EPC_CrowdControlType : uint8
 	Stun,
 	Freeze,
 	Pull, //끌어당기기
+	Fire,
+	Shock,
 	Num
 };
 
@@ -258,5 +260,13 @@ enum class EPC_ProximityType : uint8
 	Right,
 	Far,
 	Num,
+};
+
+UENUM(BlueprintType)
+enum class EPC_BGMType : uint8
+{
+	None,
+	Stage,
+	Combat,
 };
 

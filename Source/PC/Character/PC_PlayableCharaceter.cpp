@@ -84,6 +84,7 @@ void APC_PlayableCharaceter::BeginPlay()
 	if(!InteractionOverlapComponent->OnComponentEndOverlap.IsAlreadyBound(InteractionComponent.Get(), &UPC_InteractionComponent::OnEndOverlap))
 		InteractionOverlapComponent->OnComponentEndOverlap.AddDynamic(InteractionComponent.Get(), &UPC_InteractionComponent::OnEndOverlap);
 
+
 	InitPPFromGameMode();
 
 	// 커브가 세팅되어 있으면 타임라인 초기화
@@ -178,8 +179,8 @@ void APC_PlayableCharaceter::Look(const FInputActionValue& Value)
 		if(!LockOnComponent->IsLockOnMode())
 		{
 			// add yaw and pitch input to controller
-			AddControllerYawInput(LookAxisVector.X);
-			AddControllerPitchInput(LookAxisVector.Y);	
+			AddControllerYawInput(LookAxisVector.X * MouseSensitivity);
+			AddControllerPitchInput(LookAxisVector.Y * MouseSensitivity);	
 		}
 	}
 }
@@ -444,6 +445,11 @@ float APC_PlayableCharaceter::TakeDamage(float DamageAmount, struct FDamageEvent
 
 	UPC_CharacterDataAsset* CauserDataAsset = CauserInterface->GetCharacterDataAsset();
 	check(CauserDataAsset);
+
+	if(ActionComponent->IsGuarded())
+	{
+		return 0;
+	}
 	
 	float Damage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 
@@ -471,6 +477,14 @@ float APC_PlayableCharaceter::TakeDamage(float DamageAmount, struct FDamageEvent
 void APC_PlayableCharaceter::OnSensedByBossMonster(ACharacter* Incharacter) const
 {
 	OnEnCounterBossMonsterDelegate.Broadcast(Incharacter);
+
+	if (UWorld* World = GetWorld())
+	{
+		if (APCGameMode* GM = World->GetAuthGameMode<APCGameMode>())
+		{
+			GM->PlayBGM(EPC_BGMType::Combat);
+		}
+	}
 }
 
 void APC_PlayableCharaceter::OnPPBlurUpdate(float Value)

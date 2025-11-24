@@ -6,6 +6,8 @@
 #include "PC_CharacterStatWidget.h"
 #include "Components/ProgressBar.h"
 #include "PC/Interface/PC_CharacterHUDInterface.h"
+#include "PC/Misc/GameMode/PCGameMode.h"
+#include "PC/Subsystem/PC_AudioSubsystem.h"
 
 void UPC_HUDWidget::NativeConstruct()
 {

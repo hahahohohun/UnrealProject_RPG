@@ -30,6 +30,9 @@ struct FPC_HitPartData
 
 	UPROPERTY(EditAnywhere)
 	EPC_HitPartType HitPartType = EPC_HitPartType::None;
+
+	UPROPERTY(EditAnywhere)
+	float AddHitDamage = 0.0f; // 부위 별 추가뎀지
 };
 
 USTRUCT(BlueprintType)
@@ -48,7 +51,7 @@ struct FPC_CharacterStatTableRow : public FTableRowBase
 	GENERATED_BODY()
 
 public:
-	FPC_CharacterStatTableRow() : MaxHp(0.0f), MaxStamina(0.0f), Attack(0.0f),PowerAttack(0.0f), MovementSpeed(0.0f)
+	FPC_CharacterStatTableRow() : MaxHp(0.0f), MaxStamina(0.0f), Attack(0.0f), PowerAttack(0.0f), MovementSpeed(0.0f)
 	{
 	}
 
@@ -144,18 +147,26 @@ struct FPC_EnemyTableRow : public FTableRowBase
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UAnimMontage> Left90TurnAnim = nullptr;
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UAnimMontage> Right90TurnAnim = nullptr;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UAnimMontage> Left45TurnAnim = nullptr;
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UAnimMontage> Right45TurnAnim = nullptr;
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UAnimMontage> Turn180Anim = nullptr;
 
-	UPROPERTY(EditAnywhere)
-	TObjectPtr<UAnimMontage> Right90TurnAnim = nullptr;
 
 	UPROPERTY(EditAnywhere)
 	bool IsBoss = false;
 
 	UPROPERTY(EditAnywhere)
 	bool IsHitPartUnit = false;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UNiagaraSystem> HitPartFX = nullptr;
 
 	UPROPERTY(EditAnywhere)
 	bool HasSuperAmor = false;
@@ -175,6 +186,12 @@ struct FPC_WeaponTableRow : public FTableRowBase
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TObjectPtr<UStaticMesh> WeaponMesh = nullptr;
+
+	UPROPERTY(EditAnywhere)
+	USoundBase* HitSound = nullptr;
+
+	UPROPERTY(EditAnywhere)
+	USoundBase* SwingSound = nullptr;
 
 	UPROPERTY(EditAnywhere)
 	UNiagaraSystem* WeaponSparkFX_Niagara = nullptr;
@@ -229,6 +246,12 @@ struct FPC_ExecTableRow : public FTableRowBase
 
 	UPROPERTY(EditAnywhere)
 	uint32 DataId = 0;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<USoundBase> StartSFX; //스킬 시작할때
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<USoundBase> ActiveSFX; //
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UAnimMontage> SkillAnim;
@@ -317,9 +340,15 @@ struct FPC_ExecTableRow : public FTableRowBase
 
 	UPROPERTY(EditAnywhere)
 	FName SkillPosBoneName = NAME_None;
-	
+
 	UPROPERTY(EditAnywhere)
 	bool bSpawnCollision = true;
+
+	UPROPERTY(EditAnywhere)
+	bool bEffectBlur = false;
+
+	UPROPERTY(EditAnywhere)
+	float HitDilationTime = 0.0f;
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UMaterialInterface> MaterialInterface = nullptr;
@@ -377,7 +406,7 @@ struct FPC_CrowdControlTableRow : public FTableRowBase
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UNiagaraSystem> EndCrowdControlFX = nullptr;
-	
+
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UMaterialInstance> MaterialInstance = nullptr; //메테리얼중 가장 상위 클래스
 

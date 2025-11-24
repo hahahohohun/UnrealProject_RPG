@@ -77,21 +77,10 @@ void APC_BaseCharacter::BeginPlay()
 float APC_BaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
                                     AActor* DamageCauser)
 {
-	if(IPC_PlayerCharacterInterface* PlayerCharacter = Cast<IPC_PlayerCharacterInterface>(this))
-	{
-		 if(UPC_ActionComponent* ActionComponent = PlayerCharacter->GetActionComponent())
-		 {
-			 if(ActionComponent->IsGuarded())
-			 {
-			 	return 0;
-			 }
-		 }
-	}
-	
 	const float VariancePercent = 0.035f;
 	const float RandomFactor = FMath::FRandRange(-VariancePercent, VariancePercent);
 	const float FinalDamage = DamageAmount * (1.0f + RandomFactor);
-
+	
 	const float Damage = StatComponent->ApplyDamage(FinalDamage, DamageCauser, false);
 	if (Damage > KINDA_SMALL_NUMBER)
 	{
@@ -181,6 +170,7 @@ void APC_BaseCharacter::OnDead()
 	//GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	//GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_GameTraceChannel3, ECR_Ignore);
 	GetCapsuleComponent()->SetCollisionProfileName(EName::Pawn);
+
 }
 
 void APC_BaseCharacter::ReactAttackBreak()

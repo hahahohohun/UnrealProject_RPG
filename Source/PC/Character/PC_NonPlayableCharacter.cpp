@@ -11,6 +11,7 @@
 #include "PC/AI/PC_AIController.h"
 #include "PC/AI/Actor/PC_PatrolRoute.h"
 #include "PC/Battle/PC_NormalAttackDamageType.h"
+#include "PC/Misc/GameMode/PCGameMode.h"
 #include "PC/Subsystem/PC_UISubsystem.h"
 #include "PC/UI/PC_HPBarWidget.h"
 #include "PC/Utills/PC_GameUtill.h"
@@ -91,9 +92,8 @@ void APC_NonPlayableCharacter::BeginPlay()
 		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_GameTraceChannel3, ECR_Ignore);
 	}
 
+	GetHitPartList();
 	ResetState();
-
-	
 }
 
 void APC_NonPlayableCharacter::PossessedBy(AController* NewController)
@@ -117,17 +117,17 @@ float APC_NonPlayableCharacter::TakeDamage(float DamageAmount, FDamageEvent cons
 	UPC_CharacterDataAsset* CauseDataAsset = CauserCharacterInterface->GetCharacterDataAsset();
 	check(CauseDataAsset);
 	
+	float Damage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+
 	UAISense_Damage::ReportDamageEvent(
 		GetWorld(),
 		this,
 		DamageCauser,
-		DamageAmount,
+		Damage,
 		DamageCauser->GetActorLocation(),
 		GetActorLocation());
 
-	float Damage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
-
-	if (DamageAmount > KINDA_SMALL_NUMBER)
+	if (Damage > KINDA_SMALL_NUMBER)
 	{
 		if (DamageEvent.IsOfType(FNormalAttackDamageEvent::ClassID))
 		{
@@ -135,10 +135,6 @@ float APC_NonPlayableCharacter::TakeDamage(float DamageAmount, FDamageEvent cons
 
 			const FNormalAttackDamageEvent& AttackDamageEven =
 				static_cast<const FNormalAttackDamageEvent&>(DamageEvent);
-		
-			bool bPowerAttack = AttackDamageEven.bPowerAttack;
-			if(bPowerAttack)
-				FPC_GameUtil::CameraShake(EPC_CameraShakeMagnitudeType::Strong);
 		}
 
 		if (UAnimInstance* AnimIns = GetMesh()->GetAnimInstance())
@@ -151,17 +147,6 @@ float APC_NonPlayableCharacter::TakeDamage(float DamageAmount, FDamageEvent cons
 					RequestChangeState(EPC_EnemyStateType::ReactAttackBreak);
 					if(EnemyState == EPC_EnemyStateType::ReactAttackBreak)
 					{
-						//if(AAIController* AIController = Cast<AAIController>(GetController()))
-						//{
-						//	AIController->StopMovement();
-						//
-						//	USkeletalMeshComponent* SkeletalMeshComponent = GetMesh();
-						//	check(SkeletalMeshComponent);
-						//
-						//	GetCharacterMovement()->DisableMovement();
-						//	SkeletalMeshComponent->SetComponentTickEnabled(false);
-						//}
-						
 						FOnMontageEnded EndDelegate;
 						EndDelegate.BindLambda([this](UAnimMontage* Montage, bool bInterrupted)
 						{
@@ -186,28 +171,53 @@ float APC_NonPlayableCharacter::TakeDamage(float DamageAmount, FDamageEvent cons
 				FPC_GameUtil::SpawnEffectAtLocation(GetWorld(), CauseDataAsset->HitFx, Hit.ImpactPoint, FRotator::ZeroRotator);
 				int32 DecalID = SkinnedDecalSampler->SpawnDecal(Hit.ImpactPoint, Hit.ImpactNormal.Rotation().Quaternion(),Hit.BoneName,25.0f);
 
+				UNiagaraComponent* HitPartFXComp = nullptr;
+				if (auto HitPartFX = EnemyTableRow->HitPartFX)
+				{
+					USkeletalMeshComponent* MeshComp = Cast<USkeletalMeshComponent>(Hit.GetComponent());
+					if (MeshComp)
+					{
+						HitPartFXComp = FPC_GameUtil::SpawnEffectAttached(
+							HitPartFX,
+							MeshComp,
+							Hit.BoneName,
+							Hit.ImpactPoint,                    
+							Hit.ImpactNormal.Rotation(),
+							EAttachLocation::KeepWorldPosition,
+							false
+						);
+					}
+				}
+				
+				TWeakObjectPtr<UNiagaraComponent> HitPartFXWeak = HitPartFXComp;
+
 				//데칼 삭제
 				FTimerHandle TimerHandle;
 				GetWorld()->GetTimerManager().SetTimer(
 					TimerHandle,
-					FTimerDelegate::CreateLambda([this, DecalID]()
+					FTimerDelegate::CreateLambda([this, DecalID, HitPartFXWeak]()
 					{
 						if (SkinnedDecalSampler)
 						{
 							SkinnedDecalSampler->RemoveDecal(DecalID);
 						}
-					}),
-					3.0f,  // 타이머 실행 시간 (초 단위)
-					false  // 반복 여부: false면 한 번만 실행
+						
+						if (HitPartFXWeak.IsValid())
+						{
+							HitPartFXWeak->Deactivate();
+							HitPartFXWeak->DestroyComponent();
+						}
+					}), 5.0f, false 
 				);
 			}
+
 		}
 		else
 		{
 			FPC_GameUtil::SpawnEffectAtLocation(GetWorld(), CauseDataAsset->HitFx, GetActorLocation(), FRotator::ZeroRotator);
 		}
-
-		FPC_GameUtil::SpawnDamageFloater(this, DamageAmount);
+		
+		FPC_GameUtil::SpawnDamageFloater(this, Damage);
 	}
 
 	return Damage;
@@ -260,8 +270,8 @@ void APC_NonPlayableCharacter::Tick_DrawHitPart()
 			if (!PhysicsAsset)
 				return;
 			
-			FSoftObjectPath AssetPath(PhysicsAsset);
-			FPC_HitPartListRow* HitPartList = FPC_GameUtil::GetHitPartData(AssetPath);
+			//FSoftObjectPath AssetPath(PhysicsAsset);
+			//FPC_HitPartListRow* HitPartList = FPC_GameUtil::GetHitPartData(AssetPath);
 			if (!HitPartList)
 				return;
 
@@ -334,6 +344,24 @@ FPC_EnemyTableRow* APC_NonPlayableCharacter::GetEnemyData()
 	return EnemyTableRow;
 }
 
+FPC_HitPartListRow* APC_NonPlayableCharacter::GetHitPartList()
+{
+	if(!HitPartList)
+	{
+		USkeletalMeshComponent* SkeletalMeshComponent = GetMesh();
+		check(SkeletalMeshComponent);
+		
+		UPhysicsAsset* PhysicsAsset = SkeletalMeshComponent->GetPhysicsAsset();
+		if(PhysicsAsset)
+		{
+			FSoftObjectPath AssetPath(PhysicsAsset);
+			HitPartList = FPC_GameUtil::GetHitPartData(AssetPath);
+		}
+	}
+
+	return HitPartList;
+}
+
 void APC_NonPlayableCharacter::OnAttackMontageEnd(UAnimMontage* Montage, bool bInterrupted)
 {
 	OnAttackFinished.ExecuteIfBound();
@@ -361,30 +389,70 @@ void APC_NonPlayableCharacter::TurnInPlace(float TurnAnimDegree)
 	check(EnemyTableRow);
 
 	UAnimMontage* TurnAnimMontage = nullptr;
-	if(TurnAnimDegree == 90.f)
+
+	// 45도 회전 처리
+	if (TurnAnimDegree == 45.f)
+	{
+		if (EnemyTableRow->Left45TurnAnim)
+			TurnAnimMontage = EnemyTableRow->Left45TurnAnim;
+		else
+			return;   // 몽타주 없으면 회전 안함
+	}
+	else if (TurnAnimDegree == -45.f)
+	{
+		if (EnemyTableRow->Right45TurnAnim)
+			TurnAnimMontage = EnemyTableRow->Right45TurnAnim;
+		else
+			return;   // 몽타주 없으면 회전 안함
+	}
+
+	// 90° Left
+	if (TurnAnimDegree == 90.f)
 	{
 		TurnAnimMontage = EnemyTableRow->Left90TurnAnim;
 	}
-	else if(TurnAnimDegree == 180.f)
-	{
-		TurnAnimMontage = EnemyTableRow->Turn180Anim;
-	}
-	else if(TurnAnimDegree == -90.f)
+	// 90° Right
+	else if (TurnAnimDegree == -90.f)
 	{
 		TurnAnimMontage = EnemyTableRow->Right90TurnAnim;
 	}
-	
+	// 180°
+	else if (TurnAnimDegree == 180.f)
+	{
+		TurnAnimMontage = EnemyTableRow->Turn180Anim;
+	}
+
+	// 해당 회전에 맞는 몽타주 없으면 Abort
+	if (!TurnAnimMontage)
+		return;
+
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	check(AnimInstance);
-	
+
+	if (UAnimMontage* CurrentMontage = AnimInstance->GetCurrentActiveMontage())
+	{
+		if (CurrentMontage != TurnAnimMontage)
+		{
+			const float BlendOutTime = 0.2f; // 0.1~0.2 정도에서 테스트해봐
+			AnimInstance->Montage_Stop(BlendOutTime, CurrentMontage);
+		}
+	}
+
 	IsTurning = true;
 	TurnStartYaw = GetActorRotation().Yaw;
 	TurnDegree = TurnAnimDegree;
 	
-	PlayAnimMontage(TurnAnimMontage);
+	AnimInstance->Montage_Play(
+		TurnAnimMontage,
+		1.0f,                                               // PlayRate
+		EMontagePlayReturnType::MontageLength,
+		0.0f,                                               // Start at beginning
+		false                                               // bStopAllMontages = false (중요)
+	);
 	
-	FOnMontageEnded EndDelegate = FOnMontageEnded::CreateUObject(this, &ThisClass::OnTurnMontageEnd);
-	GetMesh()->GetAnimInstance()->Montage_SetEndDelegate(EndDelegate);
+	FOnMontageEnded EndDelegate =
+		FOnMontageEnded::CreateUObject(this, &ThisClass::OnTurnMontageEnd);
+	AnimInstance->Montage_SetEndDelegate(EndDelegate);
 }
 
 void APC_NonPlayableCharacter::DashBack()
@@ -581,6 +649,22 @@ void APC_NonPlayableCharacter::OnDead()
 		Cap->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block); // 바닥/벽
 		Cap->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block); // 필요 시 시야/트레이스 유지
 		Cap->SetGenerateOverlapEvents(false); // 겹침 이벤트 필요 없으면
+	}
+
+	if (UWorld* World = GetWorld())
+	{
+		if (APCGameMode* GM = World->GetAuthGameMode<APCGameMode>())
+		{
+			GM->PlayBGM(EPC_BGMType::Stage);
+		}
+
+		if (UGameInstance* GameInstance = GetGameInstance())
+		{
+			if (UPC_UISubsystem* UISubsystem = GameInstance->GetSubsystem<UPC_UISubsystem>())
+			{
+				UISubsystem->HideBossHPWidget();
+			}
+		}
 	}
 }
 

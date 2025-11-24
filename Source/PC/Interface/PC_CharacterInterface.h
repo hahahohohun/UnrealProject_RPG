@@ -52,7 +52,7 @@ public:
 
 	virtual UPC_CharacterDataAsset* GetCharacterDataAsset() = 0;
 	virtual bool IsDead() = 0;
-
+	
 	virtual FPC_OnStartSkillDelegate& GetOnStartSkillDelegate() =0;
 	virtual FPC_OnEndSkillDelegate& GetOnEndSkillDelegate() =0;
 

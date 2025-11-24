@@ -78,7 +78,7 @@ APawn* UPC_LockOnComponent::FindTarget()
 	{
 		Actors.Add(Result.GetActor());
 	}
-
+	
 	return Cast<APawn>(FPC_GameUtil::GetBestTargetByViewAngle(PlayerController,Actors,false, TargetDetectRadius));
 }
 

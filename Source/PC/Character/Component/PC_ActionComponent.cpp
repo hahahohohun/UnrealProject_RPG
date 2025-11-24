@@ -215,8 +215,7 @@ void UPC_ActionComponent::Attack(bool IsPressed)
 
 	// 현재 가속의 크기 (length)
 	float CurrentSpeed = MoveComp->Velocity.Size();
-	bool IsMaxSpeed = PlayerData->RunAttackMontage
-		&& CurrentSpeed >= PlayerData->MovementSpeed_Sprint;
+	bool IsMaxSpeed = false;// 안씀 PlayerData->RunAttackMontage && CurrentSpeed >= PlayerData->MovementSpeed_Sprint;
 	
 	TArray<UAnimMontage*>& AttackMontages = PlayerData->AttackMontages;
 	if(AttackMaxCount == 0)

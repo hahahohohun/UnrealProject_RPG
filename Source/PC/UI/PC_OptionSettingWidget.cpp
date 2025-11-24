@@ -151,23 +151,16 @@ void UPC_OptionSettingWidget::OnOpened()
 {
 	bIsActive = true;
 	SetVisibility(ESlateVisibility::SelfHitTestInvisible);
-
-	// 1. 오너 플레이어 컨트롤러 가져오기
+	
 	if (APlayerController* PlayerController = GetOwningPlayer())
 	{
-		// 2. 입력 모드를 UIOnly로 설정해서
-		//    마우스/키보드 입력이 게임이 아니라 UI로만 가도록 함
 		FInputModeGameAndUI InputMode;
 		InputMode.SetWidgetToFocus(TakeWidget());
 		InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
 		InputMode.SetHideCursorDuringCapture(false);
 
 		PlayerController->SetInputMode(InputMode);
-
-		// 3. 마우스 커서 보이게
 		PlayerController->bShowMouseCursor = true;
-
-		// 4. 혹시 남는 입력을 완전히 막고 싶으면 (카메라 회전, 이동 등)
 		PlayerController->SetIgnoreLookInput(true);
 		PlayerController->SetIgnoreMoveInput(true);
 		PlayerController->SetPause(true);
@@ -196,6 +189,10 @@ void UPC_OptionSettingWidget::OnClosed()
 void UPC_OptionSettingWidget::SaveSetting()
 {
 	OptionSubsystem->ApplyAndSaveOption(ApplyOption);
+
+	//카메라
+	if(APlayerController* PlayerController = GetOwningPlayer())
+		OptionSubsystem->ApplyCameraOptions(PlayerController);
 }
 
 void UPC_OptionSettingWidget::RefreshSetting()

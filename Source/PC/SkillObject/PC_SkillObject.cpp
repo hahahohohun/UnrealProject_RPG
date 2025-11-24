@@ -11,9 +11,11 @@
 #include "Engine/DamageEvents.h"
 #include "GameFramework/Character.h"
 #include "PC/Battle/PC_NormalAttackDamageType.h"
+#include "PC/Interface/PC_CharacterAIInterface.h"
 #include "PC/Interface/PC_CharacterInterface.h"
 #include "PC/Utills/PC_GameUtill.h"
 
+class IPC_CharacterAIInterface;
 // Sets default values
 APC_SkillObject::APC_SkillObject()
 {
@@ -103,16 +105,68 @@ void APC_SkillObject::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, A
 {
 	FPC_SkillObjectTableRow* SkillObjectTableRow = FPC_GameUtil::GetSkillObjectData(SkillObjectId);
 	check(SkillObjectTableRow);
-
+	
 	if (ACharacter* HitCharacter = Cast<ACharacter>(OtherActor))
 	{
-		FNormalAttackDamageEvent DamageEvent;
-		DamageEvent.DamageTypeClass = UDamageType::StaticClass(); 
-		
-		HitCharacter->TakeDamage(SkillObjectTableRow->Damage, DamageEvent, OwnerCharacter->GetController(),
-		                         OwnerCharacter.Get());
-	}
+		FPointDamageEvent DamageEvent;
 
+		bool bHitPartUnit = false;
+		if(IPC_CharacterAIInterface* CharacterAIInterface = Cast<IPC_CharacterAIInterface>(HitCharacter))
+		{
+			if(auto EnemyData = CharacterAIInterface->GetEnemyData())
+				bHitPartUnit = EnemyData->IsHitPartUnit;
+		}
+
+		float AddDamage = 0.0f;
+		if(bHitPartUnit)
+		{
+			USkeletalMeshComponent* MeshComp = HitCharacter->GetMesh();
+			if (MeshComp)
+			{
+				UWorld* World = GetWorld();
+				if (!World)
+					return;
+
+				FHitResult MeshHit;
+				FCollisionObjectQueryParams ObjectQueryParams;
+				ObjectQueryParams.AddObjectTypesToQuery(ECC_Pawn);
+
+				FCollisionQueryParams Params;
+				Params.AddIgnoredActor(this);
+				Params.AddIgnoredActor(OwnerCharacter.Get());
+				Params.bTraceComplex = true;
+
+				const FVector Start = GetActorLocation();
+				const FVector End   = HitCharacter->GetActorLocation();
+				
+				if (World->LineTraceSingleByObjectType(MeshHit, Start, End, ObjectQueryParams, Params))
+				{
+					DamageEvent.DamageTypeClass = UPC_NormalAttackDamageType::StaticClass();
+					DamageEvent.HitInfo = MeshHit;
+					if(IPC_CharacterAIInterface* CharacterAIInterface = Cast<IPC_CharacterAIInterface>(HitCharacter))
+					{
+						if (auto HitPartList = CharacterAIInterface->GetHitPartList())
+						{
+							AddDamage += FPC_GameUtil::GetHitPartAddDamage(HitPartList, MeshHit.BoneName);
+						}
+					}
+				}
+			}
+		}
+		else
+		{
+			DamageEvent.DamageTypeClass = UPC_NormalAttackDamageType::StaticClass();
+			DamageEvent.HitInfo = SweepResult;
+		}
+
+		const float FinalDamage = SkillObjectTableRow->Damage + AddDamage;
+		HitCharacter->TakeDamage(
+			FinalDamage,
+			DamageEvent,
+			OwnerCharacter->GetController(),
+			OwnerCharacter.Get());
+	}
+	
 	if(OnDelegateBeginOverlap.IsBound())
 		OnDelegateBeginOverlap.Broadcast(OtherActor);
 	

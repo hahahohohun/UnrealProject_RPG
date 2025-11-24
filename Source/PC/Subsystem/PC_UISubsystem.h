@@ -42,6 +42,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<UPC_OptionSettingWidget> OptionSettingWidgetClass;
 
+	void HideBossHPWidget();
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = HUD)
 	TSubclassOf<UPC_HUDWidget> HUDWidgetClass;

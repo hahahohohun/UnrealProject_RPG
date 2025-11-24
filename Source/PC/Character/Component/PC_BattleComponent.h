@@ -42,7 +42,8 @@ public:
 	AActor* GetAssassinateTarget() const;
 	bool TryAssassinate();
 	void Assassinate(AActor* Target);
-
+	void PlayWeaponHitSound();
+	void PlayWeaponSwingSound();
 	bool bTracing = false;
 	bool bTraceRightWeapon = false;
 	bool bPowerAttack = false;
@@ -80,11 +81,12 @@ public:
 private:
 	UPROPERTY()
 	TObjectPtr<UPC_ActionComponent> ActionComponent;
-
 	TWeakObjectPtr<ACharacter> AssassinateTarget;
 
 
 	float AssassinatingElapsedTime = 0.f;
+
+	const FPC_WeaponTableRow* GetCurWeaponTableRow(bool bRight);
 };
 
 

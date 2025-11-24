@@ -12,6 +12,7 @@
 #include "Components/CapsuleComponent.h"
 #include "DSP/MidiNoteQuantizer.h"
 #include "DynamicMesh/MeshTransforms.h"
+#include "Sound/SoundWave.h"
 #include "GameFramework/Character.h"
 #include "PC/Data/PC_CharacterDataAsset.h"
 #include "PC/Data/PC_HitPartDataAsset.h"
@@ -19,7 +20,9 @@
 #include "PC/Interface/PC_CharacterInterface.h"
 #include "PC/Interface/PC_PlayerCharacterInterface.h"
 #include "PC/Misc/GameMode/PCGameMode.h"
+#include "PC/Subsystem/PC_AudioSubsystem.h"
 #include "PC/Subsystem/PC_UISubsystem.h"
+
 
 FPC_CharacterStatTableRow* FPC_GameUtil::GetCharacterStatData(uint32 CharacterId)
 {
@@ -590,6 +593,25 @@ void FPC_GameUtil::PlayHitMaterial(ACharacter* DamageCharacter)
 	);
 }
 
+void FPC_GameUtil::PlaySFXAtLocation(UObject* WorldContextObject, USoundBase* SFX, const FVector& Location)
+{
+	if (!WorldContextObject || !SFX)
+		return;
+
+	UWorld* World = WorldContextObject->GetWorld();
+	if (!World)
+		return;
+
+	if (UGameInstance* GI = World->GetGameInstance())
+	{
+		if (UPC_AudioSubsystem* Audio = GI->GetSubsystem<UPC_AudioSubsystem>())
+		{
+			Audio->PlaySFXAtLocation(SFX, Location);
+		}
+	}
+}
+
+
 // StatusType = AttackPowerUp, ValueMode = Multiplicative, ModifierValue = 1.2f (즉 +20%)
 // 또는 Additive 모드라면 ModifierValue = +15.0f 같은 식
 FPC_CharacterStatModifier FPC_GameUtil::MakeCharacterStatModifierFromRow(
@@ -661,7 +683,6 @@ UParticleSystemComponent* FPC_GameUtil::SpawnEffectAttached(UParticleSystem* Par
 	                                              Rotation, LocationType, bAutoDestroy);
 }
 
-//TODO 풀링 처리
 void FPC_GameUtil::SpawnDamageFloater(ACharacter* DamageCharacter, int32 Damge)
 {
 	if (!DamageCharacter) return;
@@ -753,8 +774,6 @@ bool FPC_GameUtil::IsDebugDrawing(UObject* WorldContextObject)
 
 	return GameMode->DebugDrawing;
 }
-
-
 
 void FPC_GameUtil::AddOnScreenDebugMessage(FString msg)
 {
@@ -853,6 +872,24 @@ FColor FPC_GameUtil::GetHitPartColor(FPC_HitPartListRow* ListRow, FName BoneName
 	}
 
 	return FColor::White;
+}
+
+float FPC_GameUtil::GetHitPartAddDamage(FPC_HitPartListRow* ListRow, FName BoneName)
+{
+	for (FPC_HitPartData& HitPartData : ListRow->HitPartDatas)
+	{
+		if (HitPartData.HitPartName == BoneName)
+		{
+			return HitPartData.AddHitDamage;
+		}
+	}
+
+	return 0.0f;
+}
+
+float FPC_GameUtil::GetCalcTotalNormalDamage(float DamageAmount, AActor* HitActor, FName BoneName)
+{
+	return 0;
 }
 
 FTransform FPC_GameUtil::GetSocketTransform(AActor* Actor, FName BoneName)
