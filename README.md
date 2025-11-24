@@ -5,7 +5,7 @@
 데이터 드리븐 스킬 시스템, 대형 보스 HitPart 구조, AI/프로젝타일/IK 등  
 언리얼 기반 핵심 Gameplay 시스템을 직접 설계·구현했습니다.
 
-//> 🎬 **데모 영상**:  
+//> 🎬 **플레이 영상**: 
 > 🖼️ **GIF**: 
 
 ---
@@ -15,9 +15,9 @@
 - [대형 보스 시스템](#대형-보스-시스템)
 - [전투 & Enemy AI](#전투--enemy-ai)
 - [상태이상·버프 시스템](#상태이상버프-시스템)
-- [ui·옵션-시스템](#ui옵션-시스템)
+- [UI·옵션 시스템](#ui옵션-시스템)
 - [오디오 시스템](#오디오-시스템)
-- [디버그&툴링](#디버그툴링)
+- [디버그·툴링](#디버그툴링)
 
 ---
 
@@ -82,15 +82,20 @@
 
 
 ## 🛠️ 디버그·툴링
-- Exec 콜리전 시각화  
-- Enemy Detect Range / 시야각 디버그  
-- Projectile 경로 디버그  
-- 캐릭터 상태 디버그 텍스트(UWidgetComponent)  
+- **Exec 콜리전 시각화**  
+  - 공격 판정이 의도한 범위와 타이밍에 정확히 동작하는지 즉시 검증하기 위한 기능
+- **Enemy Detect Range / 시야각 디버그**  
+  - AI가 플레이어를 언제 인식하는지 시각적으로 확인해 튜닝 효율을 높이기 위한 기능
+- **Projectile 경로 디버그**  
+  - 투사체 충돌 및 이동 경로가 데이터값에 따라 어떻게 반영되는지 확인하기 위한 기능
+- **캐릭터 상태 디버그 텍스트(UWidgetComponent)**  
+  - 캐릭터의 현재 상태, AI 상태 등을 게임 화면에서 직접 모니터링하기 위한 기능
 - **간편화 및 개선 툴**
-  - 루트모션 거리 자동 계산 -> 테이블 화
-    - 전투중 타겟 거리에 맞는 루트모션 실행하기 위한 테이블 : Dash, 돌진, 백스탭 등 루트모션 기반 이동 스킬 자동 거리 자동 입력
-  - PhysicsAsset → HitPart 자동 생성 및 테이블화
-    - PhysicsAsset을 읽어서 본(Bone) 목록을 추출 → HitPartType 자동 매핑
+  - **루트모션 거리 자동 계산 → 테이블화**  
+    - 전투 중 타깃 거리별로 정확한 RootMotion 공격을 선택하기 위해 이동 거리를 자동 계산·기록하는 툴
+  - **PhysicsAsset → HitPart 자동 생성 및 테이블화**  
+    - 본(Bone) 구조가 다른 보스·몬스터에도 HitPart 정보를 빠르게 적용하기 위해 자동으로 테이블화하는 툴
+
 
 ---
 
@@ -98,12 +103,17 @@
 
 | 기능 | 미리보기 |
 |------|-----------|
-| 락온 & 각도 타깃팅 | Docs/gifs/lockon.gif |
-| Control Rig 발바닥 IK | Docs/gifs/ik.gif |
-| 데미지 플로터 | Docs/gifs/damage_floater.gif |
-| AI 대시백 | Docs/gifs/dashback.gif |
-| 암살/백스탭 | Docs/gifs/assassination.gif |
-| 보스 패턴(원형 낙하) | Docs/gifs/boss_rain.gif |
+| **락온 & 각도 기반 타깃팅**                      | Docs/gifs/lockon.gif         |
+| **Control Rig 발바닥 IK**                  | Docs/gifs/ik.gif             |
+| **암살 / 백스탭**                            | Docs/gifs/assassination.gif  |
+| **보스 패턴 – 원형 낙하(Projectile AOE)**       | Docs/gifs/boss_rain.gif      |
+| **보스 – HitPart 부위별 피격 (데칼 포함)**         | Docs/gifs/boss_hitpart.gif   |
+| **보스 – 방향 기반 공격 선택(EPC_ProximityType)** | Docs/gifs/boss_direction.gif |
+| **EQS – 자연스러운 대치/회피 포지션 탐색**            | Docs/gifs/eqs.gif            |
+| **스킬 – 투사체 궤적(Arc Preview)**            | Docs/gifs/arc_preview.gif    |
+| **상태이상/버프 HUD 갱신**                      | Docs/gifs/buff.gif           |
+| **루트모션 기반 공격(거리 맞춰 선택)**                | Docs/gifs/rm_attack.gif      |
+
 
 ---
 
