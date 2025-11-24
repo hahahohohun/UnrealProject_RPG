@@ -1,7 +1,7 @@
 # ProjectClass (Unreal Portfolio)
 
 [![Unreal Engine](https://img.shields.io/badge/Unreal-5.x-0E1128?logo=unrealengine)](#)  
-**전투/AI/보스 중심 언리얼 포트폴리오**입니다. 전투·AI·보스 패턴 중심의 실전형 언리얼 프로젝트입니다.  
+**전투/AI/보스 중심 언리얼 포트폴리오**입니다. 전투·AI·보스 패턴 중심의 언리얼 프로젝트입니다.
 데이터 드리븐 스킬 시스템, 대형 보스 HitPart 구조, AI/프로젝타일/IK 등  
 언리얼 기반 핵심 Gameplay 시스템을 직접 설계·구현했습니다.
 
