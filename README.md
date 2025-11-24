@@ -101,19 +101,18 @@
 
 ## 🎥 시연 GIF
 
-| 기능 | 미리보기 |
-|------|-----------|
-| **락온 & 각도 기반 타깃팅**                      | <img src="gifs/lockon.gif" width="380"> |
-| **Control Rig 발바닥 IK**                  | <img src="gifs/ik.gif" width="380"> |
-| **암살** | <img src="gifs/assassination.gif" width="380"> |
-| **보스 패턴 – 원형 낙하(Projectile AOE)**       | Docs/gifs/boss_rain.gif      |
-| **보스 – HitPart 부위별 피격 (데칼 포함)**         | <img src="gifs/boss_hitpart_1.gif" width="380"> <img src="gifs/boss_hitpart_2.gif" width="380">  |
-| **보스 – 방향 기반 공격 선택(EPC_ProximityType)** | Docs/gifs/boss_direction.gif |
-| **EQS – 자연스러운 대치/회피 포지션 탐색**            | Docs/gifs/eqs.gif            |
-| **스킬 – 투사체 궤적(Arc Preview)**            | Docs/gifs/arc_preview.gif    |
-| **상태이상/버프 HUD 갱신**                      | Docs/gifs/buff.gif           |
-| **루트모션 기반 공격(거리 맞춰 선택)**                | Docs/gifs/rm_attack.gif      |
-
+| 기능                                      | 미리보기 |
+|-------------------------------------------|----------|
+| **락온 & 각도 기반 타깃팅**               | <img src="gifs/lockon.gif" width="500"/> |
+| **Control Rig 발바닥 IK**                 | <img src="gifs/ik.gif" width="500"/> |
+| **암살**                                  | <img src="gifs/assassination.gif" width="500"/> |
+| **보스 패턴 – 원형 낙하 (Projectile )** | <img src="gifs/boss_rain.gif" width="500"/> |
+| **보스 – HitPart 부위별 피격 (데칼 포함)** | <div style="display:flex; gap:15px; justify-content:center; flex-wrap:wrap;"><img src="gifs/boss_hitpart_1.gif" width="400"/><img src="gifs/boss_hitpart_2.gif" width="400"/></div> |
+| **보스 – 방향 기반 공격 선택 (EPC_ProximityType)** | <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;"><img src="gifs/boss_driection_near_l.gif" width="300"/><img src="gifs/boss_driection_near_r.gif" width="300"/><img src="gifs/boss_driection_near_back.gif" width="300"/><img src="gifs/boss_driection_front.gif" width="300"/></div> |
+| **EQS – 자연스러운 대치/회피 포지션 탐색** | <img src="gifs/eqs.gif" width="500"/> |
+| **스킬 – 투사체 궤적 (Arc Preview)**      | <img src="gifs/arc_preview.gif" width="500"/> |
+| **상태이상/버프 HUD 갱신**                 | <img src="gifs/buff.gif" width="500"/> |
+| **루트모션 기반 공격 (거리 맞춰 선택)**     | <img src="gifs/rm_attack.gif" width="500"/> |
 
 ---
 
