@@ -105,7 +105,7 @@
 |------|-----------|
 | **락온 & 각도 기반 타깃팅**                      | Docs/gifs/lockon.gif         |
 | **Control Rig 발바닥 IK**                  | Docs/gifs/ik.gif             |
-| **암살 / 백스탭**                            | Docs/gifs/assassination.gif  |
+| **암살 / 백스탭**                            | gifs/assassination.gif  |
 | **보스 패턴 – 원형 낙하(Projectile AOE)**       | Docs/gifs/boss_rain.gif      |
 | **보스 – HitPart 부위별 피격 (데칼 포함)**         | Docs/gifs/boss_hitpart.gif   |
 | **보스 – 방향 기반 공격 선택(EPC_ProximityType)** | Docs/gifs/boss_direction.gif |
