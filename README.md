@@ -29,6 +29,7 @@
   - 상태 머신: Patrol → Investigating → Battle → CrowdControlled → SkillUsing → Dead
 - **보스 패턴**
   - 원형 낙하/다중 발사 등 **프로젝타일 스킬** (환경 충돌/피격 충돌 분리)
+  - 대형 보스/ 타겟 위치기반 (
   - **카메라 셰이크** & **타임 딜레이션**(Notify 연동)
 - **애니메이션/IK**
   - **Control Rig 발바닥 IK**(지면 트레이스, 본 Transform 보정)
@@ -56,7 +57,7 @@
 ---
 
 ## 🧩 기술 스택
-- **Engine**: Unreal Engine 5.x (예: 5.4)
+- **Engine**: Unreal Engine 5.5
 - **Language**: C++20 / Blueprint
 - **Animation**: Control Rig, Montage, Notify
 - **AI**: Behavior Tree, AI Perception
