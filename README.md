@@ -103,11 +103,11 @@
 
 | 기능 | 미리보기 |
 |------|-----------|
-| **락온 & 각도 기반 타깃팅**                      | Docs/gifs/lockon.gif         |
-| **Control Rig 발바닥 IK**                  | Docs/gifs/ik.gif             |
-| **암살 / 백스탭**                            | gifs/assassination.gif  |
+| **락온 & 각도 기반 타깃팅**                      | <img src="gifs/lockon.gif" width="380"> |
+| **Control Rig 발바닥 IK**                  | <img src="gifs/ik.gif" width="380"> |
+| **암살** | <img src="gifs/assassination.gif" width="380"> |
 | **보스 패턴 – 원형 낙하(Projectile AOE)**       | Docs/gifs/boss_rain.gif      |
-| **보스 – HitPart 부위별 피격 (데칼 포함)**         | Docs/gifs/boss_hitpart.gif   |
+| **보스 – HitPart 부위별 피격 (데칼 포함)**         | <img src="gifs/boss_hitpart_1.gif" width="380"> <img src="gifs/boss_hitpart_2.gif" width="380">  |
 | **보스 – 방향 기반 공격 선택(EPC_ProximityType)** | Docs/gifs/boss_direction.gif |
 | **EQS – 자연스러운 대치/회피 포지션 탐색**            | Docs/gifs/eqs.gif            |
 | **스킬 – 투사체 궤적(Arc Preview)**            | Docs/gifs/arc_preview.gif    |
