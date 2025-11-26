@@ -12,6 +12,7 @@
 #include "Engine/DamageEvents.h"
 #include "PC/PC.h"
 #include "PC/Battle/PC_NormalAttackDamageType.h"
+#include "PC/Interface/PC_CharacterAIInterface.h"
 #include "PC/Interface/PC_PlayerCharacterInterface.h"
 #include "PC/UI/PC_IndicatorWidget.h"
 #include "PC/UI/PC_HPBarWidget.h"
@@ -19,7 +20,7 @@
 
 // APCCharacter
 
-
+class UPC_BattleComponent;
 APC_BaseCharacter::APC_BaseCharacter()
 {
 	// Set size for collision capsule
@@ -86,7 +87,7 @@ float APC_BaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Dama
 	{
 		if (DamageEvent.IsOfType(FNormalAttackDamageEvent::ClassID))
 		{
-			//노말머테리얼일때만
+			//노말머테리얼일
 			FPC_GameUtil::PlayHitMaterial(this);
 		}
 	}

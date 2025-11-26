@@ -564,6 +564,9 @@ void FPC_GameUtil::PlayHitMaterial(ACharacter* DamageCharacter)
 	UPC_CharacterDataAsset* CharacterDataAsset = CauserCharacterInterface->GetCharacterDataAsset();
 	check(CharacterDataAsset);
 
+	if(!CharacterDataAsset->DamgeMaterial)
+		return;
+
 	USkeletalMeshComponent* SkeletalMeshComponent = DamageCharacter->GetMesh();
 	check(SkeletalMeshComponent);
 
@@ -780,7 +783,7 @@ void FPC_GameUtil::AddOnScreenDebugMessage(FString msg)
 	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, msg);
 }
 
-EPC_ProximityType FPC_GameUtil::GetTargetProximity(AActor* TargetActor, AActor* CurrentActor, float Near, float Middle, FVector CurrentActorOffset)
+EPC_ProximityType FPC_GameUtil::GetTargetProximity(AActor* TargetActor, AActor* CurrentActor,  float Under, float Near, float Middle, FVector CurrentActorOffset)
 {
 	if (!TargetActor || !CurrentActor)
 	{
@@ -806,7 +809,12 @@ EPC_ProximityType FPC_GameUtil::GetTargetProximity(AActor* TargetActor, AActor* 
 	const float RightDot = FVector::DotProduct(RightVector, ToTargetDir);
 
 	const float ForwardAngle = FMath::RadiansToDegrees(FMath::Acos(ForwardDot));
-	UE_LOG(LogTemp, Log, TEXT("%f"), Distance);
+
+	if (Distance <= Under)
+	{
+		return EPC_ProximityType::Under;
+	}
+	
 	if (Distance <= Near)
 	{
 		return RightDot >= 0.f ? EPC_ProximityType::Near_r : EPC_ProximityType::Near_l;

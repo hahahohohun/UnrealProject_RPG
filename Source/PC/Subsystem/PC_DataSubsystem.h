@@ -74,7 +74,10 @@ private:
 	
 	UPROPERTY(config)
 	FSoftObjectPath AimCameraDataPath;
-
+	
+	UPROPERTY(config)
+	FSoftObjectPath ZoomInCameraDataPath;
+	
 	UPROPERTY(Config)
 	FSoftObjectPath GameDataPath;
 };

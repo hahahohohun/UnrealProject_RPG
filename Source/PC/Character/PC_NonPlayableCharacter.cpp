@@ -73,10 +73,10 @@ void APC_NonPlayableCharacter::BeginPlay()
 
 	int32 NumMats = GetMesh()->GetNumMaterials();
 
-	for(int32 i = 0 ; i < NumMats ; i++)
+	for (int32 i = 0; i < NumMats; i++)
 	{
 		UMaterialInterface* Material = GetMesh()->GetMaterial(i);
-		if(UMaterialInstanceDynamic* MaterialInstanceDynamic = UMaterialInstanceDynamic::Create(Material, this))
+		if (UMaterialInstanceDynamic* MaterialInstanceDynamic = UMaterialInstanceDynamic::Create(Material, this))
 		{
 			GetMesh()->SetMaterial(i, MaterialInstanceDynamic);
 		}
@@ -87,7 +87,7 @@ void APC_NonPlayableCharacter::BeginPlay()
 	if (EnemyTableRow->IsHitPartUnit)
 	{
 		//플레이어 Channel 무시
-		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Ignore);
+		//GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Ignore);
 		//캡슐이 공격받는게 아니기 때문
 		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_GameTraceChannel3, ECR_Ignore);
 	}
@@ -116,27 +116,25 @@ float APC_NonPlayableCharacter::TakeDamage(float DamageAmount, FDamageEvent cons
 
 	UPC_CharacterDataAsset* CauseDataAsset = CauserCharacterInterface->GetCharacterDataAsset();
 	check(CauseDataAsset);
-	
-	float Damage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 
 	UAISense_Damage::ReportDamageEvent(
 		GetWorld(),
 		this,
 		DamageCauser,
-		Damage,
+		DamageAmount,
 		DamageCauser->GetActorLocation(),
 		GetActorLocation());
 
-	if (Damage > KINDA_SMALL_NUMBER)
+	if (DamageAmount > KINDA_SMALL_NUMBER)
 	{
+		const FNormalAttackDamageEvent& AttackDamageEven =
+			static_cast<const FNormalAttackDamageEvent&>(DamageEvent);
+		
 		if (DamageEvent.IsOfType(FNormalAttackDamageEvent::ClassID))
 		{
 			//CrowdControlComponent->RequestPlayerCC(3, DamageCauser);
-
-			const FNormalAttackDamageEvent& AttackDamageEven =
-				static_cast<const FNormalAttackDamageEvent&>(DamageEvent);
 		}
-
+		
 		if (UAnimInstance* AnimIns = GetMesh()->GetAnimInstance())
 		{
 			if (EnemyState != EPC_EnemyStateType::SKillUsing && !IsDead()
@@ -145,31 +143,36 @@ float APC_NonPlayableCharacter::TakeDamage(float DamageAmount, FDamageEvent cons
 				if (OwnerDataAsset->HitReactAnim)
 				{
 					RequestChangeState(EPC_EnemyStateType::ReactAttackBreak);
-					if(EnemyState == EPC_EnemyStateType::ReactAttackBreak)
+					if (EnemyState == EPC_EnemyStateType::ReactAttackBreak)
 					{
 						FOnMontageEnded EndDelegate;
 						EndDelegate.BindLambda([this](UAnimMontage* Montage, bool bInterrupted)
 						{
+							if(!IsValid(this))
+								return;
 							if (!IsDead())
 							{
 								ChangeState(EPC_EnemyStateType::Battle);
 							}
 						});
-						
-						AnimIns->Montage_Play(OwnerDataAsset->HitReactAnim, 1.f,EMontagePlayReturnType::MontageLength);
+
+						AnimIns->Montage_Play(OwnerDataAsset->HitReactAnim, 1.f, EMontagePlayReturnType::MontageLength);
 						AnimIns->Montage_SetEndDelegate(EndDelegate, OwnerDataAsset->HitReactAnim);
 					}
 				}
 			}
 		}
 
-		if(DamageEvent.GetTypeID() == FPointDamageEvent::ClassID)
+		if (DamageEvent.GetTypeID() == FPointDamageEvent::ClassID)
 		{
-			if(const FPointDamageEvent* PointEvent = static_cast<const FPointDamageEvent*>(&DamageEvent))
+			if (const FPointDamageEvent* PointEvent = static_cast<const FPointDamageEvent*>(&DamageEvent))
 			{
 				const FHitResult& Hit = PointEvent->HitInfo;
-				FPC_GameUtil::SpawnEffectAtLocation(GetWorld(), CauseDataAsset->HitFx, Hit.ImpactPoint, FRotator::ZeroRotator);
-				int32 DecalID = SkinnedDecalSampler->SpawnDecal(Hit.ImpactPoint, Hit.ImpactNormal.Rotation().Quaternion(),Hit.BoneName,25.0f);
+				FPC_GameUtil::SpawnEffectAtLocation(GetWorld(), CauseDataAsset->HitFx, Hit.ImpactPoint,
+				                                    FRotator::ZeroRotator);
+				int32 DecalID = SkinnedDecalSampler->SpawnDecal(Hit.ImpactPoint,
+				                                                Hit.ImpactNormal.Rotation().Quaternion(), Hit.BoneName,
+				                                                25.0f);
 
 				UNiagaraComponent* HitPartFXComp = nullptr;
 				if (auto HitPartFX = EnemyTableRow->HitPartFX)
@@ -181,14 +184,14 @@ float APC_NonPlayableCharacter::TakeDamage(float DamageAmount, FDamageEvent cons
 							HitPartFX,
 							MeshComp,
 							Hit.BoneName,
-							Hit.ImpactPoint,                    
+							Hit.ImpactPoint,
 							Hit.ImpactNormal.Rotation(),
 							EAttachLocation::KeepWorldPosition,
 							false
 						);
 					}
 				}
-				
+
 				TWeakObjectPtr<UNiagaraComponent> HitPartFXWeak = HitPartFXComp;
 
 				//데칼 삭제
@@ -201,25 +204,95 @@ float APC_NonPlayableCharacter::TakeDamage(float DamageAmount, FDamageEvent cons
 						{
 							SkinnedDecalSampler->RemoveDecal(DecalID);
 						}
-						
+
 						if (HitPartFXWeak.IsValid())
 						{
 							HitPartFXWeak->Deactivate();
 							HitPartFXWeak->DestroyComponent();
 						}
-					}), 5.0f, false 
+					}), 5.0f, false
 				);
 			}
 
+			if (OwnerDataAsset->GroggyAnim)
+			{
+				if (IsHasBeenGroggy == false &&
+					EnemyState != EPC_EnemyStateType::Groggy)
+				{
+					const float MaxHp =StatComponent->GetMaxHp();
+					const float CurHp = StatComponent->GetCurrentHp();
+					if (MaxHp * 0.5f >= CurHp)
+					{
+						RequestChangeState(EPC_EnemyStateType::Groggy);
+						if (EnemyState == EPC_EnemyStateType::Groggy)
+						{
+							IsHasBeenGroggy = true;
+							if (APC_AIController* AIController = Cast<APC_AIController>(GetController()))
+							{
+								AIController->StopMovement();
+								AIController->StopAI();
+
+								FOnMontageEnded EndDelegate;
+								TWeakObjectPtr<APC_AIController> WeakAI = AIController;
+								//기존에 머테리얼 캐싱
+								USkeletalMeshComponent* SkeletalMeshComponent = GetMesh();
+								check(SkeletalMeshComponent);
+
+								UMaterialInterface* OverlayMaterial = SkeletalMeshComponent->GetOverlayMaterial();
+								SkeletalMeshComponent->SetOverlayMaterial(OwnerDataAsset->GroggyMaterial);
+							
+								EndDelegate.BindLambda([this, WeakAI, OverlayMaterial](UAnimMontage* Montage, bool bInterrupted)
+								{
+									if (!IsValid(this))
+										return;
+								
+									if (!WeakAI.IsValid())
+										return;
+
+									if (!IsDead())
+									{
+										USkeletalMeshComponent* MeshComponent = this->GetMesh();
+										UMaterialInterface* Material = MeshComponent->GetOverlayMaterial();
+
+										if (MeshComponent && Material)
+										{
+											MeshComponent->SetOverlayMaterial(OverlayMaterial);
+										}
+										WeakAI->RunAI();
+										ChangeState(EPC_EnemyStateType::Battle);
+									}
+								});
+
+								if (UAnimInstance* AnimIns = GetMesh()->GetAnimInstance())
+								{
+									AnimIns->StopAllMontages(0.1f);
+									AnimIns->Montage_Play(OwnerDataAsset->GroggyAnim, 1.f,
+														  EMontagePlayReturnType::MontageLength);
+									AnimIns->Montage_SetEndDelegate(EndDelegate, OwnerDataAsset->GroggyAnim);
+								}
+							}
+						}
+					}
+				}
+			}
+
+			if (EnemyState == EPC_EnemyStateType::Groggy)
+			{
+				FPC_GameUtil::CameraShake(EPC_CameraShakeMagnitudeType::Strong);
+				FPC_GameUtil::SpawnEffectAtLocation(GetWorld(), CauseDataAsset->HitFx, GetActorLocation(),
+									FRotator::ZeroRotator);
+				
+			}
 		}
 		else
 		{
-			FPC_GameUtil::SpawnEffectAtLocation(GetWorld(), CauseDataAsset->HitFx, GetActorLocation(), FRotator::ZeroRotator);
+			FPC_GameUtil::SpawnEffectAtLocation(GetWorld(), CauseDataAsset->HitFx, GetActorLocation(),FRotator::ZeroRotator);
 		}
-		
-		FPC_GameUtil::SpawnDamageFloater(this, Damage);
 	}
 
+	float Damage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	FPC_GameUtil::SpawnDamageFloater(this, Damage);
+	
 	return Damage;
 }
 
@@ -234,7 +307,7 @@ void APC_NonPlayableCharacter::Tick(float DeltaTime)
 			if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
 			{
 				const float CurveValue = AnimInstance->GetCurveValue(TEXT("DistanceToPivot"));
-			
+
 				//에셋 자체가 -1이기 때문에
 				const float MaxCurveVal = -FMath::Abs(TurnDegree);
 
@@ -269,7 +342,7 @@ void APC_NonPlayableCharacter::Tick_DrawHitPart()
 			UPhysicsAsset* PhysicsAsset = SkeletalMeshComponent->GetPhysicsAsset();
 			if (!PhysicsAsset)
 				return;
-			
+
 			//FSoftObjectPath AssetPath(PhysicsAsset);
 			//FPC_HitPartListRow* HitPartList = FPC_GameUtil::GetHitPartData(AssetPath);
 			if (!HitPartList)
@@ -287,23 +360,23 @@ void APC_NonPlayableCharacter::Tick_DrawHitPart()
 				const FTransform BoneWorldTM = SkeletalMeshComponent->GetBoneTransform(BoneIndex);
 				const FVector BoneScale = BoneWorldTM.GetScale3D();
 				const FKAggregateGeom& AggGeom = BodySetup->AggGeom;
-				
+
 				FColor BodyColor = FPC_GameUtil::GetHitPartColor(HitPartList, BodySetup->BoneName);
-				
+
 				for (const FKSphereElem& Sphere : AggGeom.SphereElems)
 				{
 					const FVector Center = BoneWorldTM.TransformPosition(Sphere.Center);
-					const float ScaledRadius = Sphere.Radius * BoneScale.GetMax(); 
+					const float ScaledRadius = Sphere.Radius * BoneScale.GetMax();
 					DrawDebugSphere(World, Center, ScaledRadius, 16, BodyColor, false);
 				}
-				
+
 				for (const FKBoxElem& Box : AggGeom.BoxElems)
 				{
 					const FTransform BoxTM = Box.GetTransform() * BoneWorldTM;
 					const FVector ScaledExtent = FVector(Box.X, Box.Y, Box.Z) * 0.5f * BoneScale;
 					DrawDebugBox(World, BoxTM.GetLocation(), ScaledExtent, BoxTM.GetRotation(), BodyColor, false);
 				}
-				
+
 				for (const FKSphylElem& Sphyl : AggGeom.SphylElems)
 				{
 					const FTransform SphylTM = Sphyl.GetTransform() * BoneWorldTM;
@@ -312,13 +385,13 @@ void APC_NonPlayableCharacter::Tick_DrawHitPart()
 					const float ScaledLength = Sphyl.Length * Scale;
 
 					const float HalfHeight = (ScaledLength * 0.5f) + ScaledRadius;
-					DrawDebugCapsule(World, SphylTM.GetLocation(), HalfHeight, ScaledRadius, SphylTM.GetRotation(), BodyColor, false);
+					DrawDebugCapsule(World, SphylTM.GetLocation(), HalfHeight, ScaledRadius, SphylTM.GetRotation(),
+					                 BodyColor, false);
 				}
 			}
 		}
 	}
 }
-
 
 
 float APC_NonPlayableCharacter::GetAIAttackRange()
@@ -346,13 +419,13 @@ FPC_EnemyTableRow* APC_NonPlayableCharacter::GetEnemyData()
 
 FPC_HitPartListRow* APC_NonPlayableCharacter::GetHitPartList()
 {
-	if(!HitPartList)
+	if (!HitPartList)
 	{
 		USkeletalMeshComponent* SkeletalMeshComponent = GetMesh();
 		check(SkeletalMeshComponent);
-		
+
 		UPhysicsAsset* PhysicsAsset = SkeletalMeshComponent->GetPhysicsAsset();
-		if(PhysicsAsset)
+		if (PhysicsAsset)
 		{
 			FSoftObjectPath AssetPath(PhysicsAsset);
 			HitPartList = FPC_GameUtil::GetHitPartData(AssetPath);
@@ -396,14 +469,14 @@ void APC_NonPlayableCharacter::TurnInPlace(float TurnAnimDegree)
 		if (EnemyTableRow->Left45TurnAnim)
 			TurnAnimMontage = EnemyTableRow->Left45TurnAnim;
 		else
-			return;   // 몽타주 없으면 회전 안함
+			return; // 몽타주 없으면 회전 안함
 	}
 	else if (TurnAnimDegree == -45.f)
 	{
 		if (EnemyTableRow->Right45TurnAnim)
 			TurnAnimMontage = EnemyTableRow->Right45TurnAnim;
 		else
-			return;   // 몽타주 없으면 회전 안함
+			return; // 몽타주 없으면 회전 안함
 	}
 
 	// 90° Left
@@ -422,7 +495,6 @@ void APC_NonPlayableCharacter::TurnInPlace(float TurnAnimDegree)
 		TurnAnimMontage = EnemyTableRow->Turn180Anim;
 	}
 
-	// 해당 회전에 맞는 몽타주 없으면 Abort
 	if (!TurnAnimMontage)
 		return;
 
@@ -433,7 +505,7 @@ void APC_NonPlayableCharacter::TurnInPlace(float TurnAnimDegree)
 	{
 		if (CurrentMontage != TurnAnimMontage)
 		{
-			const float BlendOutTime = 0.2f; // 0.1~0.2 정도에서 테스트해봐
+			const float BlendOutTime = 0.2f;
 			AnimInstance->Montage_Stop(BlendOutTime, CurrentMontage);
 		}
 	}
@@ -441,15 +513,15 @@ void APC_NonPlayableCharacter::TurnInPlace(float TurnAnimDegree)
 	IsTurning = true;
 	TurnStartYaw = GetActorRotation().Yaw;
 	TurnDegree = TurnAnimDegree;
-	
+
 	AnimInstance->Montage_Play(
 		TurnAnimMontage,
-		1.0f,                                               // PlayRate
+		1.0f,
 		EMontagePlayReturnType::MontageLength,
-		0.0f,                                               // Start at beginning
-		false                                               // bStopAllMontages = false (중요)
+		0.0f,
+		false
 	);
-	
+
 	FOnMontageEnded EndDelegate =
 		FOnMontageEnded::CreateUObject(this, &ThisClass::OnTurnMontageEnd);
 	AnimInstance->Montage_SetEndDelegate(EndDelegate);
@@ -476,7 +548,6 @@ void APC_NonPlayableCharacter::SetAIMoveMontageFinishedDelegate(
 
 void APC_NonPlayableCharacter::Attack(bool bLastAttack)
 {
-
 	check(EnemyTableRow);
 	TArray<TObjectPtr<UAnimMontage>>& AttackAnims = EnemyTableRow->AttackAnims;
 
@@ -486,19 +557,20 @@ void APC_NonPlayableCharacter::Attack(bool bLastAttack)
 	AActor* Target = Cast<AActor>(AIController->GetBlackboardComponent()->GetValueAsObject(TEXT("Target")));
 	check(Target);
 
-	UAnimMontage* Montage = FPC_GameUtil::GetProperAttackMontage(AlreadyPlayedAttackMontages, this, Target->GetActorLocation());
-	
+	UAnimMontage* Montage = FPC_GameUtil::GetProperAttackMontage(AlreadyPlayedAttackMontages, this,
+	                                                             Target->GetActorLocation());
+
 	check(Montage);
 
 	bLastAttacking = bLastAttack;
 
-	if(IsDummy)
+	if (IsDummy)
 	{
 		OnAttackFinished.ExecuteIfBound();
 		bLastAttacking = false;
 		return;
 	}
-	
+
 	PlayAnimMontage(Montage);
 	FOnMontageEnded EndDelegate = FOnMontageEnded::CreateUObject(this, &ThisClass::OnAttackMontageEnd);
 	GetMesh()->GetAnimInstance()->Montage_SetEndDelegate(EndDelegate);
@@ -568,7 +640,7 @@ void APC_NonPlayableCharacter::ChangeState(EPC_EnemyStateType StateType)
 	{
 		return;
 	}
-
+	
 	EnemyState = StateType;
 	AlreadyPlayedAttackMontages.Empty();
 
@@ -579,6 +651,10 @@ void APC_NonPlayableCharacter::ChangeState(EPC_EnemyStateType StateType)
 	else if (EnemyState == EPC_EnemyStateType::Battle)
 	{
 		GetCharacterMovement()->MaxWalkSpeed = EnemyTableRow->MovementSpeed_Run;
+	}
+	else if (EnemyState == EPC_EnemyStateType::Groggy)
+	{
+		SkillComponent->ClearCurSkillList();
 	}
 
 	if (AAIController* AIController = Cast<AAIController>(GetController()))
@@ -665,6 +741,21 @@ void APC_NonPlayableCharacter::OnDead()
 				UISubsystem->HideBossHPWidget();
 			}
 		}
+
+		TWeakObjectPtr<APC_NonPlayableCharacter> WeakThis(this);
+		FTimerHandle TimerHandle;
+		World->GetTimerManager().SetTimer(
+			DeathDestroyTimerHandle,
+			FTimerDelegate::CreateLambda([WeakThis]()
+			{
+				if (WeakThis.IsValid())
+				{
+					WeakThis->Destroy();
+				}
+			}),
+			3.0f,
+			false
+		);
 	}
 }
 
@@ -734,6 +825,8 @@ void APC_NonPlayableCharacter::ReactAttackBreak()
 				FOnMontageEnded EndDelegate;
 				EndDelegate.BindLambda([this](UAnimMontage* Montage, bool bInterrupted)
 				{
+					if (!IsValid(this))
+						return;
 					if (!IsDead())
 					{
 						FPC_GameUtil::AddOnScreenDebugMessage("End");

@@ -70,7 +70,7 @@ void UPC_AudioSubsystem::SetBGMVolume(float Volume)
 
 	if (BGMAudioComponent)
 	{
-		BGMAudioComponent->SetVolumeMultiplier(BGMVolume);
+		BGMAudioComponent->FadeIn(1.f ,BGMVolume);
 	}
 }
 

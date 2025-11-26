@@ -28,6 +28,7 @@ enum class EPC_EnemyStateType : uint8
 	Dead = 5,
 	SKillUsing,
 	ReactAttackBreak,
+	Groggy,
 	Num
 };
 
@@ -128,6 +129,7 @@ enum class EPC_CameraType : uint8
 	None,
 	Normal,
 	Aim,
+	ZoomIn,
 	Num
 };
 
@@ -191,6 +193,7 @@ enum class EPC_CrowdControlType : uint8
 	Pull, //끌어당기기
 	Fire,
 	Shock,
+	GiantPushback,
 	Num
 };
 
@@ -252,6 +255,7 @@ UENUM(BlueprintType)
 enum class EPC_ProximityType : uint8
 {
 	None,
+	Under,   // 발아래
 	Near_l,
 	Near_r,
 	Front,

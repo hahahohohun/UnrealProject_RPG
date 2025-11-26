@@ -30,6 +30,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TObjectPtr<UNiagaraSystem> AssasinFx; //암살당했을때
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TObjectPtr<USoundBase> FootSFX;
 
 	UPROPERTY(EditAnywhere)
@@ -52,6 +53,11 @@ public:
 	UAnimMontage* HitGuardAnimMontage;
 
 	UPROPERTY(EditAnywhere)
-	TObjectPtr<UAnimMontage> HitReactAnim = nullptr; //TODO 방향별 리액트 
+	TObjectPtr<UAnimMontage> HitReactAnim = nullptr; 
 
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UAnimMontage> GroggyAnim = nullptr;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UMaterialInterface> GroggyMaterial = nullptr; 
 };

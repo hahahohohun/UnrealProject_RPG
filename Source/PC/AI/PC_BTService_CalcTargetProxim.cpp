@@ -20,19 +20,20 @@ void UPC_BTService_CalcTargetProxim::TickNode(UBehaviorTreeComponent& OwnerComp,
 	Super::TickNode(OwnerComp, NodeMemory, DeltaSeconds);
 
 	APawn* ControllingPawn = Cast<APawn>(OwnerComp.GetAIOwner()->GetPawn());
-	if(!ControllingPawn)
+	if (!ControllingPawn)
 		return;
 
 	IPC_CharacterAIInterface* AIPawn = Cast<IPC_CharacterAIInterface>(ControllingPawn);
-	if(!AIPawn)
+	if (!AIPawn)
 		return;
 
 	APawn* Target = Cast<APawn>(OwnerComp.GetBlackboardComponent()->GetValueAsObject(TEXT("Target")));
-	if(!Target)
+	if (!Target)
 		return;
 
-	EPC_ProximityType TargetProximity = FPC_GameUtil::GetTargetProximity(ControllingPawn, Target, NearRange, MiddleRange,FVector::ZeroVector);
+	EPC_ProximityType TargetProximity = FPC_GameUtil::GetTargetProximity(
+		ControllingPawn, Target, UnderRange, NearRange, MiddleRange, FVector::ZeroVector);
 
-	OwnerComp.GetBlackboardComponent()->SetValueAsEnum(TEXT("TargetProximityType"), static_cast<uint8>(TargetProximity));
-	
+	OwnerComp.GetBlackboardComponent()->
+	          SetValueAsEnum(TEXT("TargetProximityType"), static_cast<uint8>(TargetProximity));
 }

@@ -12,7 +12,6 @@
 UPC_AimComponent::UPC_AimComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
-
 }
 
 void UPC_AimComponent::BeginPlay()
@@ -40,8 +39,14 @@ void UPC_AimComponent::BeginPlay()
 	SpringArmComponent->TargetArmLength = TargetArmLength;
 }
 
+void UPC_AimComponent::OnCameraAnimFinished()
+{
+	bCameraAnimPlaying = false;
+	SwitchCamera(PrevCameraType);
+}
+
 void UPC_AimComponent::TickComponent(float DeltaTime, ELevelTick TickType,
-	FActorComponentTickFunction* ThisTickFunction)
+                                     FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	
@@ -54,16 +59,18 @@ void UPC_AimComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 		UCameraComponent* CameraComponent = Interface->GetCameraComponent();
 		check(CameraComponent);
 
-		const FVector TargetOffset = FPC_GameUtil::GetCameraData(CurrentCameraType)->SocketOffset;
-		const FRotator TargetArmRotation = FPC_GameUtil::GetCameraData(CurrentCameraType)->CameraRot;
-		const float TargetArmLength = FPC_GameUtil::GetCameraData(CurrentCameraType)->TargetArmLength;
-		const float TargetFOV = FPC_GameUtil::GetCameraData(CurrentCameraType)->CameraFov;
+		const UPC_CameraDataAsset* CameraDataAsset = FPC_GameUtil::GetCameraData(CurrentCameraType);
+		const FVector TargetOffset = CameraDataAsset->SocketOffset;
+		const FRotator TargetArmRotation = CameraDataAsset->CameraRot;
+		const float TargetArmLength = CameraDataAsset->TargetArmLength;
+		const float TargetFOV = CameraDataAsset->CameraFov;
 
 		// 보간 처리
-		const FVector NewOffset = FMath::VInterpTo(SpringArmComponent->SocketOffset, TargetOffset, DeltaTime, 30.f);
-		const FRotator NewRot = FMath::RInterpTo(CameraComponent->GetRelativeRotation(), TargetArmRotation, DeltaTime, 30.f);
-		const float NewLen = FMath::FInterpTo(SpringArmComponent->TargetArmLength, TargetArmLength, DeltaTime, 30.f);
-		const float NewFOV = FMath::FInterpTo(CameraComponent->FieldOfView, TargetFOV, DeltaTime, 30.f);
+		const float Speed = CameraDataAsset->BlendInterp;
+		const FVector NewOffset = FMath::VInterpTo(SpringArmComponent->SocketOffset, TargetOffset, DeltaTime, Speed);
+		const FRotator NewRot = FMath::RInterpTo(CameraComponent->GetRelativeRotation(), TargetArmRotation, DeltaTime, Speed);
+		const float NewLen = FMath::FInterpTo(SpringArmComponent->TargetArmLength, TargetArmLength, DeltaTime, Speed);
+		const float NewFOV = FMath::FInterpTo(CameraComponent->FieldOfView, TargetFOV, DeltaTime, Speed);
 		
 		SpringArmComponent->SocketOffset = NewOffset;
 		CameraComponent->SetRelativeRotation(NewRot);
@@ -86,6 +93,42 @@ void UPC_AimComponent::SwitchCamera(EPC_CameraType CameraType)
 {
 	CurrentCameraType = CameraType;
 	bCameraBlending = true;
+}
+
+void UPC_AimComponent::PlayCameraAnim(EPC_CameraType CameraType, float Time)
+{
+	if (CurrentCameraType == CameraType)
+		return;
+
+	// Aim 중에는 애니메이션 X
+	if (CurrentCameraType == EPC_CameraType::Aim)
+		return;
+
+	if (bCameraAnimPlaying)
+	{
+		if (UWorld* World = GetWorld())
+		{
+			World->GetTimerManager().ClearTimer(CameraAnimTimerHandle);
+		}
+	}
+
+	PrevCameraType = CurrentCameraType;   // 나중에 되돌릴 타입 저장
+	bCameraAnimPlaying = true;
+
+	// 줌인용 타입으로 전환 (여기서 bCameraBlending = true; 가 이미 처리됨)
+	SwitchCamera(CameraType);
+
+	// Time 후에 원복
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().SetTimer(
+			CameraAnimTimerHandle,
+			this,
+			&UPC_AimComponent::OnCameraAnimFinished,
+			Time,
+			false
+		);
+	}
 }
 
 void UPC_AimComponent::CalcAimOffset(float DeltaTime)

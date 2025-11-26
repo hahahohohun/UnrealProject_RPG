@@ -194,7 +194,8 @@ void UPC_SkillComponent::PlayDecal(uint32 ExecDataId, FVector StartPos, FVector 
 
 	if (World->LineTraceSingleByObjectType(Hit, StartPos, End, ObjectQueryParams, Query))
 	{
-		DrawDebugSphere(World, Hit.ImpactPoint, 20.f, 10, FColor::Red, false, 3.f);
+		if(FPC_GameUtil::IsDebugDrawing(this))
+			DrawDebugSphere(World, Hit.ImpactPoint, 20.f, 10, FColor::Red, false, 3.f);
 
 		FRotator DecalRotation(-90.f, GetOwner()->GetActorRotation().Yaw, 0.f);
 		FVector MidPoint = (StartPos + Hit.ImpactPoint) * 0.5f;
@@ -214,6 +215,11 @@ void UPC_SkillComponent::PlayDecal(uint32 ExecDataId, FVector StartPos, FVector 
 			Decal->SetFadeOut(2.0f, 1.f, true);
 		}
 	}
+}
+
+void UPC_SkillComponent::ClearCurSkillList()
+{
+	CurrentPlayingSkillInfos.Empty();
 }
 
 void UPC_SkillComponent::ProcessSkill(float DeltaTime, FPC_SkillInfo& SkillInfo)
@@ -238,7 +244,7 @@ void UPC_SkillComponent::ProcessSkill(float DeltaTime, FPC_SkillInfo& SkillInfo)
 
 			ExecInfo.bAimStarted = true;
 
-			//AnimInstance->StopAllMontages(0.1f);
+			AnimInstance->StopAllMontages(0.1f);
 			AnimInstance->Montage_Play(ExecTableRow->SkillAnim);
 
 			if (ExecTableRow->StartSFX)
@@ -1197,27 +1203,10 @@ void UPC_SkillComponent::SpawnCollisionDecal(UMaterialInterface* DecalMaterial, 
 		DecalRot.Pitch = -90.f;
 
 		FVector DecalSize;
-
-		//if (Shape.IsBox())
-		//{
-		//	// Box Extent = X,Y,Z → 데칼에선 X=길이, Y=폭
-		//	FVector Ext = Shape.GetExtent();
-		//	DecalSize = FVector(Ext.X * 2.f, Ext.Y * 2.f, 1.f);
-		//}
-		//else if (Shape.IsSphere())
-		//{
-		//	float Radius = Shape.GetSphereRadius();
-		//	DecalSize = FVector(Radius * 2.f, Radius * 2.f, 1.f);
-		//}
-
+		
 		FVector Ext = Shape;
 		DecalSize = Shape; //FVector(Ext.X * 2.f, Ext.Y * 2.f, 1.f);
-
-		if (FPC_GameUtil::IsDebugDrawing(this))
-		{
-			DecalLocation = DecalLocation + FVector(0, 0, -30.f); // 30cm 위로 띄움
-		}
-
+		
 		UDecalComponent* Decal = UGameplayStatics::SpawnDecalAtLocation(
 			World,
 			DecalMaterial,

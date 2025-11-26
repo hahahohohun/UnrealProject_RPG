@@ -72,7 +72,6 @@ protected:
 
 
 	//포스트프로세싱 블러
-	
 	UPROPERTY()
 	APostProcessVolume* CombatPPVolume = nullptr;
 
@@ -103,10 +102,9 @@ public:
 	
 	void AdjustMovement(bool IsPressed);
 	void AdjustCamera(bool bIsPressed);
-	
+	void PlayCameraAnim(EPC_CameraType CameraType,float Time);
 	void SetGenericTeamId(const FGenericTeamId& TeamID);
 	FGenericTeamId GetGenericTeamId() const;
-
 	
 	virtual USpringArmComponent* GetSpringArmComponent() const override { return CameraBoom; }
 	virtual UCameraComponent* GetCameraComponent() const override { return FollowCamera; }

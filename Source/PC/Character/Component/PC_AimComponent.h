@@ -17,19 +17,25 @@ public:
 	
 protected:
 	virtual void BeginPlay() override;
+	void CalcAimOffset(float DeltaTime);
+	bool bCameraBlending = false;
+	//
+	UPROPERTY(BlueprintReadOnly)
+	FRotator AimOffsetRotation = FRotator::ZeroRotator;
+	bool bCameraAnimPlaying = false;
+	EPC_CameraType PrevCameraType = EPC_CameraType::Normal;
+	FTimerHandle CameraAnimTimerHandle;
+	UFUNCTION()
+	void OnCameraAnimFinished();
+	//
+
 public:
 	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	
-	void SwitchCamera(EPC_CameraType CameraType);
-	void CalcAimOffset(float DeltaTime);
-	
-	UPROPERTY(BlueprintReadOnly)
-	FRotator AimOffsetRotation = FRotator::ZeroRotator;
-
 	EPC_CameraType CurrentCameraType = EPC_CameraType::Normal;
-	bool bCameraBlending = false;
-	
+	void SwitchCamera(EPC_CameraType CameraType);
+	void PlayCameraAnim(EPC_CameraType CameraType, float Time);
+
 	TWeakObjectPtr<ACharacter> OwnerCharacter = nullptr;
 };
 

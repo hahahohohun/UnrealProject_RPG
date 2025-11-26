@@ -21,6 +21,9 @@ public:
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Behavior)
+	float UnderRange = 0.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Behavior)
 	float NearRange = 0.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Behavior)

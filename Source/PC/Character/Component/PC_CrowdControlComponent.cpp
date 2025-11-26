@@ -228,7 +228,28 @@ void UPC_CrowdControlComponent::OnStartCC()
 		OwnerCharacter->GetCharacterMovement()->Velocity += ForceDir * Power;
 		//OwnerCharacter->LaunchCharacter(ForceDir * Power, true, true);
 	}
+	else if (CrowdControlInfo.CrowdControlType == EPC_CrowdControlType::GiantPushback)
+	{
+		const FRotator CauserRot = CrowdControlInfo.CauserRot;
 
+		FVector Dir2D = CauserRot.Vector().GetSafeNormal2D();
+		Dir2D.Z = 0.f;
+
+		const float HorizontalPower = CrowdControlTableRow->Property_0;
+		const float UpwardPower     = CrowdControlTableRow->Property_1;
+
+		UCharacterMovementComponent* MoveComp = OwnerCharacter->GetCharacterMovement();
+		if (MoveComp)
+		{
+			MoveComp->StopMovementImmediately();
+		}
+
+		FVector LaunchVelocity = Dir2D * HorizontalPower;
+		LaunchVelocity.Z += UpwardPower;
+
+		OwnerCharacter->SetActorRotation(Dir2D.Rotation());
+		OwnerCharacter->LaunchCharacter(LaunchVelocity, true, true);
+	}
 
 
 }

@@ -82,7 +82,7 @@ public:
 	void CalcSkillTime(uint32 SkillId, float& SkillLifeTime, TArray<FPC_ExecInfo>& ExecInfos);
 
 	void PlayDecal(uint32 ExecDataId, FVector StartPos, FVector ForwardVector, FRotator Rot );
-	
+	void ClearCurSkillList();
 	//논타겟
 	void ProcessSkill(float DeltaTime, FPC_SkillInfo& SkillInfo);
 	void ProcessNonTargetExec(float DeltaTime, FPC_ExecInfo& ExecInfo, FVector StartPos, FRotator StartRot);

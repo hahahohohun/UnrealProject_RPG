@@ -13,7 +13,8 @@
 #include "Particles/ParticleSystem.h"
 #include "PC/PC.h"
 #include "PC/Battle/PC_NormalAttackDamageType.h"
-#include "PC/Character/PC_BaseCharacter.h"
+//#include "PC/Character/PC_BaseCharacter.h"
+#include "PC/Character/PC_NonPlayableCharacter.h"
 #include "PC/Character/PC_PlayableCharaceter.h"
 #include "PC/Character/Controller/PC_PlayerController.h"
 #include "PC/Data/PC_PlayerDataAsset.h"
@@ -143,8 +144,6 @@ void UPC_BattleComponent::Tick_TraceWeapon(float DeltaTime)
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(GetOwner());
 
-	//FPC_GameUtil::CameraShake(EPC_CameraShakeMagnitudeType::Weak);
-
 	for (const auto& Line : TraceLines)
 	{
 		FHitResult HitResult;
@@ -174,8 +173,6 @@ void UPC_BattleComponent::Tick_TraceWeapon(float DeltaTime)
 
 					const float Damage = bPowerAttack ?  Character->StatComponent->GetTotalStat().PowerAttack
 						: Character->StatComponent->GetTotalStat().Attack;
-
-					UE_LOG(LogPC, Log, TEXT("Hit!! %f"), Damage);
 					
 					//UPC_NormalAttackDamageType DamageEvent;
 					//auto AttackType = UPC_NormalAttackDamageType::StaticClass();
@@ -218,18 +215,20 @@ void UPC_BattleComponent::Tick_TraceWeapon(float DeltaTime)
 				if (ACharacter* HitCharacter = Cast<ACharacter>(HitActor))
 				{
 					DamagedActor.Add(HitActor);
-
+					
 					FPointDamageEvent DamageEvent;
 					DamageEvent.DamageTypeClass = UPC_NormalAttackDamageType::StaticClass();
 					DamageEvent.HitInfo = HitResult;
+					
+					const float BaseDamage = CalculateBaseDamage(Character);
+					bool bGroggyHit = false;
+					float Damage = ApplyHitPartAndStateBonus(HitActor, HitResult, BaseDamage, bGroggyHit);
+					PlayOnHitEffects(Character, HitResult, bGroggyHit, ShouldHitAction);
 
-					const float Damage = bPowerAttack ?  Character->StatComponent->GetTotalStat().PowerAttack
-						: Character->StatComponent->GetTotalStat().Attack;
+					if(HasWeapon())
+						PlayWeaponHitSound();
 
 					HitActor->TakeDamage(Damage, DamageEvent, Character->GetController(), Character);
-
-					FPC_GameUtil::CameraShake(EPC_CameraShakeMagnitudeType::Weak);
-					FPC_GameUtil::PlayStopDilation(this, 0.1f, 0.f);
 				}
 			}
 		}
@@ -615,6 +614,63 @@ const FPC_WeaponTableRow* UPC_BattleComponent::GetCurWeaponTableRow(bool bRight)
 	}
 
 	return WeaponTableRow;
+}
+
+float UPC_BattleComponent::CalculateBaseDamage(const APC_BaseCharacter* Attacker)
+{
+	const auto& TotalStat = Attacker->StatComponent->GetTotalStat();
+	return bPowerAttack ? TotalStat.PowerAttack : TotalStat.Attack;
+}
+
+float UPC_BattleComponent::ApplyHitPartAndStateBonus(AActor* HitActor, const FHitResult& HitResult, float BaseDamage,
+	bool& bOutHitGroggyEnemy) const
+{
+	float Damage = BaseDamage;
+	bOutHitGroggyEnemy = false;
+	
+	if (IPC_CharacterAIInterface* CharacterAIInterface = Cast<IPC_CharacterAIInterface>(HitActor))
+	{
+		if (auto HitPartList = CharacterAIInterface->GetHitPartList())
+		{
+			Damage += FPC_GameUtil::GetHitPartAddDamage(HitPartList, HitResult.BoneName);
+		}
+
+		if (CharacterAIInterface->GetState() == EPC_EnemyStateType::Groggy)
+		{
+			Damage *= 2.f;
+			bOutHitGroggyEnemy = true;
+		}
+	}
+
+	return Damage;
+}
+
+void UPC_BattleComponent::PlayOnHitEffects(APC_BaseCharacter* Attacker, const FHitResult& HitResult, bool bIsGroggyHit,
+	bool bIsLastAttack)
+{
+	if (APC_PlayableCharaceter* PlayerCharacter = Cast<APC_PlayableCharaceter>(Attacker))
+	{
+		PlayerCharacter->PlayHitBlurEffect();
+
+		if (bIsGroggyHit)
+		{
+			PlayerCharacter->PlayCameraAnim(EPC_CameraType::ZoomIn, 0.5f);
+		}
+	}
+
+	EPC_CameraShakeMagnitudeType ShakeMagnitude = EPC_CameraShakeMagnitudeType::Weak;
+	if (bIsGroggyHit)
+	{
+		ShakeMagnitude = EPC_CameraShakeMagnitudeType::Strong;
+		FPC_GameUtil::PlayStopDilation(this, 0.1f, 0.f);
+	}
+	else if (bIsLastAttack)
+	{
+		ShakeMagnitude = EPC_CameraShakeMagnitudeType::Strong;
+		FPC_GameUtil::PlayStopDilation(this, 0.2f, 0.f);
+	}
+
+	FPC_GameUtil::CameraShake(ShakeMagnitude);
 }
 
 void UPC_BattleComponent::EndTrace()

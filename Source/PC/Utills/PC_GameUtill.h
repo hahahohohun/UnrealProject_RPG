@@ -7,8 +7,12 @@
 #include "Sound/SoundCue.h"
 #include "Sound/SoundWave.h"
 #include "PC/Subsystem/PC_DataSubsystem.h"
-//#include "PC/Cometic/PC_LegacyCameraShake.h"
-//#include "PC/Data/PC_PlayerDataAsset.h"
+namespace PC_EnemyRange
+{
+	constexpr float Under   = 300.f;
+	constexpr float NearRange   = 500.f;
+	constexpr float MiddleRange = 1000.f;
+}
 
 class UPC_CameraDataAsset;
 
@@ -70,7 +74,7 @@ public:
 	template <typename T>
 	static TArray<T*> GetAllRows(EPC_DataTableType DataTableType);
 
-	static EPC_ProximityType GetTargetProximity(AActor* TargetActor, AActor* CurrentActor, float Near, float Middle, FVector CurrentActorOffset);
+	static EPC_ProximityType GetTargetProximity(AActor* TargetActor, AActor* CurrentActor,float Under, float Near, float Middle, FVector CurrentActorOffset);
 	static FColor GetHitPartColor(EPC_HitPartType PartType);
 	static FColor GetHitPartColor(FPC_HitPartListRow* ListRow, FName BoneName);
 	static float GetHitPartAddDamage(FPC_HitPartListRow* ListRow, FName BoneName);

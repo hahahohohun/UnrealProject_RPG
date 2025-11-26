@@ -5,10 +5,12 @@
 #include "CoreMinimal.h"
 #include "PC_ActionComponent.h"
 #include "Components/ActorComponent.h"
+//#include "PC/Character/PC_BaseCharacter.h"
 #include "PC/Data//PC_TableRows.h"
 #include "PC/Data/PC_CharacterDataAsset.h"
 #include "PC_BattleComponent.generated.h"
 
+class APC_BaseCharacter;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PC_API UPC_BattleComponent : public UActorComponent
@@ -21,6 +23,12 @@ public:
 private:
 	void Tick_Assassinate(float DeltaTime);
 	void Tick_TraceWeapon(float DeltaTime);
+	const FPC_WeaponTableRow* GetCurWeaponTableRow(bool bRight);
+	float CalculateBaseDamage(const APC_BaseCharacter* Attacker);
+	float ApplyHitPartAndStateBonus(AActor* HitActor, const FHitResult& HitResult, float BaseDamage, bool& bOutHitGroggyEnemy) const;
+	void PlayOnHitEffects(APC_BaseCharacter* Attacker, const FHitResult& HitResult, bool bIsGroggyHit, bool bIsLastAttack);
+	
+	
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
@@ -82,11 +90,8 @@ private:
 	UPROPERTY()
 	TObjectPtr<UPC_ActionComponent> ActionComponent;
 	TWeakObjectPtr<ACharacter> AssassinateTarget;
-
-
+	
 	float AssassinatingElapsedTime = 0.f;
-
-	const FPC_WeaponTableRow* GetCurWeaponTableRow(bool bRight);
 };
 
 

@@ -3,12 +3,14 @@
 
 #include "PC/Subsystem/PC_OptionSubsystem.h"
 
+#include "PC_AudioSubsystem.h"
 #include "GameFramework/GameUserSettings.h"
 #include "Kismet/GameplayStatics.h"
 #include "PC/Character/PC_PlayableCharaceter.h"
 #include "PC/OptionSetting/PC_OptionConfigDataAsset.h"
 #include "PC/OptionSetting/PC_OptionSaveGame.h"
 
+class UPC_AudioSubsystem;
 class APC_PlayableCharaceter;
 
 UPC_OptionSubsystem::UPC_OptionSubsystem()
@@ -133,6 +135,29 @@ void UPC_OptionSubsystem::ApplyGraphicsOptions()
 
 void UPC_OptionSubsystem::ApplyAudioOptions()
 {
+
+	UWorld* World = GetWorld();
+
+	if (!World)
+		return;
+
+	if (UGameInstance* GI = World->GetGameInstance())
+	{
+		if (UPC_AudioSubsystem* Audio = GI->GetSubsystem<UPC_AudioSubsystem>())
+		{
+			// 0~100 슬라이더 → 0.0f~1.0f
+			const float BGMVol = FMath::Clamp(
+				static_cast<float>(CurrentOption.BGMVolume) / 100.0f,
+				0.0f, 1.0f);
+
+			const float SFXVol = FMath::Clamp(
+				static_cast<float>(CurrentOption.SFXVolume) / 100.0f,
+				0.0f, 1.0f);
+
+			Audio->SetBGMVolume(BGMVol);
+			Audio->SetSFXVolume(SFXVol);
+		}
+	}
 }
 
 //카메라

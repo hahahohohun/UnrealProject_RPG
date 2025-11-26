@@ -173,6 +173,9 @@ void APC_AIController::HandleSensedSight(AActor* InActor)
 {
 	IPC_CharacterAIInterface* AIPawn = Cast<IPC_CharacterAIInterface>(GetPawn());
 	ensure(AIPawn);
+	
+	if (AIPawn->GetState() == EPC_EnemyStateType::Groggy)
+		return;
 
 	AIPawn->RequestChangeState(EPC_EnemyStateType::Battle);
 	OnSenseTarget(InActor);
@@ -185,6 +188,9 @@ void APC_AIController::HandleSensedHearing(AActor* InActor, FVector InLocation)
 
 	if (AIPawn->GetState() == EPC_EnemyStateType::Battle)
 		return;
+	
+	if (AIPawn->GetState() == EPC_EnemyStateType::Groggy)
+		return;
 
 	AIPawn->RequestChangeState(EPC_EnemyStateType::Investigating);
 	GetBlackboardComponent()->SetValueAsVector(TEXT("InvestigatingPos"), InLocation);
@@ -195,6 +201,9 @@ void APC_AIController::HandleSensedDamage(AActor* InActor)
 	IPC_CharacterAIInterface* AIPawn = Cast<IPC_CharacterAIInterface>(GetPawn());
 	ensure(AIPawn);
 
+	if(AIPawn->GetState() == EPC_EnemyStateType::Groggy)
+		return;
+	
 	AIPawn->RequestChangeState(EPC_EnemyStateType::Battle);
 
 	OnSenseTarget(InActor);
@@ -330,8 +339,9 @@ void APC_AIController::Tick(float DeltaSeconds)
 	IPC_CharacterAIInterface* AIPawn = Cast<IPC_CharacterAIInterface>(GetPawn());
 	ensure(AIPawn);
 
-	const float NearRange = 450.f;
-	const float MiddleRange = 1000.f;
+	constexpr float UnderRange = PC_EnemyRange::Under;
+	constexpr float NearRange = PC_EnemyRange::NearRange;
+	constexpr float MiddleRange = PC_EnemyRange::MiddleRange;
 	FVector CurrentActorOffset = GetPawn()->GetActorRotation().Vector() * Cast<ACharacter>(GetPawn())->GetMesh()->GetRelativeScale3D().GetMax() * 50.f;
 
 	if(FPC_GameUtil::IsDebugDrawing(this))
@@ -369,7 +379,7 @@ void APC_AIController::Tick(float DeltaSeconds)
 	if(EnemyTableRow->IsHitPartUnit)
 	{
 		EPC_ProximityType TargetProximity = FPC_GameUtil::GetTargetProximity(
-			TargetActor, GetPawn(), NearRange, MiddleRange, CurrentActorOffset);
+			TargetActor, GetPawn(),UnderRange, NearRange, MiddleRange, CurrentActorOffset);
 
 		GetBlackboardComponent()->SetValueAsEnum(TEXT("TargetProximityType"), static_cast<uint8>(TargetProximity));
 
@@ -382,6 +392,7 @@ void APC_AIController::Tick(float DeltaSeconds)
         
             switch (TargetProximity)
             {
+            case EPC_ProximityType::Under: DrawColor = FColor::Black;     break;
             case EPC_ProximityType::Near_l: DrawColor = FColor::Red;      break;
             case EPC_ProximityType::Near_r: DrawColor = FColor::Green;    break;
             case EPC_ProximityType::Front:  DrawColor = FColor::Yellow;   break;
@@ -405,7 +416,7 @@ void APC_AIController::Tick(float DeltaSeconds)
                 GetWorld(),
                 TargetLocation + FVector(0, 0, 200),
                 DebugText,
-                nullptr, DrawColor, 0.f, true
+                nullptr, DrawColor, 0.f, true, 3.0f
             );
         }
 

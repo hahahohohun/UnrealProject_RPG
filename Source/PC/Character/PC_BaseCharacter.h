@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GenericTeamAgentInterface.h"
-#include "Component/PC_BattleComponent.h"
+//#include "Component/PC_BattleComponent.h"
 #include "Component/PC_StatusEffectComponent.h"
 #include "GameFramework/Character.h"
 #include "PC/PC_Enum.h"
@@ -40,6 +40,7 @@ protected:
 
 	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
 	                         AActor* DamageCauser) override;
+
 
 public:
 	void ApplyStat(const FPC_CharacterStatTableRow& BaseStat, const FPC_CharacterStatTableRow& ModifierStat);

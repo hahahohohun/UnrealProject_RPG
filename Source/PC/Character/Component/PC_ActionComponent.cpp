@@ -70,55 +70,53 @@ void UPC_ActionComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 
 	Tick_Running(DeltaTime);
 
-	if (!DebugInputArrow)
-		return;
-
-	// 입력 없으면 숨김
-	if (InputVector.IsNearlyZero() || !FPC_GameUtil::IsDebugDrawing(this))
+	if (DebugInputArrow)
 	{
-		DebugInputArrow->SetHiddenInGame(true);
-		return;
+		// 입력 없으면 숨김
+		if (InputVector.IsNearlyZero() || !FPC_GameUtil::IsDebugDrawing(this))
+		{
+			DebugInputArrow->SetHiddenInGame(true);
+			return;
+		}
+
+		DebugInputArrow->SetHiddenInGame(false);
+
+		const FRotator ControlRot = OwnerCharacter->GetControlRotation();
+		const FRotator YawOnly(0.f, ControlRot.Yaw, 0.f);
+		const FVector Forward = FRotationMatrix(YawOnly).GetUnitAxis(EAxis::X);
+		const FVector Right   = FRotationMatrix(YawOnly).GetUnitAxis(EAxis::Y);
+		const FVector TargetWorldDir = (Right * InputVector.X + Forward * InputVector.Y).GetSafeNormal();
+	
+		const float SmoothSpeed = 10.f;
+		DebugDirSmoothed = FMath::VInterpTo(DebugDirSmoothed, TargetWorldDir, DeltaTime, SmoothSpeed).GetSafeNormal();
+
+		const USkeletalMeshComponent* Mesh = OwnerCharacter->GetMesh();
+		const FName PelvisSocket(TEXT("pelvis")); // 허리 본 이름
+		FVector Start = OwnerCharacter->GetActorLocation();
+
+		if (Mesh && Mesh->DoesSocketExist(PelvisSocket))
+		{
+			Start = Mesh->GetSocketLocation(PelvisSocket);
+		}
+		else
+		{
+			// 허리쯤 높이로 보정 (대략 +80cm)
+			Start += FVector(0.f, 0.f, 80.f);
+		}
+
+		// 4️⃣ 크기 및 회전 조정
+		const float ArrowLen   = 160.f;             // 짧게
+		const float BaseLen    = 100.f;
+		const float ScaleX     = ArrowLen / BaseLen;
+		const FRotator DirRot  = DebugDirSmoothed.Rotation();
+
+		DebugInputArrow->SetWorldLocation(Start);
+		DebugInputArrow->SetWorldRotation(DirRot);
+		//DebugInputArrow->SetWorldScale3D(FVector(ScaleX, 0.3f, 0.3f)); // 얇고 슬림하게
+
+		DrawFeetSpheres(OwnerCharacter, /*Radius=*/8.f, /*Life=*/GetWorld()->GetDeltaSeconds() * 1.5f);
 	}
 
-	DebugInputArrow->SetHiddenInGame(false);
-
-	// 1️⃣ 카메라 방향 기준 변환
-	const FRotator ControlRot = OwnerCharacter->GetControlRotation();
-	const FRotator YawOnly(0.f, ControlRot.Yaw, 0.f);
-	const FVector Forward = FRotationMatrix(YawOnly).GetUnitAxis(EAxis::X);
-	const FVector Right   = FRotationMatrix(YawOnly).GetUnitAxis(EAxis::Y);
-	const FVector TargetWorldDir = (Right * InputVector.X + Forward * InputVector.Y).GetSafeNormal();
-
-	// 2️⃣ 방향 스무딩
-	const float SmoothSpeed = 10.f;
-	DebugDirSmoothed = FMath::VInterpTo(DebugDirSmoothed, TargetWorldDir, DeltaTime, SmoothSpeed).GetSafeNormal();
-
-	// 3️⃣ 위치: 허리 소켓 기준 (없으면 루트 기준 + 높이 보정)
-	const USkeletalMeshComponent* Mesh = OwnerCharacter->GetMesh();
-	const FName PelvisSocket(TEXT("pelvis")); // 허리 본 이름
-	FVector Start = OwnerCharacter->GetActorLocation();
-
-	if (Mesh && Mesh->DoesSocketExist(PelvisSocket))
-	{
-		Start = Mesh->GetSocketLocation(PelvisSocket);
-	}
-	else
-	{
-		// 허리쯤 높이로 보정 (대략 +80cm)
-		Start += FVector(0.f, 0.f, 80.f);
-	}
-
-	// 4️⃣ 크기 및 회전 조정
-	const float ArrowLen   = 160.f;             // 짧게
-	const float BaseLen    = 100.f;
-	const float ScaleX     = ArrowLen / BaseLen;
-	const FRotator DirRot  = DebugDirSmoothed.Rotation();
-
-	DebugInputArrow->SetWorldLocation(Start);
-	DebugInputArrow->SetWorldRotation(DirRot);
-	//DebugInputArrow->SetWorldScale3D(FVector(ScaleX, 0.3f, 0.3f)); // 얇고 슬림하게
-
-	DrawFeetSpheres(OwnerCharacter, /*Radius=*/8.f, /*Life=*/GetWorld()->GetDeltaSeconds() * 1.5f);
 }
 
 void UPC_ActionComponent::Tick_Running(float DeltaTime)

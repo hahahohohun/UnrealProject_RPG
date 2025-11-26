@@ -59,6 +59,15 @@ void UPC_DataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 		}
 	}
 
+	const FSoftObjectPath ZoomInCameraAssetObject(ZoomInCameraDataPath);
+	if (ZoomInCameraAssetObject.IsValid())
+	{
+		if (UPC_CameraDataAsset* DataAsset = Cast<UPC_CameraDataAsset>(ZoomInCameraAssetObject.TryLoad()))
+		{
+			CameraData.Add(EPC_CameraType::ZoomIn, DataAsset);
+		}
+	}
+
 	const FSoftObjectPath GameDataAssetObject(GameDataPath);
 	if (GameDataAssetObject.IsValid())
 	{

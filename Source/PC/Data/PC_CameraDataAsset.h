@@ -24,4 +24,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Stat)
 	float TargetArmLength = 0.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Stat)
+	float BlendInterp = 30.f;
 };

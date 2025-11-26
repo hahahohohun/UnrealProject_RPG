@@ -3,3 +3,4 @@
 
 #include "PC_NormalAttackDamageType.h"
 const int32 FNormalAttackDamageEvent::ClassID = 1;
+bool PlayHitMaterial = true;

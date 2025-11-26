@@ -478,11 +478,14 @@ void APC_PlayableCharaceter::OnSensedByBossMonster(ACharacter* Incharacter) cons
 {
 	OnEnCounterBossMonsterDelegate.Broadcast(Incharacter);
 
-	if (UWorld* World = GetWorld())
+	if(Incharacter)
 	{
-		if (APCGameMode* GM = World->GetAuthGameMode<APCGameMode>())
+		if (UWorld* World = GetWorld())
 		{
-			GM->PlayBGM(EPC_BGMType::Combat);
+			if (APCGameMode* GM = World->GetAuthGameMode<APCGameMode>())
+			{
+				GM->PlayBGM(EPC_BGMType::Combat);
+			}
 		}
 	}
 }
@@ -589,6 +592,12 @@ void APC_PlayableCharaceter::AdjustCamera(bool bIsPressed)
 			AimComponent->SwitchCamera(EPC_CameraType::Normal);
 		}
 	}
+}
+
+void APC_PlayableCharaceter::PlayCameraAnim(EPC_CameraType CameraType, float Time)
+{
+	check(AimComponent);
+	AimComponent->PlayCameraAnim(CameraType, Time);
 }
 
 void APC_PlayableCharaceter::SetGenericTeamId(const FGenericTeamId& TeamID)

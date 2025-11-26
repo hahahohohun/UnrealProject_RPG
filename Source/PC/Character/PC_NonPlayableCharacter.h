@@ -114,14 +114,16 @@ private:
 	EPC_DeadType DeadType = EPC_DeadType::None;
 
 	bool IsTurning = false;
+	bool IsHasBeenGroggy = false;
 
 	float TurnStartYaw = 0.0f;
 	float TurnDegree = 0.0f;
 
+	FTimerHandle DeathDestroyTimerHandle;
+	
 	TArray<TObjectPtr<UAnimMontage>> AlreadyPlayedAttackMontages;
 	bool bLastAttacking; //마지막 공격
 	
 	UPROPERTY(EditAnywhere)
 	bool IsDummy = false; //더미, 테스트용
-	
 };
