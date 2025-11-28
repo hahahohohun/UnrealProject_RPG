@@ -1,12 +1,15 @@
 ﻿#pragma once
 #include "CoreMinimal.h"
+#include "LevelSequence.h"
 #include "NiagaraSystem.h"
 #include "BehaviorTree/BlackboardData.h"
 #include "Engine/DataTable.h"
+
 #include "PC/PC_Enum.h"
 #include "PC_TableRows.generated.h"
 
 struct FPC_HitPartUnitAttackAnims;
+class ALevelSequenceActor;
 //에디터에서 셋팅하는 데이터
 USTRUCT(BlueprintType)
 struct FPC_ExecData
@@ -33,6 +36,9 @@ struct FPC_HitPartData
 
 	UPROPERTY(EditAnywhere)
 	float AddHitDamage = 0.0f; // 부위 별 추가뎀지
+
+	UPROPERTY(EditAnywhere)
+	UMaterialInterface* HitPartMaterial = nullptr;
 };
 
 USTRUCT(BlueprintType)
@@ -173,6 +179,9 @@ struct FPC_EnemyTableRow : public FTableRowBase
 
 	UPROPERTY(EditAnywhere)
 	FName Name = NAME_None;
+	
+	UPROPERTY(EditAnywhere)
+	TSoftObjectPtr<ULevelSequence> DeathSequenceAsset;
 };
 
 

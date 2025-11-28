@@ -343,8 +343,9 @@ void UPC_ActionComponent::Roll(bool bPressed)
 		
 		UAnimInstance* AnimInstance = OwnerCharacter->GetMesh()->GetAnimInstance();
 		check(AnimInstance);
-		
+
 		AnimInstance->StopAllMontages(0.1f);
+		ResetCombo();
 		OwnerCharacter->PlayAnimMontage(PlayerData->RollMontage);
 		FOnMontageEnded EndDelegate = FOnMontageEnded::CreateUObject(this, &ThisClass::OnMontageEnd);
 		AnimInstance->Montage_SetEndDelegate(EndDelegate);

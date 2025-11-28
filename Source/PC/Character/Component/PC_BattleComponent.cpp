@@ -140,10 +140,14 @@ void UPC_BattleComponent::Tick_TraceWeapon(float DeltaTime)
 	bool ShouldHitAction = false;
 	if(ActionComponent)
 		ShouldHitAction = ActionComponent->IsLastAttack();
-	
+
+
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(GetOwner());
-
+	
+	FCollisionObjectQueryParams ObjectQueryParams;
+	ObjectQueryParams.AddObjectTypesToQuery(ECC_Pawn);
+	
 	for (const auto& Line : TraceLines)
 	{
 		FHitResult HitResult;
@@ -188,23 +192,15 @@ void UPC_BattleComponent::Tick_TraceWeapon(float DeltaTime)
 					if (UPC_CharacterDataAsset* HitCharDataAsset = HitCharacter->GetCharacterDataAsset())
 					{
 						FPC_GameUtil::SpawnEffectAtLocation(GetWorld(), HitCharDataAsset->HitFx, HitResult.ImpactPoint, FRotator::ZeroRotator, 1);
-						//SpawnEffect(HitResult.ImpactPoint, HitCharDataAsset->HitFx);
 					}
 					
 					if(HasWeapon())
 						PlayWeaponHitSound();
-
-					if(APC_PlayableCharaceter* PlayerCharacter = Cast<APC_PlayableCharaceter>(OwnerCharacter))
-					{
-						PlayerCharacter->PlayHitBlurEffect();
-					}
+					
 				}
 			}
 		}
-
-		FCollisionObjectQueryParams ObjectQueryParams;
-		ObjectQueryParams.AddObjectTypesToQuery(ECC_Pawn);
-
+		
 		//HitPart가 가능한 몹 체크용(거대보스)
 		if(World->LineTraceSingleByObjectType(HitResult, Line.Key, Line.Value, ObjectQueryParams, Params))
 		{
@@ -650,10 +646,9 @@ void UPC_BattleComponent::PlayOnHitEffects(APC_BaseCharacter* Attacker, const FH
 {
 	if (APC_PlayableCharaceter* PlayerCharacter = Cast<APC_PlayableCharaceter>(Attacker))
 	{
-		PlayerCharacter->PlayHitBlurEffect();
-
-		if (bIsGroggyHit)
+		if (bIsGroggyHit || bIsLastAttack)
 		{
+			PlayerCharacter->PlayHitBlurEffect(HitResult.ImpactPoint);
 			PlayerCharacter->PlayCameraAnim(EPC_CameraType::ZoomIn, 0.5f);
 		}
 	}
@@ -662,7 +657,7 @@ void UPC_BattleComponent::PlayOnHitEffects(APC_BaseCharacter* Attacker, const FH
 	if (bIsGroggyHit)
 	{
 		ShakeMagnitude = EPC_CameraShakeMagnitudeType::Strong;
-		FPC_GameUtil::PlayStopDilation(this, 0.1f, 0.f);
+		FPC_GameUtil::PlayStopDilation(this, 0.3f, 0.1f);
 	}
 	else if (bIsLastAttack)
 	{

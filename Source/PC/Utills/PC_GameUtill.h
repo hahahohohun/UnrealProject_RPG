@@ -68,9 +68,27 @@ public:
 	static FVector FindSurfacePos(ACharacter* Character, FVector& CurrentPos);
 	
 	//디버그용
+	
 	static bool IsDebugDrawing(UObject* WorldContextObject);
 	static void AddOnScreenDebugMessage(FString msg);
+	static FString GetProximityString(EPC_ProximityType Proximity);
+	static FColor GetProximityColor(EPC_ProximityType Proximity);
+	static void DrawProximityMapDebug(
+	AActor* CurrentActor,
+	float UnderRange,
+	float NearRange,
+	float MiddleRange,
+	const FVector& CurrentActorOffset);
+	static void DrawProximityAngleDebug(
+	AActor* CurrentActor,
+	float UnderRange,
+	float NearRange,
+	float MiddleRange,
+	float AngleThresholdDeg = 45.f, // GetTargetProximity에서 쓰던 각도
+	const FVector& CurrentActorOffset = FVector::ZeroVector);
+    
 	//
+	
 	template <typename T>
 	static TArray<T*> GetAllRows(EPC_DataTableType DataTableType);
 
@@ -78,12 +96,14 @@ public:
 	static FColor GetHitPartColor(EPC_HitPartType PartType);
 	static FColor GetHitPartColor(FPC_HitPartListRow* ListRow, FName BoneName);
 	static float GetHitPartAddDamage(FPC_HitPartListRow* ListRow, FName BoneName);
+	static UMaterialInterface* GetHitPartHitMaterial(FPC_HitPartListRow* ListRow, FName BoneName);
 	//static float GetCalcTotalHitPartDamage(float Damage, FPC_HitPartListRow* ListRow, FName BoneName);
 	static float GetCalcTotalNormalDamage(float Damage, AActor* HitActor, FName BoneName);
 	static FTransform GetSocketTransform(AActor* Actor, FName BoneName); //소켓찾고 없으면 무기소켓도
 private:
 
 };
+
 
 template <typename T>
 TArray<T*> FPC_GameUtil::GetAllRows(EPC_DataTableType Type)

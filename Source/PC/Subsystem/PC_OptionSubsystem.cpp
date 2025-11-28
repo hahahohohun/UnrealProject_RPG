@@ -111,13 +111,13 @@ void UPC_OptionSubsystem::ApplyGraphicsOptions()
 	{
 		Scalability::FQualityLevels Quality = UserSettings->ScalabilityQuality;
 		
+		Quality.SetDefaults();
 		Quality.FoliageQuality = CurrentOption.bUseFoliage ? 2 : 0;
 		
 		UKismetSystemLibrary::ExecuteConsoleCommand(
 			World,
 			FString::Printf(TEXT("sg.FoliageQuality %d"), CurrentOption.bUseFoliage ? 2 : 0)
 		);
-		
 		// 섀도우
 		Quality.ShadowQuality = CurrentOption.bUseShadow ? 2 : 0;
 

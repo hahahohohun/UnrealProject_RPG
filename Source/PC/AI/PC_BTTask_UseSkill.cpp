@@ -27,10 +27,10 @@ EBTNodeResult::Type UPC_BTTask_UseSkill::ExecuteTask(UBehaviorTreeComponent& Own
 
 	IPC_CharacterInterface* IPCChar = Cast<IPC_CharacterInterface>(ControllingPawn);
 	check(IPCChar);
-
 	UPC_SkillComponent* SkillComponent = IPCChar->GetSkillComponent();
 	check(SkillComponent);
 
+	IPCChar->AttackTrace(false, "","");
 	BehaviorTreeComponent = &OwnerComp;
 	OwenrCharacter = Cast<ACharacter>(ControllingPawn);
 

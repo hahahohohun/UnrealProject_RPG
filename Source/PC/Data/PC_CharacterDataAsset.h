@@ -31,6 +31,9 @@ public:
 	TObjectPtr<UNiagaraSystem> AssasinFx; //암살당했을때
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TObjectPtr<USoundBase> HitSFX;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TObjectPtr<USoundBase> FootSFX;
 
 	UPROPERTY(EditAnywhere)

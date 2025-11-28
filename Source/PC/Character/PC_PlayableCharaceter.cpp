@@ -460,14 +460,14 @@ float APC_PlayableCharaceter::TakeDamage(float DamageAmount, struct FDamageEvent
 			CrowdControlComponent->RequestPlayerCC(4, DamageCauser);
 		}
 
-		FPC_GameUtil::SpawnEffectAtLocation(GetWorld(), CauserDataAsset->HitFx, GetActorLocation(), FRotator::ZeroRotator);
+		FPC_GameUtil::SpawnEffectAtLocation(GetWorld(), OwnerDataAsset->HitFx, GetActorLocation(), FRotator::ZeroRotator);
 	}
 	else
 	{
 		if(ActionComponent->IsInSpecialAction &&
 			BattleComponent->CharacterStanceType == EPC_CharacterStanceType::Sword)
 		{
-			FPC_GameUtil::SpawnEffectAtLocation(GetWorld(), CauserDataAsset->HitFx, GetActorLocation(), FRotator::ZeroRotator);
+			FPC_GameUtil::SpawnEffectAtLocation(GetWorld(), OwnerDataAsset->HitFx, GetActorLocation(), FRotator::ZeroRotator);
 		}
 	}
 	
@@ -522,7 +522,46 @@ void APC_PlayableCharaceter::PlayHitBlurEffect()
 {
 	if (!PPBlurCurve || !CombatPPMID)
 		return;
+	
+	if(FPC_GameUtil::IsDebugDrawing(this))
+		return;
+	
+	PPBlurTimeline.PlayFromStart();
+}
 
+void APC_PlayableCharaceter::PlayHitBlurEffect(const FVector& ImpactPointWorld, const FVector& HitFromWorldDir)
+{
+	if (!PPBlurCurve || !CombatPPMID)
+		return;
+
+	if(FPC_GameUtil::IsDebugDrawing(this))
+		return;
+	
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	if (!PC) return;
+	
+	FVector2D ScreenPos;
+	if (!PC->ProjectWorldLocationToScreen(ImpactPointWorld, ScreenPos, true))
+		return;
+
+	int32 ViewX = 0, ViewY = 0;
+	PC->GetViewportSize(ViewX, ViewY);
+	if (ViewX <= 0 || ViewY <= 0)
+		return;
+
+	const FVector2D ViewSize(ViewX, ViewY);
+	FVector2D ImpactUV = ScreenPos / ViewSize;
+
+	// Y 플립 테스트
+	//ImpactUV.Y = 1.f - ImpactUV.Y;
+
+	ImpactUV.X = FMath::Clamp(ImpactUV.X, 0.f, 1.f);
+	ImpactUV.Y = FMath::Clamp(ImpactUV.Y, 0.f, 1.f);
+
+	CombatPPMID->SetVectorParameterValue(
+		TEXT("BlurCenter"),
+		FLinearColor(ImpactUV.X, ImpactUV.Y, 0.f, 0.f));
+	
 	PPBlurTimeline.PlayFromStart();
 }
 
@@ -630,6 +669,7 @@ bool APC_PlayableCharaceter::IsGuarding(FVector ImpactPoint)
 				UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 				check(AnimInstance);
 
+				ActionComponent->ResetCombo();
 				AnimInstance->StopAllMontages(0.f);
 				AnimInstance->Montage_Play(HitCharDataAsset->HitGuardAnimMontage, 1.f, EMontagePlayReturnType::MontageLength);
 				FOnMontageEnded EndDelegate;

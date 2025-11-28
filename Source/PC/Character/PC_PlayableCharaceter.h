@@ -95,6 +95,9 @@ public:
 	UFUNCTION(Category="PostProcess")
 	void PlayHitBlurEffect();
 	
+	//UFUNCTION(Category="PostProcess")
+	void PlayHitBlurEffect(const FVector& ImpactPointWorld,	const FVector& HitFromWorldDir = FVector::ZeroVector);
+	
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void SetupHUDWidget(UPC_HUDWidget* InWidget) override;
 	virtual void ReactAttackBreak() override;

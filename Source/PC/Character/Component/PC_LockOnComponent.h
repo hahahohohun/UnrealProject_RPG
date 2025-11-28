@@ -6,6 +6,8 @@
 #include "Components/ActorComponent.h"
 #include "PC_LockOnComponent.generated.h"
 
+class USpringArmComponent;
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PC_API UPC_LockOnComponent : public UActorComponent
 {
@@ -37,11 +39,13 @@ protected:
 public:
 	UPROPERTY(BlueprintReadOnly)
 	bool bLockOnMode = false;
-
+	
+	virtual void BeginPlay() override;
 private:
 	UPROPERTY()
 	TWeakObjectPtr<APawn> LockedTarget;
 
+	USpringArmComponent* SpringArm;
 	FVector TargetOverViewPoint;
 	float TargetDetectRadius = 0.f;
 	float TargetDetectAngle = 0.f;
@@ -54,11 +58,12 @@ private:
 	float MinArmLength = 300.f;
 
 	UPROPERTY(EditAnywhere, Category="LockOn|Camera")
-	float MaxArmLength = 600.f;
+	float MaxArmLength = 400.f;
 
 	// 보간 속도
 	UPROPERTY(EditAnywhere, Category="LockOn|Camera")
 	float ArmInterpSpeed = 5.f;
 
 	bool bCachedDefaultArmLength = false;
+	
 };

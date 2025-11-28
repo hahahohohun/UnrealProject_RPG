@@ -346,15 +346,32 @@ void APC_AIController::Tick(float DeltaSeconds)
 
 	if(FPC_GameUtil::IsDebugDrawing(this))
 	{
-		if(AIPawn->GetEnemyData()->IsHitPartUnit)
+		//if(AIPawn->GetEnemyData()->IsHitPartUnit)
+		//{
+		//	//매쉬가 앞으로 기울어져있어서 보정처리
+		//	FVector Center = GetPawn()->GetActorLocation() + GetPawn()->GetActorRotation().Vector() *
+		//		Cast<ACharacter>(GetPawn())->GetMesh()->GetRelativeScale3D().GetMax() * 50.f;
+		//	
+		//	Center.Z -= Cast<ACharacter>(GetPawn())->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+		//	DrawDebugSphere(GetWorld(), Center, NearRange, 16, FColor::Yellow, false, -1, 0, 3.f);
+		//	DrawDebugSphere(GetWorld(), Center, MiddleRange, 16, FColor::Purple, false, -1,0, 3.f);
+		//}
+
+
+		if (AIPawn->GetEnemyData()->IsHitPartUnit)
 		{
-			//매쉬가 앞으로 기울어져있어서 보정처리
-			FVector Center = GetPawn()->GetActorLocation() + GetPawn()->GetActorRotation().Vector() *
-				Cast<ACharacter>(GetPawn())->GetMesh()->GetRelativeScale3D().GetMax() * 50.f;
+			AActor* BossActor = GetPawn(); // 혹은 AIPawn 등
+
+			FVector Offset = BossActor->GetActorRotation().Vector() *
+				Cast<ACharacter>(BossActor)->GetMesh()->GetRelativeScale3D().GetMax() * 50.f;
 			
-			Center.Z -= Cast<ACharacter>(GetPawn())->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
-			DrawDebugSphere(GetWorld(), Center, NearRange, 16, FColor::Yellow, false, -1, 0, 3.f);
-			DrawDebugSphere(GetWorld(), Center, MiddleRange, 16, FColor::Purple, false, -1,0, 3.f);
+			FPC_GameUtil::DrawProximityAngleDebug(
+				BossActor,
+				UnderRange,
+				NearRange,
+				MiddleRange,
+				45.f,     // Front 기준 각도(±45도)
+				Offset);  // 네가 쓰던 앞쪽 보정
 		}
 	}
 	

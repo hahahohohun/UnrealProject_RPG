@@ -248,7 +248,8 @@ void UPC_CrowdControlComponent::OnStartCC()
 		LaunchVelocity.Z += UpwardPower;
 
 		OwnerCharacter->SetActorRotation(Dir2D.Rotation());
-		OwnerCharacter->LaunchCharacter(LaunchVelocity, true, true);
+		//OwnerCharacter->LaunchCharacter(LaunchVelocity, true, true);
+		OwnerCharacter->GetCharacterMovement()->Velocity += LaunchVelocity;
 	}
 
 

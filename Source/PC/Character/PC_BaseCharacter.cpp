@@ -92,6 +92,9 @@ float APC_BaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Dama
 		}
 	}
 
+	if(CharacterData->HitSFX)
+		FPC_GameUtil::PlaySFXAtLocation(this, CharacterData->HitSFX, GetActorLocation());
+
 	return Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
 }
 
@@ -131,7 +134,8 @@ void APC_BaseCharacter::SetupStatusEffectWidget(UPC_UserWidget* InUserWidget)
 {
 	if (UPC_StatusEffectWidget* StatusEffectWidget = Cast<UPC_StatusEffectWidget>(InUserWidget))
 	{
-		OnCharacterApplyStatusEffect.AddDynamic(StatusEffectComponent, &UPC_StatusEffectComponent::ApplyStatusEffect);
+		if(!OnCharacterApplyStatusEffect.IsBound())
+			OnCharacterApplyStatusEffect.AddDynamic(StatusEffectComponent, &UPC_StatusEffectComponent::ApplyStatusEffect);
 		StatusEffectComponent->OnStatusEffectTimeUpdate.AddUObject(StatusEffectWidget,
 		                                                           &UPC_StatusEffectWidget::UpdateStatusEffect);
 	}

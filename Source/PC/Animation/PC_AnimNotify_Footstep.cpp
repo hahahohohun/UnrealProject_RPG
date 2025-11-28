@@ -33,7 +33,7 @@ void UPC_AnimNotify_Footstep::Notify(USkeletalMeshComponent* MeshComp, UAnimSequ
 	if (!FootSFX)
 		return;
 
-	if (OwnerCharacter->GetVelocity().Size2D() < 10.f) //가만히있으면 안나게
+	if (OwnerCharacter->GetVelocity().Size2D() < 100.f) //가만히있으면 안나게
 		return;
 	
 	FVector Location = OwnerCharacter->GetActorLocation();

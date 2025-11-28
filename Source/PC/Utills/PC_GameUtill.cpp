@@ -526,13 +526,16 @@ void FPC_GameUtil::CameraShake(EPC_CameraShakeMagnitudeType Type)
 {
 	if (Type == EPC_CameraShakeMagnitudeType::None)
 		return;
-
+	
 	UPC_GameDataAsset* GameDataAsset = GetGameData();
 	if (GameDataAsset)
 	{
 		if (APlayerController* PlayerController = UGameplayStatics::GetPlayerController(
 			GEngine->GetCurrentPlayWorld(), 0))
 		{
+			if(IsDebugDrawing(PlayerController))
+				return;
+			
 			PlayerController->ClientStartCameraShake(*GameDataAsset->CameraShakeClass.Find(Type));
 		}
 	}
@@ -542,6 +545,9 @@ void FPC_GameUtil::PlayStopDilation(const UObject* WorldObject, float Duration, 
 {
 	UWorld* World = WorldObject->GetWorld();
 	check(World);
+
+	if(FPC_GameUtil::IsDebugDrawing(World))
+		return;
 
 	UGameplayStatics::SetGlobalTimeDilation(World, Dilation);
 
@@ -572,6 +578,9 @@ void FPC_GameUtil::PlayHitMaterial(ACharacter* DamageCharacter)
 
 	UWorld* World = DamageCharacter->GetWorld();
 	check(World);
+
+	if(FPC_GameUtil::IsDebugDrawing(World))
+		return;
 
 	//기존에 머테리얼 캐싱
 	UMaterialInterface* OverlayMaterial = SkeletalMeshComponent->GetOverlayMaterial();
@@ -783,6 +792,239 @@ void FPC_GameUtil::AddOnScreenDebugMessage(FString msg)
 	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, msg);
 }
 
+FString FPC_GameUtil::GetProximityString(EPC_ProximityType Proximity)
+{
+	switch (Proximity)
+	{
+	case EPC_ProximityType::Under:   return TEXT("Under");
+	case EPC_ProximityType::Near_l:  return TEXT("Near_L");
+	case EPC_ProximityType::Near_r:  return TEXT("Near_R");
+	case EPC_ProximityType::Front:   return TEXT("Front");
+	case EPC_ProximityType::Back:    return TEXT("Back");
+	case EPC_ProximityType::Left:    return TEXT("Left");
+	case EPC_ProximityType::Right:   return TEXT("Right");
+	case EPC_ProximityType::Far:     return TEXT("Far");
+	default:                         return TEXT("None");
+	}
+}
+
+FColor FPC_GameUtil::GetProximityColor(EPC_ProximityType Proximity)
+{
+	switch (Proximity)
+	{
+	case EPC_ProximityType::Under:   return FColor::Cyan;
+	case EPC_ProximityType::Near_l:  return FColor::Emerald;
+	case EPC_ProximityType::Near_r:  return FColor::Green;
+	case EPC_ProximityType::Front:   return FColor::Red;
+	case EPC_ProximityType::Back:    return FColor::Blue;
+	case EPC_ProximityType::Left:    return FColor::Magenta;
+	case EPC_ProximityType::Right:   return FColor::Yellow;
+	case EPC_ProximityType::Far:     return FColor::Silver;
+	default:                         return FColor::White;
+	}
+}
+
+ void FPC_GameUtil::DrawProximityMapDebug(AActor* CurrentActor, float UnderRange, float NearRange,
+	float MiddleRange, const FVector& CurrentActorOffset)
+{
+	if (!CurrentActor)
+		return;
+
+	UWorld* World = CurrentActor->GetWorld();
+	if (!World)
+		return;
+
+
+	FVector Center = CurrentActor->GetActorLocation() + CurrentActorOffset;
+
+	// 혹시 캡슐/메쉬 보정 쓰고 싶으면 여기서 추가로 조정해도 됨
+	if (const ACharacter* Char = Cast<ACharacter>(CurrentActor))
+	{
+		Center.Z -= Char->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+	}
+
+	const FVector Forward2D = CurrentActor->GetActorForwardVector().GetSafeNormal2D();
+	const FVector Right2D   = CurrentActor->GetActorRightVector().GetSafeNormal2D();
+
+	// 1) 거리 링(Under / Near / Middle) 표시
+	//    포폴용이니까 색 다르게 해서 한 번에 보이게
+	DrawDebugSphere(World, Center, UnderRange,   32, FColor::Cyan,   false, -1.f, 0, 1.f);
+	DrawDebugSphere(World, Center, NearRange,    32, FColor::Yellow, false, -1.f, 0, 1.f);
+	DrawDebugSphere(World, Center, MiddleRange,  32, FColor::White,  false, -1.f, 0, 1.f);
+
+	// 디버그 링 설명 텍스트
+	DrawDebugString(World, Center + FVector(0, 0, 150.f),
+		TEXT("Under / Near / Middle Ranges"),
+		nullptr, FColor::White, 0.f, true);
+
+	// 각 ProximityType 대표 위치 계산용 람다
+	auto DrawSample = [&](EPC_ProximityType Type, const FVector& Dir2D, float Radius)
+	{
+		if (Radius <= 0.f)
+			return;
+
+		FVector Pos = Center + Dir2D.GetSafeNormal() * Radius;
+		Pos.Z = Center.Z;
+
+		const FColor Color = GetProximityColor(Type);
+		const FString Text = GetProximityString(Type);
+
+		// 작게 색 구체 + 텍스트
+		DrawDebugSphere(World, Pos, 20.f, 16, Color, false, -1.f, 0, 2.f);
+		DrawDebugString(World, Pos + FVector(0, 0, 40.f), Text, nullptr, Color, 0.f, true);
+	};
+
+	// 2) Under : 발 아래
+	DrawSample(EPC_ProximityType::Under, FVector::ZeroVector, UnderRange * 0.3f);
+
+	// 3) Near_l / Near_r : 대각선 전방 좌/우 근거리
+	const FVector FrontLeft  = (Forward2D - Right2D).GetSafeNormal();
+	const FVector FrontRight = (Forward2D + Right2D).GetSafeNormal();
+	DrawSample(EPC_ProximityType::Near_l, FrontLeft,  NearRange * 0.7f);
+	DrawSample(EPC_ProximityType::Near_r, FrontRight, NearRange * 0.7f);
+
+	// 4) 정면 / 후면 / 좌 / 우 (MiddleRange 안쪽)
+	DrawSample(EPC_ProximityType::Front, Forward2D,  MiddleRange * 0.8f);
+	DrawSample(EPC_ProximityType::Back,  -Forward2D, MiddleRange * 0.8f);
+	DrawSample(EPC_ProximityType::Left,  -Right2D,   MiddleRange * 0.8f);
+	DrawSample(EPC_ProximityType::Right, Right2D,    MiddleRange * 0.8f);
+
+	// 5) Far : Middle 밖 한 지점 예시
+	DrawSample(EPC_ProximityType::Far, Forward2D, MiddleRange * 1.3f);
+}
+
+void FPC_GameUtil::DrawProximityAngleDebug(AActor* CurrentActor, float UnderRange, float NearRange, float MiddleRange,
+	float AngleThresholdDeg, const FVector& CurrentActorOffset)
+{
+	 if (!CurrentActor)
+        return;
+
+    UWorld* World = CurrentActor->GetWorld();
+    if (!World)
+        return;
+
+    // 중심 위치 (보스 발밑 기준 + 네가 쓰던 오프셋)
+    FVector Center = CurrentActor->GetActorLocation() + CurrentActorOffset;
+
+    if (ACharacter* Char = Cast<ACharacter>(CurrentActor))
+    {
+        // 발밑으로 내리기
+        Center.Z -= Char->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+    }
+
+    const FVector Forward2D = CurrentActor->GetActorForwardVector().GetSafeNormal2D();
+    const FVector Right2D   = CurrentActor->GetActorRightVector().GetSafeNormal2D();
+
+    auto MakeDirFromAngle = [&](float AngleDeg)
+    {
+        const float Rad = FMath::DegreesToRadians(AngleDeg);
+        // 0도 = 정면, +각도 = 오른쪽 방향으로 회전
+        return (Forward2D * FMath::Cos(Rad) + Right2D * FMath::Sin(Rad)).GetSafeNormal();
+    };
+
+    auto DrawArc = [&](float Radius, float StartDeg, float EndDeg, const FColor& Color)
+    {
+        const int32 Segments = 32;
+        FVector PrevPos;
+
+        for (int32 i = 0; i <= Segments; ++i)
+        {
+            const float Alpha = static_cast<float>(i) / Segments;
+            const float AngleDeg = FMath::Lerp(StartDeg, EndDeg, Alpha);
+
+            FVector Dir = MakeDirFromAngle(AngleDeg);
+            FVector Pos = Center + Dir * Radius;
+            Pos.Z += 5.f; // 살짝 띄워서 지형에 묻히지 않게
+
+            if (i > 0)
+            {
+                DrawDebugLine(World, PrevPos, Pos, Color, false, -1.f, 0, 2.f);
+            }
+
+            PrevPos = Pos;
+        }
+    };
+
+    auto DrawSector = [&](EPC_ProximityType Type, float InnerRadius, float OuterRadius,
+                          float StartDeg, float EndDeg)
+    {
+        const FColor Color = GetProximityColor(Type);
+
+        // 바깥쪽/안쪽 호 그리기
+        DrawArc(OuterRadius, StartDeg, EndDeg, Color);
+        DrawArc(InnerRadius, StartDeg, EndDeg, Color);
+
+        // 양 끝쪽 반지름선
+        FVector StartDir = MakeDirFromAngle(StartDeg);
+        FVector EndDir   = MakeDirFromAngle(EndDeg);
+
+        FVector InnerStart = Center + StartDir * InnerRadius;
+        FVector OuterStart = Center + StartDir * OuterRadius;
+        FVector InnerEnd   = Center + EndDir   * InnerRadius;
+        FVector OuterEnd   = Center + EndDir   * OuterRadius;
+
+        InnerStart.Z += 10.f;
+        OuterStart.Z += 10.f;
+        InnerEnd.Z   += 10.f;
+        OuterEnd.Z   += 10.f;
+
+        DrawDebugLine(World, InnerStart, OuterStart, Color, false, -1.f, 0, 2.f);
+        DrawDebugLine(World, InnerEnd,   OuterEnd,   Color, false, -1.f, 0, 2.f);
+
+        // 섹터 중앙에 텍스트
+        const float MidDeg = (StartDeg + EndDeg) * 0.5f;
+        FVector MidDir = MakeDirFromAngle(MidDeg);
+        FVector TextPos = Center + MidDir * ((InnerRadius + OuterRadius) * 0.5f);
+        TextPos.Z += 40.f;
+
+        DrawDebugString(World, TextPos, GetProximityString(Type),
+                        nullptr, Color, 0.f, true,4.f);
+    };
+
+    // 0도 = 정면, +각도 = 오른쪽
+    const float FrontStart = -AngleThresholdDeg;
+    const float FrontEnd   =  AngleThresholdDeg;
+
+    const float RightStart =  AngleThresholdDeg;
+    const float RightEnd   =  180.f - AngleThresholdDeg;
+
+    const float LeftStart  = -(180.f - AngleThresholdDeg);
+    const float LeftEnd    = -AngleThresholdDeg;
+
+    const float BackStart  =  180.f - AngleThresholdDeg;
+    const float BackEnd    =  180.f + AngleThresholdDeg;
+
+    // 1) Under: 그냥 중앙 원
+    if (UnderRange > 0.f)
+    {
+        DrawArc(UnderRange, 0.f, 360.f, GetProximityColor(EPC_ProximityType::Under));
+    }
+
+    // 2) Front / Right / Back / Left 섹터를 Near~Middle 구간에 그리기
+    DrawSector(EPC_ProximityType::Front, NearRange,   MiddleRange, FrontStart, FrontEnd);
+    DrawSector(EPC_ProximityType::Right, NearRange,   MiddleRange, RightStart, RightEnd);
+    DrawSector(EPC_ProximityType::Back,  NearRange,   MiddleRange, BackStart,  BackEnd);
+    DrawSector(EPC_ProximityType::Left,  NearRange,   MiddleRange, LeftStart,  LeftEnd);
+
+	const float NearFrontStart = -AngleThresholdDeg;
+	const float NearFrontEnd   =  AngleThresholdDeg;
+
+	// 전방 왼쪽 절반
+	DrawSector(EPC_ProximityType::Near_l,
+			   UnderRange,
+			   NearRange,
+			   NearFrontStart,
+			   0.f);
+
+	// 전방 오른쪽 절반
+	DrawSector(EPC_ProximityType::Near_r,
+			   UnderRange,
+			   NearRange,
+			   0.f,
+			   NearFrontEnd);
+}
+
+
 EPC_ProximityType FPC_GameUtil::GetTargetProximity(AActor* TargetActor, AActor* CurrentActor,  float Under, float Near, float Middle, FVector CurrentActorOffset)
 {
 	if (!TargetActor || !CurrentActor)
@@ -893,6 +1135,19 @@ float FPC_GameUtil::GetHitPartAddDamage(FPC_HitPartListRow* ListRow, FName BoneN
 	}
 
 	return 0.0f;
+}
+
+UMaterialInterface* FPC_GameUtil::GetHitPartHitMaterial(FPC_HitPartListRow* ListRow, FName BoneName)
+{
+	for (FPC_HitPartData& HitPartData : ListRow->HitPartDatas)
+	{
+		if (HitPartData.HitPartName == BoneName)
+		{
+			return HitPartData.HitPartMaterial;
+		}
+	}
+
+	return nullptr;
 }
 
 float FPC_GameUtil::GetCalcTotalNormalDamage(float DamageAmount, AActor* HitActor, FName BoneName)

@@ -194,9 +194,6 @@ void UPC_SkillComponent::PlayDecal(uint32 ExecDataId, FVector StartPos, FVector 
 
 	if (World->LineTraceSingleByObjectType(Hit, StartPos, End, ObjectQueryParams, Query))
 	{
-		if(FPC_GameUtil::IsDebugDrawing(this))
-			DrawDebugSphere(World, Hit.ImpactPoint, 20.f, 10, FColor::Red, false, 3.f);
-
 		FRotator DecalRotation(-90.f, GetOwner()->GetActorRotation().Yaw, 0.f);
 		FVector MidPoint = (StartPos + Hit.ImpactPoint) * 0.5f;
 		FVector DecalLocation = MidPoint + GetOwner()->GetActorForwardVector() * ExecTableRow->DecalSize.Z;
@@ -211,7 +208,6 @@ void UPC_SkillComponent::PlayDecal(uint32 ExecDataId, FVector StartPos, FVector 
 
 		if (Decal)
 		{
-			// FadeOut 설정: 1초 대기 후, 0.5초 동안 페이드 아웃, 완료 시 데칼 파괴
 			Decal->SetFadeOut(2.0f, 1.f, true);
 		}
 	}

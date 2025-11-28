@@ -14,7 +14,15 @@ UPC_LockOnComponent::UPC_LockOnComponent()
 	TargetDetectRadius = 1200.f;
 	TargetDetectAngle = 90.f;
 }
+void UPC_LockOnComponent::BeginPlay()
+{
+	Super::BeginPlay();
+	
+	ACharacter* Owner = Cast<ACharacter>(GetOwner());
+	check(Owner);
 
+	SpringArm = Owner->FindComponentByClass<USpringArmComponent>();
+}
 void UPC_LockOnComponent::TickComponent(float DeltaTime, enum ELevelTick TickType,
 	FActorComponentTickFunction* ThisTickFunction)
 {
@@ -28,25 +36,41 @@ void UPC_LockOnComponent::TickComponent(float DeltaTime, enum ELevelTick TickTyp
 		APlayerController* PlayerController = Cast<APlayerController>(Owner->GetController());
 		check(PlayerController);
 
-		if (LockedTarget.Get())
+		if (LockedTarget.IsValid())
 		{
-			const FVector OwnerLocation = Owner->GetActorLocation();
-			const FVector LookAtPoint = GetLockOnViewPoint(LockedTarget.Get());
+			if (LockedTarget.Get())
+			{
+				if(!SpringArm)
+					return;
+				
+				FVector  ViewOrigin = SpringArm->GetComponentLocation();
+				const FVector LookAtPoint = GetLockOnViewPoint(LockedTarget.Get());
 
-			const FRotator CurrentRot = PlayerController->GetControlRotation();
-			FRotator TargetRot = (LookAtPoint - OwnerLocation).Rotation();
+				const FRotator CurrentRot = PlayerController->GetControlRotation();
+				FRotator TargetRot = (LookAtPoint - ViewOrigin).Rotation();
 
-			// 큰 보스일수록 pitch 제한 완화
-			TargetRot.Pitch = FMath::Clamp(TargetRot.Pitch, -25.f, 10.f);
+				const float Distance2D = FVector::Dist2D(ViewOrigin, LookAtPoint);
 
-			FRotator NewRot = FMath::RInterpTo(CurrentRot, TargetRot, DeltaTime, 10.f);
+				float DistanceAlpha = 0.f;
+				if (TargetDetectRadius > KINDA_SMALL_NUMBER)
+				{
+					DistanceAlpha = FMath::Clamp(
+						(TargetDetectRadius - Distance2D) / TargetDetectRadius,
+						0.f, 1.f);
+				}
+				
+				const float ExtraDownPitch = FMath::Lerp(-5.f, -60.f, DistanceAlpha);
 
-			PlayerController->SetControlRotation(NewRot);
+				// 최종 Pitch 보정 & 클램프
+				TargetRot.Pitch += ExtraDownPitch;
+				TargetRot.Pitch = FMath::Clamp(TargetRot.Pitch, -45.f, 10.f);
+
+				FRotator NewRot = FMath::RInterpTo(CurrentRot, TargetRot, DeltaTime, 10.f);
+				PlayerController->SetControlRotation(NewRot);
+			}
 		}
 	}
-
-	// 락온 중이면 보스 크기에 맞춰 암 길이 조정,
-	// 락온이 아니면 기본 길이로 복원
+	
 	UpdateCameraArmLength(DeltaTime);
 }
 
@@ -178,11 +202,8 @@ float UPC_LockOnComponent::GetDesiredArmLength(AActor* TargetActor) const
 	{
 		return DefaultArmLength;
 	}
-
-	// 예시 매핑:
-	// 사람형(약 180) 기준 → 기본값 근처
-	// 그보다 큰 보스일수록 점점 MaxArmLength에 가까워지게
-	const float BaseHeight = 180.f;   // 사람 키 기준
+	
+	const float BaseHeight = 80.f;   
 	const float MaxHeightForScale = 500.f; // 이 이상은 그냥 최대 거리
 
 	const float Normalized =
@@ -190,8 +211,7 @@ float UPC_LockOnComponent::GetDesiredArmLength(AActor* TargetActor) const
 
 	const float DesiredArmLength =
 		FMath::Lerp(DefaultArmLength, MaxArmLength, Normalized);
-
-	// 최소/최대 클램프
+	
 	return FMath::Clamp(DesiredArmLength, MinArmLength, MaxArmLength);
 }
 
@@ -201,7 +221,6 @@ void UPC_LockOnComponent::UpdateCameraArmLength(float DeltaTime)
 	if (!Owner)
 		return;
 
-	USpringArmComponent* SpringArm = Owner->FindComponentByClass<USpringArmComponent>();
 	if (!SpringArm)
 		return;
 
@@ -217,6 +236,11 @@ void UPC_LockOnComponent::UpdateCameraArmLength(float DeltaTime)
 	if (IsLockOnMode() && LockedTarget.IsValid())
 	{
 		TargetArmLength = GetDesiredArmLength(LockedTarget.Get());
+		TargetArmLength = FMath::Clamp(TargetArmLength, MinArmLength, MaxArmLength);
+	}
+	else
+	{
+		//TargetArmLength = FMath::Clamp(TargetArmLength, MinArmLength, MaxArmLength);
 	}
 
 	SpringArm->TargetArmLength = FMath::FInterpTo(
@@ -226,3 +250,5 @@ void UPC_LockOnComponent::UpdateCameraArmLength(float DeltaTime)
 		ArmInterpSpeed
 	);
 }
+
+

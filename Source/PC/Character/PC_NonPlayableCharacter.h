@@ -61,6 +61,7 @@ protected:
 	virtual void OnDead() override;
 	virtual void SetupCharacterWidget(class UPC_UserWidget* InWidget) override;
 
+	
 	UFUNCTION(BlueprintCallable)
 	virtual EPC_EnemyStateType GetState() override;
 
@@ -75,6 +76,16 @@ protected:
 
 	virtual bool IsGuarding(FVector ImpactPoint) override;
 	virtual bool IsRolling() override;
+
+	void EnablePhysics(bool Enable);
+	void ApplyGroggyPhysicsReaction(const FName& BoneName, FVector HitInfo) const;
+
+	UFUNCTION()
+	void OnDeathFinished();
+	
+public:
+	UFUNCTION(BlueprintCallable)
+	void EnableHPBar(bool bEnable);
 
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = camera, meta = (AllowPrivateAccess = "true"))
@@ -108,6 +119,9 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	FName Name = NAME_None;
+
+	UPROPERTY(EditAnywhere, Category="Groggy|Physics")
+	FName GroggyPhysicsRootBone = TEXT("pelvis");
 
 	EPC_EnemyStateType EnemyState = EPC_EnemyStateType::None;
 
