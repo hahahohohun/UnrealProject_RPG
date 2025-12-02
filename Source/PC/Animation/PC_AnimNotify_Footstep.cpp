@@ -19,28 +19,8 @@ void UPC_AnimNotify_Footstep::Notify(USkeletalMeshComponent* MeshComp, UAnimSequ
 	if (!OwnerCharacter)
 		return;
 	
-	USoundBase* FootSFX = OverrideFootstepSFX;
-
-	if (!FootSFX)
+	if (IPC_CharacterInterface* CI = Cast<IPC_CharacterInterface>(OwnerCharacter))
 	{
-	    if (IPC_CharacterInterface* CI = Cast<IPC_CharacterInterface>(OwnerCharacter))
-	    {
-	        UPC_CharacterDataAsset* Data = CI->GetCharacterDataAsset();
-	        FootSFX = Data ? Data->FootSFX : nullptr;
-	    }
+		CI->FootStepSound(OverrideFootstepSFX, FootSocketName);
 	}
-
-	if (!FootSFX)
-		return;
-
-	if (OwnerCharacter->GetVelocity().Size2D() < 100.f) //가만히있으면 안나게
-		return;
-	
-	FVector Location = OwnerCharacter->GetActorLocation();
-	if (!FootSocketName.IsNone() && MeshComp->DoesSocketExist(FootSocketName))
-	{
-		Location = MeshComp->GetSocketLocation(FootSocketName);
-	}
-
-	FPC_GameUtil::PlaySFXAtLocation(OwnerCharacter, FootSFX, Location);
 }

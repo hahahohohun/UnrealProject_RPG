@@ -231,7 +231,7 @@ void UPC_BattleComponent::Tick_TraceWeapon(float DeltaTime)
 		
 		if(FPC_GameUtil::IsDebugDrawing(OwnerCharacter.Get()))
 		{
-			DrawDebugLine(World, Line.Key, Line.Value, FColor::Red, false, 3.f, 0, 1.f);
+			//DrawDebugLine(World, Line.Key, Line.Value, FColor::Red, false, 3.f, 0, 1.f);
 		}
 	}
 

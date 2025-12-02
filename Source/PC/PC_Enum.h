@@ -130,6 +130,7 @@ enum class EPC_CameraType : uint8
 	Normal,
 	Aim,
 	ZoomIn,
+	Battle,
 	Num
 };
 

@@ -65,6 +65,9 @@ void UPC_HPBarWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 void UPC_HPBarWidget::UpdateHpBar(float NewCurrentHp, float NewMaxHp)
 {
+	if(!IsVisible())
+		SetVisibility(ESlateVisibility::HitTestInvisible);
+	
 	CurrentHp = NewCurrentHp;
 	MaxHp = NewMaxHp;
 

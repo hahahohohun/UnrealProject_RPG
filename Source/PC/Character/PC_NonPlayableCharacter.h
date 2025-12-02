@@ -79,7 +79,7 @@ protected:
 
 	void EnablePhysics(bool Enable);
 	void ApplyGroggyPhysicsReaction(const FName& BoneName, FVector HitInfo) const;
-
+	void ItemDrop();
 	UFUNCTION()
 	void OnDeathFinished();
 	

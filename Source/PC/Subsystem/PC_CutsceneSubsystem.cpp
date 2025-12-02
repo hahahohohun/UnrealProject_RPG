@@ -49,7 +49,7 @@ ULevelSequencePlayer* UPC_CutsceneSubsystem::PlayCutscene(
     Settings.bHidePlayer           = false;
     Settings.bHideHud              = true;
     Settings.bDisableCameraCuts    = false;
-
+    Settings.FinishCompletionStateOverride = EMovieSceneCompletionModeOverride::ForceKeepState;
     return PlayCutsceneWithSettings(SequenceAsset, Settings, InOnFinished);
 }
 
@@ -94,6 +94,14 @@ ULevelSequencePlayer* UPC_CutsceneSubsystem::PlayCutsceneWithSettings(
 
 void UPC_CutsceneSubsystem::OnSequenceFinishedInternal()
 {
+    if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+    {
+        if (APawn* Pawn = PC->GetPawn())
+        {
+            PC->SetViewTarget(Pawn);
+        }
+    }
+
     if (OnFinishedNativeDelegate.IsBound())
     {
         OnFinishedNativeDelegate.Execute();

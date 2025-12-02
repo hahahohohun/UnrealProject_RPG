@@ -103,7 +103,7 @@ struct FPC_EnemyTableRow : public FTableRowBase
 	int32 EnemyType;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	USkeletalMesh* SkeletalMesh = nullptr;
+	TArray<USkeletalMesh*> SkeletalMeshs;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<UAnimInstance> AnimInstance = nullptr;
@@ -182,6 +182,9 @@ struct FPC_EnemyTableRow : public FTableRowBase
 	
 	UPROPERTY(EditAnywhere)
 	TSoftObjectPtr<ULevelSequence> DeathSequenceAsset;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSoftClassPtr<AActor> SpawnItem;
 };
 
 

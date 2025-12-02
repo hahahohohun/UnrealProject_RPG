@@ -262,7 +262,7 @@ void UPC_CrowdControlComponent::OnStopCC()
 	
 	check(CrowdControlTableRow);
 
-	if (CrowdControlInfo.SpawnedFx && CrowdControlInfo.SpawnedFx->IsActive())
+	if (IsValid(CrowdControlInfo.SpawnedFx) && CrowdControlInfo.SpawnedFx->IsActive())
 	{
 		CrowdControlInfo.SpawnedFx->Deactivate();
 	}

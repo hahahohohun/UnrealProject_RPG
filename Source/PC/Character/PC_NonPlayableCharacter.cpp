@@ -56,7 +56,9 @@ void APC_NonPlayableCharacter::BeginPlay()
 
 	if (USkeletalMeshComponent* MeshComponent = GetMesh())
 	{
-		MeshComponent->SetSkeletalMesh(EnemyTableRow->SkeletalMesh);
+		int32 RandIndex = FMath::RandRange(0, EnemyTableRow->SkeletalMeshs.Num() - 1);
+		USkeletalMesh* RandomMesh = EnemyTableRow->SkeletalMeshs[RandIndex];
+		MeshComponent->SetSkeletalMesh(RandomMesh);
 		MeshComponent->SetAnimClass(EnemyTableRow->AnimInstance);
 	}
 
@@ -92,7 +94,7 @@ void APC_NonPlayableCharacter::BeginPlay()
 	if (EnemyTableRow->IsHitPartUnit)
 	{
 		//플레이어 Channel 무시
-		//GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Ignore);
+		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Ignore);
 		//캡슐이 공격받는게 아니기 때문
 		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_GameTraceChannel3, ECR_Ignore);
 	}
@@ -135,32 +137,33 @@ float APC_NonPlayableCharacter::TakeDamage(float DamageAmount, FDamageEvent cons
 		const FNormalAttackDamageEvent& AttackDamageEven =
 			static_cast<const FNormalAttackDamageEvent&>(DamageEvent);
 		
-		if (DamageEvent.IsOfType(FNormalAttackDamageEvent::ClassID))
-		{
-			//CrowdControlComponent->RequestPlayerCC(3, DamageCauser);
-		}
-		
 		if (UAnimInstance* AnimIns = GetMesh()->GetAnimInstance())
 		{
-			if (EnemyState != EPC_EnemyStateType::SKillUsing && !IsDead())
+			if (!AnimIns->IsAnyMontagePlaying())
 			{
-				if (OwnerDataAsset->HitReactAnim)
+				if (EnemyState != EPC_EnemyStateType::SKillUsing
+	&& !IsDead() && !IsBossMonster)
 				{
-					RequestChangeState(EPC_EnemyStateType::ReactAttackBreak);
-					if (EnemyState == EPC_EnemyStateType::ReactAttackBreak)
+					if (OwnerDataAsset->HitReactAnim)
 					{
-						FOnMontageEnded EndDelegate;
-						EndDelegate.BindLambda([this](UAnimMontage* Montage, bool bInterrupted)
+						RequestChangeState(EPC_EnemyStateType::ReactAttackBreak);
+						if (EnemyState == EPC_EnemyStateType::ReactAttackBreak)
 						{
-							if(!IsValid(this))
-								return;
+							FOnMontageEnded EndDelegate;
+							EndDelegate.BindLambda([this](UAnimMontage* Montage, bool bInterrupted)
+							{
+								if(!IsValid(this))
+									return;
 							
-							if (!IsDead()) ChangeState(EPC_EnemyStateType::Battle);
-							else ChangeState(EPC_EnemyStateType::Dead);
-						});
+								if (!IsDead())
+									ChangeState(EPC_EnemyStateType::Battle);
+								else
+									ChangeState(EPC_EnemyStateType::Dead);
+							});
 
-						AnimIns->Montage_Play(OwnerDataAsset->HitReactAnim, 1.f, EMontagePlayReturnType::MontageLength);
-						AnimIns->Montage_SetEndDelegate(EndDelegate, OwnerDataAsset->HitReactAnim);
+							AnimIns->Montage_Play(OwnerDataAsset->HitReactAnim, 1.f, EMontagePlayReturnType::MontageLength);
+							AnimIns->Montage_SetEndDelegate(EndDelegate, OwnerDataAsset->HitReactAnim);
+						}
 					}
 				}
 			}
@@ -180,6 +183,7 @@ float APC_NonPlayableCharacter::TakeDamage(float DamageAmount, FDamageEvent cons
 				int32 DecalID = SkinnedDecalSampler->SpawnDecal(Hit.ImpactPoint,
 				                                                Hit.ImpactNormal.Rotation().Quaternion(), Hit.BoneName,
 				                                                25.0f);
+
 				UNiagaraComponent* HitPartFXComp = nullptr;
 				if (auto HitPartFX = EnemyTableRow->HitPartFX)
 				{
@@ -199,16 +203,18 @@ float APC_NonPlayableCharacter::TakeDamage(float DamageAmount, FDamageEvent cons
 				}
 
 				TWeakObjectPtr<UNiagaraComponent> HitPartFXWeak = HitPartFXComp;
-
-				//데칼 삭제
+				
 				FTimerHandle TimerHandle;
 				GetWorld()->GetTimerManager().SetTimer(
 					TimerHandle,
 					FTimerDelegate::CreateLambda([this, DecalID, HitPartFXWeak]()
 					{
-						if (SkinnedDecalSampler)
+						if(DecalID > 0)
 						{
-							SkinnedDecalSampler->RemoveDecal(DecalID);
+							if (IsValid(SkinnedDecalSampler))
+							{
+								SkinnedDecalSampler->RemoveDecal(DecalID);
+							}
 						}
 
 						if (HitPartFXWeak.IsValid())
@@ -763,6 +769,8 @@ void APC_NonPlayableCharacter::OnDead()
 	check(WidgetComponent);
 	WidgetComponent->SetVisibility(false);
 
+	SkillComponent->ClearCurSkillList();
+	
 	UGameInstance* GI = GetWorld()->GetGameInstance();
 	if (!GI)
 		return;
@@ -796,14 +804,16 @@ void APC_NonPlayableCharacter::OnDeathFinished()
 		Cap->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block); 
 		Cap->SetGenerateOverlapEvents(false); 
 	}
+	
+	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
+	{
+		MoveComp->StopMovementImmediately();     // Velocity 0
+		MoveComp->DisableMovement();             // 더 이상 이동 안 함
+		// 필요하면: MoveComp->SetMovementMode(MOVE_None);
+	}
 
 	if (UWorld* World = GetWorld())
 	{
-		if (APCGameMode* GM = World->GetAuthGameMode<APCGameMode>())
-		{
-			GM->PlayBGM(EPC_BGMType::Stage);
-		}
-
 		//위젯정리
 		OnLocked(false);
 		OnSelectedAssassinateTarget(false);
@@ -817,8 +827,13 @@ void APC_NonPlayableCharacter::OnDeathFinished()
 					UISubsystem->HideBossHPWidget();
 				}
 			}
-		}
 
+			if (APCGameMode* GM = World->GetAuthGameMode<APCGameMode>())
+			{
+				GM->PlayBGM(EPC_BGMType::Stage);
+			}
+		}
+		
 		TWeakObjectPtr<APC_NonPlayableCharacter> WeakThis(this);
 		FTimerHandle TimerHandle;
 		World->GetTimerManager().SetTimer(
@@ -827,10 +842,11 @@ void APC_NonPlayableCharacter::OnDeathFinished()
 			{
 				if (WeakThis.IsValid())
 				{
+					WeakThis->ItemDrop();
 					WeakThis->Destroy();
 				}
 			}),
-			10.0f,
+			3.0f,
 			false
 		);
 	}
@@ -845,7 +861,7 @@ void APC_NonPlayableCharacter::SetupCharacterWidget(class UPC_UserWidget* InWidg
 	{
 		StatComponent->OnHPChangedDelegate.AddUObject(HPBarWidget, &UPC_HPBarWidget::UpdateHpBar);
 		HPBarWidget->UpdateHpBar(StatComponent->GetCurrentHp(), StatComponent->GetMaxHp());
-		HPBarWidget->SetVisibility(ESlateVisibility::HitTestInvisible);
+		HPBarWidget->SetVisibility(ESlateVisibility::Collapsed);
 	}
 	else if (UPC_BossHPBarWidget* BossHPBarWidget = Cast<UPC_BossHPBarWidget>(InWidget))
 	{
@@ -1018,6 +1034,33 @@ void APC_NonPlayableCharacter::ApplyGroggyPhysicsReaction(const FName& BoneName,
 	);
 }
 
+void APC_NonPlayableCharacter::ItemDrop()
+{
+	FPC_EnemyTableRow* EnemyData = GetEnemyData();
+	if (EnemyData->SpawnItem.IsValid())
+	{
+		UClass* SpawnClass = EnemyData->SpawnItem.Get();
+		if (!SpawnClass)
+			return;
+
+		UWorld* World = GetWorld();
+		if (!World)
+			return;
+						
+		FVector SpawnLoc = GetActorLocation();
+		const FRotator SpawnRotation = GetActorRotation();
+		FVector TraceStartPos = SpawnLoc + FVector(0, 0, 300.f);
+		FVector TraceEndPos = SpawnLoc - FVector(0, 0, 1000.f);
+
+		FCollisionObjectQueryParams ObjectQueryParams;
+		ObjectQueryParams.AddObjectTypesToQuery(ECC_WorldStatic);
+
+		FHitResult HitResult;
+		World->LineTraceSingleByObjectType(HitResult, TraceStartPos, TraceEndPos, ObjectQueryParams);
+		SpawnLoc = HitResult.ImpactPoint;
+		AActor* Spawned = World->SpawnActor<AActor>(SpawnClass, SpawnLoc, SpawnRotation);
+	}
+}
 
 void APC_NonPlayableCharacter::EnableHPBar(bool bEnable)
 {

@@ -27,4 +27,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Stat)
 	float BlendInterp = 30.f;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Stat)
+	FTransform RelativeTransform = FTransform::Identity;
 };

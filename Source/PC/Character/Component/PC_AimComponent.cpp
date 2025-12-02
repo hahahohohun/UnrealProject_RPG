@@ -76,6 +76,7 @@ void UPC_AimComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 		CameraComponent->SetRelativeRotation(NewRot);
 		CameraComponent->FieldOfView = NewFOV;
 		SpringArmComponent->TargetArmLength = NewLen;
+		//CameraComponent->SetRelativeTransform(NewRot);
 
 		if ((TargetOffset - NewOffset).Length() <= 0.5f)
 		{

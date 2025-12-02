@@ -368,8 +368,6 @@ void APC_PlayableCharaceter::Num5Ongoing(const FInputActionValue& Value)
 
 void APC_PlayableCharaceter::Num5Started(const FInputActionValue& Value)
 {
-	FPC_GameUtil::AddOnScreenDebugMessage(TEXT("Num5Started"));
-	
 	check(ArcSplinePreviewComponent);
 	ArcSplinePreviewComponent->BeginPreview();
 	ArcSplinePreviewComponent->AddActorToIgnore(this);

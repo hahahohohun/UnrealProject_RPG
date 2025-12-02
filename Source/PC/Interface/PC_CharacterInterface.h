@@ -59,4 +59,5 @@ public:
 	//
 	virtual bool IsRolling() = 0;
 	virtual bool IsGuarding(FVector ImpactPoint) = 0;
+	virtual void FootStepSound(USoundBase* overrideSound, FName FootSocketName) = 0;
 };

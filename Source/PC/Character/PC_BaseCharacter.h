@@ -21,7 +21,7 @@ class UPC_WidgetComponent;
 struct FPC_CharacterStatTableRow;
 class UPC_StatComponent;
 class UPC_BattleComponent;
-
+class USoundBase;
 UCLASS(config=Game)
 class APC_BaseCharacter : public ACharacter, public IPC_CharacterInterface, public IPC_CharacterWidgetInterface
 {
@@ -35,13 +35,19 @@ protected:
 	virtual void PostInitializeComponents() override;
 
 	virtual void AttackTrace(bool bStart, FName TraceStartBoneName, FName TraceEndBoneName) override;
-	virtual void AttackTraceWithWeapon(bool bStart, bool bRight,bool PowerAttack) override;
+	virtual void AttackTraceWithWeapon(bool bStart, bool bRight, bool PowerAttack) override;
 	virtual bool HasWeapon() override;
 
 	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
 	                         AActor* DamageCauser) override;
 
-
+	virtual void FootStepSound(USoundBase* overrideSound, FName FootSocketName) override;
+	
+	float PlayFootStepSoundTime = 0.f;
+	
+	UPROPERTY(EditAnywhere, Category="FootStep")
+	float MinFootStepInterval = 0.12f;
+	
 public:
 	void ApplyStat(const FPC_CharacterStatTableRow& BaseStat, const FPC_CharacterStatTableRow& ModifierStat);
 

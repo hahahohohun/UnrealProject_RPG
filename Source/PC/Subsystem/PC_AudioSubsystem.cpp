@@ -18,7 +18,7 @@ void UPC_AudioSubsystem::PlayBGM(USoundBase* BGMSound, float FadeTime)
 	if (IsValid(BGMAudioComponent))
 	{
 		BGMAudioComponent->FadeOut(FadeTime, 0.f);
-		BGMAudioComponent = nullptr; 
+		BGMAudioComponent = nullptr;
 	}
 
 	// 새로운 BGM 생성
@@ -66,12 +66,11 @@ void UPC_AudioSubsystem::PlaySFX2D(USoundBase* SFX)
 
 void UPC_AudioSubsystem::SetBGMVolume(float Volume)
 {
-	BGMVolume = Volume;
-
 	if (BGMAudioComponent)
 	{
-		BGMAudioComponent->FadeIn(1.f ,BGMVolume);
+		BGMAudioComponent->FadeIn(BGMVolume, Volume);
 	}
+	BGMVolume = Volume;
 }
 
 void UPC_AudioSubsystem::SetSFXVolume(float Volume)

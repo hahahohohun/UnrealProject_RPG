@@ -8,13 +8,7 @@
 #include "Components/DecalComponent.h"
 #include "Engine/DamageEvents.h"
 #include "GameFramework/Character.h"
-//#include "Framework/Text/ShapedTextCache.h"
-//#include "Camera/CameraComponent.h"
-//#include "GameFramework/SpringArmComponent.h"
-//#include "Kismet/KismetMathLibrary.h"
-//#include "PC/Data/PC_CameraDataAsset.h"
 #include "GameFramework/ProjectileMovementComponent.h"
-#include "Kismet/KismetMathLibrary.h"
 #include "PC/Character/PC_BaseCharacter.h"
 #include "PC/Character/PC_PlayableCharaceter.h"
 #include "PC/Interface/PC_CharacterInterface.h"
@@ -240,7 +234,7 @@ void UPC_SkillComponent::ProcessSkill(float DeltaTime, FPC_SkillInfo& SkillInfo)
 
 			ExecInfo.bAimStarted = true;
 
-			AnimInstance->StopAllMontages(0.1f);
+			AnimInstance->StopAllMontages(0.3f);
 			AnimInstance->Montage_Play(ExecTableRow->SkillAnim);
 
 			if (ExecTableRow->StartSFX)
@@ -619,17 +613,15 @@ void UPC_SkillComponent::ProcessNonTargetExec(float DeltaTime, FPC_ExecInfo& Exe
 		{
 			ExecInfo.bExecCollisionSpawned = true;
 
-			// 1) 스킬 오브젝트 클래스 로드
 			FPC_SkillObjectTableRow* SkillObjRow = FPC_GameUtil::GetSkillObjectData(ExecTableRow->ExecProperty_0);
 			check(SkillObjRow);
 
 			UClass* SkillObjectClass = SkillObjRow->SkillObjectActor;
 			check(SkillObjectClass);
 
-			// 2) 파라미터 읽기 (DT/테이블 맵핑은 프로젝트 규칙대로)
 			const int32 SentinelCount = FMath::Max(1, static_cast<int32>(ExecTableRow->ExecProperty_1));
-			const float OrbitRadius = ExecTableRow->ExecCollisionProperty_0; // 추천: OrbitRadius
-			const float TriggerRange = ExecTableRow->ExecCollisionProperty_1; // 추천: DetectRange
+			const float OrbitRadius = ExecTableRow->ExecCollisionProperty_0; 
+			const float TriggerRange = ExecTableRow->ExecCollisionProperty_1;
 			const float OrbitHeight = ExecTableRow->ExecCollisionProperty_2;
 			const float AngularSpeed = ExecTableRow->ExecProperty_2 > 0.f ? ExecTableRow->ExecProperty_2 : 180.f;
 			const float IdleLifeTime = ExecTableRow->Duration; // 대기 유지 시간
@@ -640,7 +632,6 @@ void UPC_SkillComponent::ProcessNonTargetExec(float DeltaTime, FPC_ExecInfo& Exe
 			const float HomingAccel = 8000.f;
 			const float DamageRadius = 10.f; // 근접 판정 반경
 
-			// 3) 분산 스폰
 			const FVector BaseLoc = OwnerCharacter->GetActorLocation() + FVector(0, 0, OrbitHeight);
 
 			for (int32 i = 0; i < SentinelCount; ++i)

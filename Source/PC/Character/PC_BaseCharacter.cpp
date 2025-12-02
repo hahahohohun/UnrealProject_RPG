@@ -19,7 +19,7 @@
 #include "PC/Utills/PC_GameUtill.h"
 
 // APCCharacter
-
+class USoundBase;
 class UPC_BattleComponent;
 APC_BaseCharacter::APC_BaseCharacter()
 {
@@ -78,6 +78,9 @@ void APC_BaseCharacter::BeginPlay()
 float APC_BaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
                                     AActor* DamageCauser)
 {
+	if(IsDead())
+		return 0;
+
 	const float VariancePercent = 0.035f;
 	const float RandomFactor = FMath::FRandRange(-VariancePercent, VariancePercent);
 	const float FinalDamage = DamageAmount * (1.0f + RandomFactor);
@@ -96,6 +99,43 @@ float APC_BaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Dama
 		FPC_GameUtil::PlaySFXAtLocation(this, CharacterData->HitSFX, GetActorLocation());
 
 	return Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
+}
+
+void APC_BaseCharacter::FootStepSound(USoundBase* overrideSound, FName FootSocketName)
+{
+	if (GetVelocity().Size2D() < 100.f) //가만히있으면 안나게
+		return;
+	
+	const float Now = GetWorld()->GetTimeSeconds();
+
+	// 직전 발소리와 너무 가까우면 무시
+	if (Now - PlayFootStepSoundTime < MinFootStepInterval)
+	{
+		return;
+	}
+	
+	PlayFootStepSoundTime = Now;
+
+	USoundBase* FootSFX = overrideSound;
+	
+	if (UPC_CharacterDataAsset* Data = GetCharacterDataAsset())
+	{
+		if(FootSFX == nullptr)
+		{
+			FootSFX = Data->FootSFX;
+		}
+
+		if(FootSFX != nullptr)
+		{
+			FVector Location = GetActorLocation();
+			if (!FootSocketName.IsNone() && GetMesh()->DoesSocketExist(FootSocketName))
+			{
+				Location = GetMesh()->GetSocketLocation(FootSocketName);
+			}
+
+			FPC_GameUtil::PlaySFXAtLocation(GetOwner(), FootSFX, Location);
+		}
+	}
 }
 
 void APC_BaseCharacter::ApplyStat(const FPC_CharacterStatTableRow& BaseStat,
@@ -144,15 +184,10 @@ void APC_BaseCharacter::SetupStatusEffectWidget(UPC_UserWidget* InUserWidget)
 void APC_BaseCharacter::LaunchCharacter(FVector StartPos, FVector CauserPos, float Power)
 {
 	FVector Dir2D = (StartPos - CauserPos).GetSafeNormal2D();
-	FVector Target = GetActorLocation() + Dir2D * Power; // Distance=수 cm~수십 cm
+	FVector Target = GetActorLocation() + Dir2D * Power; 
 	FVector NewPos = FPC_GameUtil::FindSurfacePos(this, Target);
+	
 	SetActorLocation(NewPos, true);
-
-	//const FVector RawDir = (StartPos - CauserPos).GetSafeNormal2D();
-	//const FVector FloorNormal = GetCharacterMovement()->CurrentFloor.HitResult.ImpactNormal;
-	//const FVector GroundDir = FVector::VectorPlaneProject(RawDir, FloorNormal).GetSafeNormal2D();
-	//
-	//Super::LaunchCharacter(GroundDir* Power, true, false);
 }
 
 void APC_BaseCharacter::OnSelectedAssassinateTarget(bool bSelected)
@@ -171,11 +206,7 @@ void APC_BaseCharacter::OnDead()
 	check(AnimInstance);
 
 	AnimInstance->StopAllMontages(0.f);
-
-	//GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	//GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_GameTraceChannel3, ECR_Ignore);
 	GetCapsuleComponent()->SetCollisionProfileName(EName::Pawn);
-
 }
 
 void APC_BaseCharacter::ReactAttackBreak()

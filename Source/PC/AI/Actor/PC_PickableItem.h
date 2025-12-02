@@ -22,7 +22,10 @@ protected:
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
     TObjectPtr<USphereComponent> TriggerCollision = nullptr;
-    	
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	USoundBase *PickupSound = nullptr;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int StatusEffectId = 0;
 

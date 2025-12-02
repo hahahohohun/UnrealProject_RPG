@@ -21,7 +21,7 @@ void APC_PickableItem::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if(StatusEffectId > -1)
+	if (StatusEffectId > -1)
 	{
 		if (!TriggerCollision->OnComponentBeginOverlap.IsAlreadyBound(this, &ThisClass::OnBeginOverlap))
 			TriggerCollision->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnBeginOverlap);
@@ -29,7 +29,8 @@ void APC_PickableItem::BeginPlay()
 }
 
 void APC_PickableItem::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+                                      UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
+                                      const FHitResult& SweepResult)
 {
 	FPC_StatusEffectTableRow* StatusEffectTableRow = FPC_GameUtil::GetStatusEffectData(StatusEffectId);
 	check(StatusEffectTableRow);
@@ -37,8 +38,14 @@ void APC_PickableItem::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, 
 	if (IPC_CharacterInterface* CharacterInterface = Cast<IPC_CharacterInterface>(OtherActor))
 	{
 		CharacterInterface->OnApplyStatusEffect(StatusEffectId);
+		
+		if(PickupSound)
+			FPC_GameUtil::PlaySFXAtLocation(GetWorld(), PickupSound, GetActorLocation());
+		
+		Destroy();
 	}
-
-	Destroy();
+	else
+	{
+		return;
+	}
 }
-

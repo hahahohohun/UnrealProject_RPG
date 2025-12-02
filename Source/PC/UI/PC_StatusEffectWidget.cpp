@@ -43,9 +43,9 @@ void UPC_StatusEffectWidget::NativeConstruct()
 	SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 }
 
-void UPC_StatusEffectWidget::UpdateStatusEffect( uint32 StatusEffectId, float RemainingTime)
+void UPC_StatusEffectWidget::UpdateStatusEffect(uint32 StatusEffectId, float RemainingTime)
 {
-	if(RemainingTime > 0.f)
+	if (RemainingTime > 0.f)
 		AddOrUpdateStatusEffect(StatusEffectId);
 	else
 		RemoveStatusEffect(StatusEffectId);
@@ -89,18 +89,7 @@ void UPC_StatusEffectWidget::AddOrUpdateStatusEffect(uint32 StatusEffectId)
 							break;
 						}
 					}
-
-					//UImage* FreeSlot = nullptr;
-					//for (int32 idx : FillOrder)
-					//{
-					//	UImage* Img = Slots.IsValidIndex(idx) ? Slots[idx] : nullptr;
-					//	if (Img && Img->GetVisibility() != ESlateVisibility::SelfHitTestInvisible)
-					//	{
-					//		FreeSlot = Img;
-					//		break;
-					//	}
-					//}
-
+					
 					if (!FreeSlot)
 						return;
 

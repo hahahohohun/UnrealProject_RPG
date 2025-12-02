@@ -22,6 +22,11 @@ void UPC_LockOnComponent::BeginPlay()
 	check(Owner);
 
 	SpringArm = Owner->FindComponentByClass<USpringArmComponent>();
+	
+	const UPC_CameraDataAsset* CameraDataAsset = FPC_GameUtil::GetCameraData(EPC_CameraType::Normal);
+	DefaultArmLength = CameraDataAsset->TargetArmLength;
+	MaxArmLength = CameraDataAsset->TargetArmLength;
+
 }
 void UPC_LockOnComponent::TickComponent(float DeltaTime, enum ELevelTick TickType,
 	FActorComponentTickFunction* ThisTickFunction)
@@ -69,9 +74,9 @@ void UPC_LockOnComponent::TickComponent(float DeltaTime, enum ELevelTick TickTyp
 				PlayerController->SetControlRotation(NewRot);
 			}
 		}
+		
+		UpdateCameraArmLength(DeltaTime);
 	}
-	
-	UpdateCameraArmLength(DeltaTime);
 }
 
 void UPC_LockOnComponent::LockOn()
@@ -227,7 +232,8 @@ void UPC_LockOnComponent::UpdateCameraArmLength(float DeltaTime)
 	// 처음 한 번 기본 길이 캐싱
 	if (!bCachedDefaultArmLength)
 	{
-		DefaultArmLength = SpringArm->TargetArmLength;
+		const UPC_CameraDataAsset* CameraDataAsset = FPC_GameUtil::GetCameraData(EPC_CameraType::Normal);
+		DefaultArmLength = CameraDataAsset->TargetArmLength;
 		bCachedDefaultArmLength = true;
 	}
 
