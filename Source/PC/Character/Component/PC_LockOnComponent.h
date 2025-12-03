@@ -24,11 +24,15 @@ public:
 	APawn* FindTarget();
 	void LockTarget(APawn* InActor);
 	void ClearTarget();
+
 	APawn* GetLockTarget() const { return LockedTarget.Get(); }
 
 	virtual void SetLockOnMode(bool bEnable);
 	bool IsLockOnMode() const { return bLockOnMode; }
-
+	
+	UFUNCTION()
+	void TryUnlockByTarget(const APawn* InActor);
+	
 protected:
 	// 추가: 보스 크기 기반 카메라 거리 계산용
 	FVector GetLockOnViewPoint(AActor* TargetActor);

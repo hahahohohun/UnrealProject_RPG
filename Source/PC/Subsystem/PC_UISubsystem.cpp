@@ -107,3 +107,19 @@ void UPC_UISubsystem::HideBossHPWidget()
 		HUDWidget->OnEnCounterBossMonster(nullptr);
 	}
 }
+
+void UPC_UISubsystem::SetUIVisibleForSequence(bool bVisible)
+{
+	ESlateVisibility Vis = bVisible ? ESlateVisibility::Visible : ESlateVisibility::Collapsed;
+
+	if (HUDWidget)
+	{
+		HUDWidget->SetVisibility(Vis);
+		//HUDWidget->OnEnCounterBossMonster(nullptr);
+	}
+
+	if (OptionSettingWidget)
+	{
+		OptionSettingWidget->SetVisibility(Vis);
+	}
+}

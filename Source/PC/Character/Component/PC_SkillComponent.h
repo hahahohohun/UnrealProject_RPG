@@ -75,7 +75,7 @@ public:
 public:
 	virtual void BeginPlay() override;
 
-	void RequestPlaySkill(uint32 SkillId);
+	void RequestPlaySkill(uint32 SkillId, TWeakObjectPtr<AActor> TargetActor = nullptr);
 	void FindTarget(uint32 SkillId, TArray<TWeakObjectPtr<AActor>>& Targets, bool sort);
 	bool CanPlaySkill(uint32 SkillId);
 	void PlaySkill(FPC_SkillInfo& SkillInfo);
@@ -95,6 +95,8 @@ public:
 	                         FRotator StartRot);
 	void ProcessTargetPlayerExec(float DeltaTime, FPC_SkillInfo& SkillInfo, FPC_ExecInfo& ExecInfo, FVector StartPos,
 	                             FRotator StartRot);
+	void ProcessSingleTargetExec(float DeltaTime, FPC_SkillInfo& SkillInfo, FPC_ExecInfo& ExecInfo, FVector StartPos,
+									FRotator StartRot);
 
 	void CheckCollision(FPC_ExecInfo& ExecInfo, FCollisionShape CollisionShape, FVector Pos, FRotator Rot);
 	void OnStartExec(FPC_SkillInfo& SkillInfo, FPC_ExecInfo& ExecInfo);
@@ -119,5 +121,6 @@ public:
 	FPC_OnStartSkillDelegate OnStartSkillDelegate;
 	FPC_OnEndSkillDelegate OnEndSkillDelegate;
 
+	TArray<TPair<uint32, TWeakObjectPtr<AActor>>> DelayedRequestSkillIds;
 	
 };

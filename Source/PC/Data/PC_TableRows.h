@@ -433,6 +433,9 @@ struct FPC_CrowdControlTableRow : public FTableRowBase
 	TObjectPtr<UNiagaraSystem> CrowdControlFX = nullptr;
 
 	UPROPERTY(EditAnywhere)
+	EPC_CrowdFxAttachType CrowdFxAttachType = EPC_CrowdFxAttachType::AttachToBone;
+	
+	UPROPERTY(EditAnywhere)
 	TObjectPtr<UNiagaraSystem> EndCrowdControlFX = nullptr;
 
 	UPROPERTY(EditAnywhere)

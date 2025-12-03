@@ -744,7 +744,7 @@ void APC_NonPlayableCharacter::OnEndCrowdControl(EPC_CrowdControlType CrowdContr
 			AIContoller->GetBlackboardComponent()->SetValueAsObject(TEXT("Target"), Causer);
 		}
 
-		RequestChangeState(EPC_EnemyStateType::Battle);
+		ChangeState(EPC_EnemyStateType::Battle);
 	}
 }
 
@@ -767,7 +767,11 @@ void APC_NonPlayableCharacter::OnDead()
 	check(WidgetComponent);
 	WidgetComponent->SetVisibility(false);
 
+	check(SkillComponent)
 	SkillComponent->ClearCurSkillList();
+
+	if(OnUnlockTarget.IsBound())
+		OnUnlockTarget.Broadcast(this);
 	
 	UGameInstance* GI = GetWorld()->GetGameInstance();
 	if (!GI)
@@ -783,7 +787,8 @@ void APC_NonPlayableCharacter::OnDead()
 		OnDeathFinished();
 		return;
 	}
-		
+
+	
 	FSimpleDelegate FinishedDelegate = FSimpleDelegate::CreateUObject(
 		this, &APC_NonPlayableCharacter::OnDeathFinished);
 

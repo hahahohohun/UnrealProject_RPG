@@ -165,10 +165,14 @@ void UPC_CrowdControlComponent::PlayCC(FPC_CrowdControlInfo& info)
 
 void UPC_CrowdControlComponent::StopCC()
 {
+	if(!CrowdControlInfo.bValid)
+		return;
+	
 	OnStopCC();
 
 	CrowdControlInfo.bValid = false;
 	OnEndCCDelegate.Broadcast(CrowdControlInfo.CrowdControlType, CrowdControlInfo.Causer.Get());
+
 }
 
 void UPC_CrowdControlComponent::OnStartCC()
@@ -264,7 +268,8 @@ void UPC_CrowdControlComponent::OnStopCC()
 
 	if (IsValid(CrowdControlInfo.SpawnedFx) && CrowdControlInfo.SpawnedFx->IsActive())
 	{
-		CrowdControlInfo.SpawnedFx->Deactivate();
+		//CrowdControlInfo.SpawnedFx->Deactivate();
+		CrowdControlInfo.SpawnedFx->DestroyComponent();
 	}
 
 	if (CrowdControlTableRow->MaterialInstance)
@@ -304,6 +309,8 @@ void UPC_CrowdControlComponent::OnStopCC()
 												   RelativePos, FRotator::ZeroRotator,
 												   EAttachLocation::SnapToTarget, true);
 	}
+
+	StopFX();
 }
 
 void UPC_CrowdControlComponent::PlayFX(FPC_CrowdControlInfo& Info)
@@ -313,11 +320,49 @@ void UPC_CrowdControlComponent::PlayFX(FPC_CrowdControlInfo& Info)
 
 	if (UNiagaraSystem* NiagaraSystem = CrowdControlTableRow->CrowdControlFX)
 	{
-		FVector RelativePos = FVector(0.f, 0.f, OwnerCharacter->GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
-		Info.SpawnedFx = FPC_GameUtil::SpawnEffectAttached(NiagaraSystem, OwnerCharacter->GetCapsuleComponent(),
-		                                                   NAME_None,
-		                                                   RelativePos, FRotator::ZeroRotator,
-		                                                   EAttachLocation::SnapToTarget, true);
+		FVector RelativePos = FVector::ZeroVector;
+		if(CrowdControlTableRow->CrowdFxAttachType == EPC_CrowdFxAttachType::Surface)
+		{
+			FVector FXSpawnPos = GetOwner()->GetActorLocation();
+
+			//위에서 아래로
+			UWorld* World = GetWorld();
+			FVector TraceStartPos = FXSpawnPos + FVector(0, 0, 300.f);
+			FVector TraceEndPos = FXSpawnPos - FVector(0, 0, 1000.f);
+
+			FCollisionObjectQueryParams ObjectQueryParams;
+			ObjectQueryParams.AddObjectTypesToQuery(ECC_WorldStatic);
+
+			FHitResult HitResult;
+			World->LineTraceSingleByObjectType(HitResult, TraceStartPos, TraceEndPos, ObjectQueryParams);
+
+			if (HitResult.bBlockingHit)
+			{
+				UCapsuleComponent* Capsule = OwnerCharacter->GetCapsuleComponent();
+				const FVector CapsuleLoc   = Capsule->GetComponentLocation();
+
+				// 월드 → 로컬
+				FVector LocalPos = HitResult.ImpactPoint - CapsuleLoc;
+
+				Info.SpawnedFx = FPC_GameUtil::SpawnEffectAttached(
+					NiagaraSystem,
+					Capsule,
+					NAME_None,
+					LocalPos,
+					FRotator::ZeroRotator,
+					EAttachLocation::KeepRelativeOffset, // 또는 SnapToTarget 말고 이쪽
+					true);
+			}
+		}
+		else
+		{
+			RelativePos = FVector(0.f, 0.f, OwnerCharacter->GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
+					
+			Info.SpawnedFx = FPC_GameUtil::SpawnEffectAttached(NiagaraSystem, OwnerCharacter->GetCapsuleComponent(),
+													   NAME_None,
+													   RelativePos, FRotator::ZeroRotator,
+													   EAttachLocation::SnapToTarget, true);
+		}
 	}
 
 	if (CrowdControlTableRow->MaterialInstance)
@@ -343,7 +388,6 @@ void UPC_CrowdControlComponent::PlayFX(FPC_CrowdControlInfo& Info)
 
 void UPC_CrowdControlComponent::StopFX()
 {
-	
 }
 
 bool UPC_CrowdControlComponent::IsCrowdControlled()

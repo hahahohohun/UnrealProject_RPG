@@ -36,7 +36,7 @@ public:
 	virtual void AttackTraceWithWeapon(bool bStart, bool bRight, bool PowerAttack, bool SwingSound = false) = 0;
 	virtual void OnApplyStatusEffect(uint32 StatusEffectID) = 0;
 	virtual void ReactAttackBreak() = 0;
-	
+
 	virtual void LaunchCharacter(FVector StartPos, FVector CauserPos, float Power) = 0;
 	virtual  UStaticMeshComponent* GetWeapon_L_StaticMeshComponent() = 0;
 	virtual  UStaticMeshComponent* GetWeapon_R_StaticMeshComponent() = 0;

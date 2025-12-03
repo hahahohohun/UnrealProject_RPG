@@ -11,6 +11,8 @@
 #include "PC_NonPlayableCharacter.generated.h"
 
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPC_OnUnlockTarget, const APawn*, DeadActor);
+
 UCLASS()
 class PC_API APC_NonPlayableCharacter : public APC_BaseCharacter, public IPC_CharacterAIInterface
 {
@@ -23,6 +25,7 @@ public:
 	virtual void WeaponSparkEffect(bool bStart, bool bRight) override;
 
 	EPC_EnemyStateType GetEnemyStateType() {return EnemyState;}
+	FPC_OnUnlockTarget OnUnlockTarget;
 	
 protected:
 	virtual void BeginPlay() override;
@@ -43,7 +46,7 @@ protected:
 	virtual void OnAttackMontageEnd(UAnimMontage* Montage, bool bInterrupted);
 	virtual void OnDashBackMontageEnd(UAnimMontage* Montage, bool bInterrupted);
 	virtual void OnTurnMontageEnd(UAnimMontage* Montage, bool bInterrupted);
-	
+
 	virtual void SetAITurnFinishDelegate(const FAICharacterTurnFinished& InOnTurnFinished) override;
 	virtual void TurnInPlace(float TurnAnimDegree) override;
 	virtual void DashBack() override;
@@ -67,7 +70,10 @@ protected:
 
 	UFUNCTION(BlueprintCallable)
 	virtual EPC_DeadType GetDeadType() override;
-
+	
+	UFUNCTION(BlueprintCallable)
+	void EnableHPBar(bool bEnable);
+	
 	virtual void JumpToNextAttackMontage() override;
 	virtual void ResetUsedMontage() override;
 	virtual void ReactAttackBreak() override;
@@ -82,10 +88,6 @@ protected:
 	void ItemDrop();
 	UFUNCTION()
 	void OnDeathFinished();
-	
-public:
-	UFUNCTION(BlueprintCallable)
-	void EnableHPBar(bool bEnable);
 
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = camera, meta = (AllowPrivateAccess = "true"))

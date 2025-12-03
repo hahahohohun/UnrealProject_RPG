@@ -143,6 +143,7 @@ enum class EPC_SkillTargetingType : uint8
 	ChainAttack,
 	Multiple,
 	TargetPlayer,
+	SingleTarget,
 	Num,
 };
 
@@ -153,12 +154,13 @@ enum class EPC_ExecType : uint8
 	Dash,
 	DashToTarget,
 	Projectile,
-	FireMultipleProjectile, //
-	FireCircularRain, //하늘에서 마구 떨어짐
-	SentinelProjectile, //감지형 프로젝타일
+	FireMultipleProjectile, //여러발
+	FireCircularRain, //
 	Dot,
 	Pushback,
-	ArcProjectile,        // 
+	ArcProjectile,
+	MultiAngleAttack,
+	ChaseTarget,
 	Num,
 };
 
@@ -248,6 +250,15 @@ enum class EPC_SkillFxAttachType : uint8
 	None,
 	AttachToBone,
 	AttachToMiddlePos,
+	Surface,
+	Num,
+};
+
+UENUM(BlueprintType)
+enum class EPC_CrowdFxAttachType : uint8
+{
+	None,
+	AttachToBone,
 	Surface,
 	Num,
 };

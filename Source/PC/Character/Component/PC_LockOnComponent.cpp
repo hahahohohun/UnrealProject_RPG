@@ -2,10 +2,12 @@
 
 #include "GameFramework/Character.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "PC/Character/PC_NonPlayableCharacter.h"
 #include "PC/Interface/PC_CharacterInterface.h"
 #include "PC/Interface/PC_CharacterWidgetInterface.h"
 #include "PC/Utills/PC_GameUtill.h"
 
+class APC_NonPlayableCharacter;
 UPC_LockOnComponent::UPC_LockOnComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
@@ -129,6 +131,11 @@ void UPC_LockOnComponent::LockTarget(APawn* InActor)
 	{
 		TargetOverViewPoint = GetLockOnViewPoint(LockedTarget.Get());
 		Character->OnLocked(true);
+
+		if (APC_NonPlayableCharacter* Target = Cast<APC_NonPlayableCharacter>(LockedTarget.Get()))
+		{
+			Target->OnUnlockTarget.AddDynamic(this, &UPC_LockOnComponent::TryUnlockByTarget);
+		}
 	}
 }
 
@@ -138,9 +145,22 @@ void UPC_LockOnComponent::ClearTarget()
 	{
 		Character->OnLocked(false);
 	}
+
+	if (APC_NonPlayableCharacter* Target = Cast<APC_NonPlayableCharacter>(LockedTarget.Get()))
+	{
+		Target->OnUnlockTarget.Clear();
+	}
 	
 	LockedTarget = nullptr;
 	TargetOverViewPoint = FVector::ZeroVector;
+}
+
+void UPC_LockOnComponent::TryUnlockByTarget(const APawn* InActor)
+{
+	if(IsLockOnMode() && InActor == LockedTarget)
+	{
+		SetLockOnMode(false);
+	}
 }
 
 void UPC_LockOnComponent::SetLockOnMode(bool bEnable)
@@ -158,6 +178,7 @@ void UPC_LockOnComponent::SetLockOnMode(bool bEnable)
 			bLockOnMode = false;
 		}
 	}
+	
 
 	if (!bLockOnMode)
 	{

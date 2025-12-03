@@ -8,6 +8,7 @@
 #include "Component/PC_StatComponent.h"
 #include "Component/PC_WidgetComponent.h"
 #include "Component/PC_BattleComponent.h"
+#include "Component/PC_LockOnComponent.h"
 #include "Component/PC_SkillComponent.h"
 #include "Engine/DamageEvents.h"
 #include "PC/PC.h"
