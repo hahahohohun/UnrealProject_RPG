@@ -141,8 +141,7 @@ float APC_NonPlayableCharacter::TakeDamage(float DamageAmount, FDamageEvent cons
 		{
 			if (!AnimIns->IsAnyMontagePlaying())
 			{
-				if (EnemyState != EPC_EnemyStateType::SKillUsing
-	&& !IsDead() && !IsBossMonster)
+				if (EnemyState != EPC_EnemyStateType::SKillUsing && !IsDead() && !IsBossMonster)
 				{
 					if (OwnerDataAsset->HitReactAnim)
 					{
@@ -348,8 +347,7 @@ float APC_NonPlayableCharacter::TakeDamage(float DamageAmount, FDamageEvent cons
 	}
 
 	float Damage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
-	FPC_GameUtil::SpawnDamageFloater(this, Damage);
-	
+
 	return Damage;
 }
 

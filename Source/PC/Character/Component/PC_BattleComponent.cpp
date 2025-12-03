@@ -137,17 +137,18 @@ void UPC_BattleComponent::Tick_TraceWeapon(float DeltaTime)
 	}
 	
 	//TODO 공격별로 히트 효과 여부 처리
-	bool ShouldHitAction = false;
+	bool bIsLastAttack = false;
 	if(ActionComponent)
-		ShouldHitAction = ActionComponent->IsLastAttack();
-
-
+		bIsLastAttack = ActionComponent->IsLastAttack();
+	
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(GetOwner());
 	
 	FCollisionObjectQueryParams ObjectQueryParams;
 	ObjectQueryParams.AddObjectTypesToQuery(ECC_Pawn);
-	
+
+	bool bIsWeaponSweepSound = false;
+
 	for (const auto& Line : TraceLines)
 	{
 		FHitResult HitResult;
@@ -171,32 +172,22 @@ void UPC_BattleComponent::Tick_TraceWeapon(float DeltaTime)
 
 					if(CharacterInterface->IsGuarding(HitResult.ImpactPoint))
 						continue;
-					
-					if(ShouldHitAction)
-						FPC_GameUtil::PlayStopDilation(this, 0.2f, 0.f);
 
-					const float Damage = bPowerAttack ?  Character->StatComponent->GetTotalStat().PowerAttack
+					float BaseDamage = bPowerAttack ?  Character->StatComponent->GetTotalStat().PowerAttack
 						: Character->StatComponent->GetTotalStat().Attack;
+					bool bOutHitGroggyEnemy = false;
 					
-					//UPC_NormalAttackDamageType DamageEvent;
-					//auto AttackType = UPC_NormalAttackDamageType::StaticClass();
-
-					//FNormalAttackDamageEvent DamageEvent;
-					//DamageEvent.bPowerAttack = bPowerAttack; // 여기서 세팅
+					const float Damage = ApplyHitPartAndStateBonus(HitActor, HitResult, BaseDamage, bOutHitGroggyEnemy);
+					
 					FNormalAttackDamageEvent DamageEvent;
 					DamageEvent.DamageTypeClass = UDamageType::StaticClass(); 
 					DamageEvent.bPowerAttack = bPowerAttack;
 
 					HitActor->TakeDamage(Damage, DamageEvent, Character->GetController(), Character);
-						
-					if (UPC_CharacterDataAsset* HitCharDataAsset = HitCharacter->GetCharacterDataAsset())
-					{
-						FPC_GameUtil::SpawnEffectAtLocation(GetWorld(), HitCharDataAsset->HitFx, HitResult.ImpactPoint, FRotator::ZeroRotator, 1);
-					}
 					
-					if(HasWeapon())
-						PlayWeaponHitSound();
-					
+					PlayOnHitEffects(Character, HitResult, false, bIsLastAttack, HitCharacter->GetCharacterDataAsset()->HitFx);
+
+					bIsWeaponSweepSound = true;
 				}
 			}
 		}
@@ -208,7 +199,7 @@ void UPC_BattleComponent::Tick_TraceWeapon(float DeltaTime)
 			if(HitActor && !DamagedActor.Contains(HitActor))
 			{
 				//캐릭터 체크
-				if (ACharacter* HitCharacter = Cast<ACharacter>(HitActor))
+				if (APC_BaseCharacter* HitCharacter = Cast<APC_BaseCharacter>(HitActor))
 				{
 					DamagedActor.Add(HitActor);
 					
@@ -219,22 +210,22 @@ void UPC_BattleComponent::Tick_TraceWeapon(float DeltaTime)
 					const float BaseDamage = CalculateBaseDamage(Character);
 					bool bGroggyHit = false;
 					float Damage = ApplyHitPartAndStateBonus(HitActor, HitResult, BaseDamage, bGroggyHit);
-					PlayOnHitEffects(Character, HitResult, bGroggyHit, ShouldHitAction);
-
-					if(HasWeapon())
-						PlayWeaponHitSound();
-
+					PlayOnHitEffects(Character, HitResult, bGroggyHit, bIsLastAttack,HitCharacter->GetCharacterDataAsset()->HitFx);
 					HitActor->TakeDamage(Damage, DamageEvent, Character->GetController(), Character);
+					bIsWeaponSweepSound = true;
 				}
 			}
 		}
 		
 		if(FPC_GameUtil::IsDebugDrawing(OwnerCharacter.Get()))
 		{
-			//DrawDebugLine(World, Line.Key, Line.Value, FColor::Red, false, 3.f, 0, 1.f);
+			DrawDebugLine(World, Line.Key, Line.Value, FColor::Red, false, 3.f, 0, 1.f);
 		}
 	}
 
+	if (bIsWeaponSweepSound)
+		PlayWeaponHitSound();
+	
 	// Prev 갱신
 	PrevStartBoneLocation = CurStartBoneLocation;
 	PrevEndBoneLocation = CurEndBoneLocation;
@@ -621,7 +612,17 @@ float UPC_BattleComponent::CalculateBaseDamage(const APC_BaseCharacter* Attacker
 float UPC_BattleComponent::ApplyHitPartAndStateBonus(AActor* HitActor, const FHitResult& HitResult, float BaseDamage,
 	bool& bOutHitGroggyEnemy) const
 {
-	float Damage = BaseDamage;
+	if (!HitActor)
+	{
+		bOutHitGroggyEnemy = false;
+		return BaseDamage;
+	}
+	
+	static constexpr float VariancePercent = 0.3f;
+	const float RandomFactor = FMath::FRandRange(-VariancePercent, VariancePercent);
+	const float FinalDamage = BaseDamage * (1.0f + RandomFactor);
+	float Damage = FinalDamage;
+	
 	bOutHitGroggyEnemy = false;
 	
 	if (IPC_CharacterAIInterface* CharacterAIInterface = Cast<IPC_CharacterAIInterface>(HitActor))
@@ -642,11 +643,11 @@ float UPC_BattleComponent::ApplyHitPartAndStateBonus(AActor* HitActor, const FHi
 }
 
 void UPC_BattleComponent::PlayOnHitEffects(APC_BaseCharacter* Attacker, const FHitResult& HitResult, bool bIsGroggyHit,
-	bool bIsLastAttack)
+	bool bIsLastAttack, TObjectPtr<UNiagaraSystem> HitFx)
 {
 	if (APC_PlayableCharaceter* PlayerCharacter = Cast<APC_PlayableCharaceter>(Attacker))
 	{
-		if (bIsGroggyHit || bIsLastAttack)
+		if (bIsLastAttack)
 		{
 			PlayerCharacter->PlayHitBlurEffect(HitResult.ImpactPoint);
 			PlayerCharacter->PlayCameraAnim(EPC_CameraType::ZoomIn, 0.5f);
@@ -663,6 +664,11 @@ void UPC_BattleComponent::PlayOnHitEffects(APC_BaseCharacter* Attacker, const FH
 	{
 		ShakeMagnitude = EPC_CameraShakeMagnitudeType::Strong;
 		FPC_GameUtil::PlayStopDilation(this, 0.2f, 0.f);
+	}
+
+	if(HitFx)
+	{
+		FPC_GameUtil::SpawnEffectAtLocation(GetWorld(), HitFx, HitResult.ImpactPoint, FRotator::ZeroRotator, 1);
 	}
 
 	FPC_GameUtil::CameraShake(ShakeMagnitude);

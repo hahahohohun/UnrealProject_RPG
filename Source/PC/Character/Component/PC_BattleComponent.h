@@ -26,7 +26,8 @@ private:
 	const FPC_WeaponTableRow* GetCurWeaponTableRow(bool bRight);
 	float CalculateBaseDamage(const APC_BaseCharacter* Attacker);
 	float ApplyHitPartAndStateBonus(AActor* HitActor, const FHitResult& HitResult, float BaseDamage, bool& bOutHitGroggyEnemy) const;
-	void PlayOnHitEffects(APC_BaseCharacter* Attacker, const FHitResult& HitResult, bool bIsGroggyHit, bool bIsLastAttack);
+	void PlayOnHitEffects(APC_BaseCharacter* Attacker, const FHitResult& HitResult, bool bIsGroggyHit,
+		bool bIsLastAttack,TObjectPtr<UNiagaraSystem> HitFx = nullptr);
 	
 	
 public:	

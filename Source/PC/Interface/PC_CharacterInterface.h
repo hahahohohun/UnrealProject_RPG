@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "PC/Character/Component/PC_BattleComponent.h"
+#include "PC/Character/Component/PC_CineComponent.h"
 #include "PC/Character/Component/PC_CrowdControlComponent.h"
 #include "PC/Character/Component/PC_SkillComponent.h"
 #include "PC/Character/Component/PC_StatComponent.h"
@@ -32,7 +33,7 @@ public:
 	virtual void AttackTrace(bool bStart, FName TraceStartBoneName, FName TraceEndBoneName) = 0;
 	virtual void WeaponSparkEffect(bool bStart, bool bRight) = 0;
 	
-	virtual void AttackTraceWithWeapon(bool bStart, bool bRight, bool PowerAttack) = 0;
+	virtual void AttackTraceWithWeapon(bool bStart, bool bRight, bool PowerAttack, bool SwingSound = false) = 0;
 	virtual void OnApplyStatusEffect(uint32 StatusEffectID) = 0;
 	virtual void ReactAttackBreak() = 0;
 	
@@ -41,7 +42,7 @@ public:
 	virtual  UStaticMeshComponent* GetWeapon_R_StaticMeshComponent() = 0;
 
 	virtual UPC_CrowdControlComponent* GetCrowdControlComponent() = 0;
-
+	virtual UPC_CineComponent* GetCineComponent() const = 0;
 	virtual UPC_SkillComponent* GetSkillComponent() const = 0;
 	virtual UPC_BattleComponent* GetBattleComponent() const = 0;
 	virtual UPC_StatComponent* GetStatComponent() const = 0;

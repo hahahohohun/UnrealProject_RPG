@@ -35,7 +35,7 @@ protected:
 	virtual void PostInitializeComponents() override;
 
 	virtual void AttackTrace(bool bStart, FName TraceStartBoneName, FName TraceEndBoneName) override;
-	virtual void AttackTraceWithWeapon(bool bStart, bool bRight, bool PowerAttack) override;
+	virtual void AttackTraceWithWeapon(bool bStart, bool bRight, bool PowerAttack, bool SwingSound) override;
 	virtual bool HasWeapon() override;
 
 	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
@@ -80,6 +80,7 @@ public:
 	virtual UPC_BattleComponent* GetBattleComponent() const override { return BattleComponent; }
 	virtual UPC_SkillComponent* GetSkillComponent() const override { return SkillComponent; }
 	virtual UPC_StatComponent* GetStatComponent() const override { return StatComponent; }
+	virtual UPC_CineComponent* GetCineComponent() const override { return CineComponent; }
 	virtual UPC_StatusEffectComponent* GetStatusEffectComponent() const override { return StatusEffectComponent; }
 	
 	UFUNCTION()
@@ -108,6 +109,9 @@ public:
 	TObjectPtr<UPC_CrowdControlComponent> CrowdControlComponent;
 
 	UPROPERTY()
+	TObjectPtr<UPC_CineComponent> CineComponent = nullptr;
+
+	UPROPERTY()
 	TObjectPtr<UPC_StatComponent> StatComponent = nullptr;
 
 	UPROPERTY()
@@ -132,6 +136,7 @@ public:
 	TObjectPtr<UStaticMeshComponent> Weapon_L_StaticComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UStaticMeshComponent> Weapon_R_StaticComponent;
+
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UPC_CharacterDataAsset> CharacterData;

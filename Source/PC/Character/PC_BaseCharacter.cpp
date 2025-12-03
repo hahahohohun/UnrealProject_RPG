@@ -44,6 +44,7 @@ APC_BaseCharacter::APC_BaseCharacter()
 
 	BattleComponent = CreateDefaultSubobject<UPC_BattleComponent>(TEXT("BattleComponent"));
 	CrowdControlComponent = CreateDefaultSubobject<UPC_CrowdControlComponent>(TEXT("CrowdControlComponent"));
+	CineComponent = CreateDefaultSubobject<UPC_CineComponent>(TEXT("CineComponent"));
 	StatComponent = CreateDefaultSubobject<UPC_StatComponent>(TEXT("StatComponent"));
 	StatusEffectComponent = CreateDefaultSubobject<UPC_StatusEffectComponent>(TEXT("StatusEffectComponent"));
 
@@ -81,12 +82,8 @@ float APC_BaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Dama
 	if(IsDead())
 		return 0;
 
-	const float VariancePercent = 0.035f;
-	const float RandomFactor = FMath::FRandRange(-VariancePercent, VariancePercent);
-	const float FinalDamage = DamageAmount * (1.0f + RandomFactor);
-	
-	const float Damage = StatComponent->ApplyDamage(FinalDamage, DamageCauser, false);
-	if (Damage > KINDA_SMALL_NUMBER)
+	float Damage = 0.f;
+	if (DamageAmount > KINDA_SMALL_NUMBER)
 	{
 		if (DamageEvent.IsOfType(FNormalAttackDamageEvent::ClassID))
 		{
@@ -94,10 +91,9 @@ float APC_BaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Dama
 			FPC_GameUtil::PlayHitMaterial(this);
 		}
 	}
-
-	if(CharacterData->HitSFX)
-		FPC_GameUtil::PlaySFXAtLocation(this, CharacterData->HitSFX, GetActorLocation());
-
+	
+	Damage = StatComponent->ApplyDamage(DamageAmount, GetOwner(), false);
+	FPC_GameUtil::SpawnDamageFloater(this, Damage);
 	return Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
 }
 
@@ -299,12 +295,15 @@ void APC_BaseCharacter::AttackTrace(bool bStart, FName TraceStartBoneName, FName
 		BattleComponent->EndTrace();
 }
 
-void APC_BaseCharacter::AttackTraceWithWeapon(bool bStart, bool bRight, bool PowerAttack)
+void APC_BaseCharacter::AttackTraceWithWeapon(bool bStart, bool bRight, bool PowerAttack, bool SwingSound)
 {
 	if (bStart)
-		BattleComponent->StartTraceWithWeapon(bRight,PowerAttack);
+		BattleComponent->StartTraceWithWeapon(bRight, PowerAttack);
 	else
 		BattleComponent->EndTrace();
+
+	if(SwingSound)
+		BattleComponent->PlayWeaponSwingSound();
 }
 
 bool APC_BaseCharacter::HasWeapon()

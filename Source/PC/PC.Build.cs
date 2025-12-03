@@ -12,7 +12,7 @@ public class PC : ModuleRules
 		PublicDependencyModuleNames.AddRange(new string[] { 
 			"Core", "CoreUObject", "Engine", "Slate", "SlateCore","InputCore", "HeadMountedDisplay", "EnhancedInput",
 			"UMG", "Niagara" , "AIModule", "GameplayTasks", "GameplayCameras" ,"Niagara", "NavigationSystem"
-			, "AssetRegistry","EngineCameras", "SkinnedDecalComponent" ,"LevelSequence","MovieScene"
+			, "AssetRegistry","EngineCameras", "SkinnedDecalComponent" ,"LevelSequence","MovieScene","CinematicCamera"
 		});
 	}
 }

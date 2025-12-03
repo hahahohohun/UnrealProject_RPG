@@ -17,7 +17,7 @@ void UPC_AttackTraceNotify::Notify(USkeletalMeshComponent* MeshComp, UAnimSequen
 		{
 			if (AttackCharacter->HasWeapon())
 			{
-				AttackCharacter->AttackTraceWithWeapon(bStart, bRight, PowerAttack);
+				AttackCharacter->AttackTraceWithWeapon(bStart, bRight, PowerAttack, bWeaponSwingSound);
 			}
 			else
 			{

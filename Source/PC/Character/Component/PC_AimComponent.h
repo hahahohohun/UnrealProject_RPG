@@ -23,7 +23,9 @@ protected:
 	UPROPERTY(BlueprintReadOnly)
 	FRotator AimOffsetRotation = FRotator::ZeroRotator;
 	bool bCameraAnimPlaying = false;
+	EPC_CameraType CurrentCameraType = EPC_CameraType::Normal;
 	EPC_CameraType PrevCameraType = EPC_CameraType::Normal;
+	
 	FTimerHandle CameraAnimTimerHandle;
 	UFUNCTION()
 	void OnCameraAnimFinished();
@@ -31,11 +33,11 @@ protected:
 
 public:
 	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-
-	EPC_CameraType CurrentCameraType = EPC_CameraType::Normal;
+	
 	void SwitchCamera(EPC_CameraType CameraType);
 	void PlayCameraAnim(EPC_CameraType CameraType, float Time);
 
+	EPC_CameraType GetCurrentCameraType() const { return CurrentCameraType; }
 	TWeakObjectPtr<ACharacter> OwnerCharacter = nullptr;
 };
 

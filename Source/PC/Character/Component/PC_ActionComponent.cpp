@@ -104,7 +104,7 @@ void UPC_ActionComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 			Start += FVector(0.f, 0.f, 80.f);
 		}
 
-		// 4️⃣ 크기 및 회전 조정
+		// 크기 및 회전 조정
 		const float ArrowLen   = 160.f;             // 짧게
 		const float BaseLen    = 100.f;
 		const float ScaleX     = ArrowLen / BaseLen;
@@ -356,6 +356,9 @@ void UPC_ActionComponent::Roll(bool bPressed)
 
 void UPC_ActionComponent::SwapWeapon(bool bPressed)
 {
+	if(IsInSpecialAction)
+		return;
+	
 	const IPC_PlayerCharacterInterface* Interface = CastChecked<IPC_PlayerCharacterInterface>(GetOwner());
 	UPC_BattleComponent* BattleComponent = Interface->GetBattleComponent();
 	check(BattleComponent);

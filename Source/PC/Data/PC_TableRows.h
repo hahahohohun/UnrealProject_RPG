@@ -259,48 +259,51 @@ struct FPC_ExecTableRow : public FTableRowBase
 	UPROPERTY(EditAnywhere)
 	uint32 DataId = 0;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="SFX")
 	TObjectPtr<USoundBase> StartSFX; //스킬 시작할때
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="SFX")
 	TObjectPtr<USoundBase> ActiveSFX; //
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Decal")
 	TObjectPtr<UAnimMontage> SkillAnim;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Decal")
 	TObjectPtr<UMaterialInterface> SkillDecalMaterial;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Decal")
 	FVector DecalSize = FVector::ZeroVector;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Decal")
 	FVector DecalRelativePos = FVector::ZeroVector;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Decal")
 	FRotator DecalRelativeRot = FRotator::ZeroRotator;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Effect")
 	UNiagaraSystem* ExecFX_Niagara_Start = nullptr;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Effect")
 	UParticleSystem* ExecFX_Cascade_Start = nullptr;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Effect")
 	UNiagaraSystem* ExecFX_Niagara_End = nullptr;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Effect")
 	UParticleSystem* ExecFX_Cascade_End = nullptr;
 
 	//받았을때 데미지 이펙트
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Effect")
 	UNiagaraSystem* HitFX_Niagara = nullptr;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Effect")
 	UParticleSystem* HitFX_Cascade = nullptr;
-	//
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Effect")
 	float HitEffectScale = 1.f;
+	UPROPERTY(EditAnywhere, Category="Effect")
+	EPC_SkillFxAttachType SkillFxAttachType = EPC_SkillFxAttachType::None;
+
+	//
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UCurveFloat> ExeCurve;
@@ -334,48 +337,61 @@ struct FPC_ExecTableRow : public FTableRowBase
 	float ExecProperty_2 = 0;
 	//
 
+	UPROPERTY(EditAnywhere, Category="Coliison")
+	bool bSpawnCollision = true;
+
 	//콜리전 정보 ex) 높이 너비 길이
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Coliison")
 	float ExecCollisionProperty_0 = 0;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Coliison")
 	float ExecCollisionProperty_1 = 0;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Coliison")
 	float ExecCollisionProperty_2 = 0;
+	
+	UPROPERTY(EditAnywhere, Category="Coliison")
+	FRotator ExecCollisionRelativeRot = FRotator::ZeroRotator;
 
 	UPROPERTY(EditAnywhere)
 	float CrowdControlId = INDEX_NONE;
 
 	UPROPERTY(EditAnywhere)
-	EPC_SkillFxAttachType SkillFxAttachType = EPC_SkillFxAttachType::None;
-
-	UPROPERTY(EditAnywhere)
 	FName SkillPosBoneName = NAME_None;
 
-	UPROPERTY(EditAnywhere)
-	bool bSpawnCollision = true;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="ETC")
 	bool bEffectBlur = false;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="ETC")
 	float HitDilationTime = 0.0f;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Material")
 	TObjectPtr<UMaterialInterface> MaterialInterface = nullptr;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Material")
 	bool bPlayHitMaterial = true;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Camera")
 	EPC_CameraShakeMagnitudeType ShakeMagnitude = EPC_CameraShakeMagnitudeType::Weak;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Camera")
 	EPC_CameraShakeActionType CameraShakeAction = EPC_CameraShakeActionType::None;
 
-	UPROPERTY(EditAnywhere)
-	FRotator ExecCollisionRelativeRot = FRotator::ZeroRotator;
+
+	UPROPERTY(EditAnywhere, Category="CineCamera")
+	uint32 LinkSkillId = 0;
+
+	UPROPERTY(EditAnywhere, Category="CineCamera")
+	ULevelSequence* AttackSequenceAsset;
+
+	UPROPERTY(EditAnywhere, Category="AfterImage")
+	TSubclassOf<AActor> AfterImageActorClass;
+
+	UPROPERTY(EditAnywhere, Category="AfterImage") //몇초간격으로 스폰시킬지
+	float PosableMeshSpawnInterval = 0.f;
+	
+
 };
 
 USTRUCT(BlueprintType)

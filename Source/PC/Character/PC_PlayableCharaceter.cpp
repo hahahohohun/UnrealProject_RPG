@@ -453,9 +453,12 @@ float APC_PlayableCharaceter::TakeDamage(float DamageAmount, struct FDamageEvent
 
 	if(Damage > KINDA_SMALL_NUMBER)
 	{
-		if (DamageEvent.IsOfType(FNormalAttackDamageEvent::ClassID))
+		if(!SkillComponent->IsPlayUsingSkill())
 		{
-			CrowdControlComponent->RequestPlayerCC(4, DamageCauser);
+			if (DamageEvent.IsOfType(FNormalAttackDamageEvent::ClassID))
+			{
+				CrowdControlComponent->RequestPlayerCC(4, DamageCauser);
+			}
 		}
 
 		FPC_GameUtil::SpawnEffectAtLocation(GetWorld(), OwnerDataAsset->HitFx, GetActorLocation(), FRotator::ZeroRotator);
@@ -617,14 +620,14 @@ void APC_PlayableCharaceter::AdjustCamera(bool bIsPressed)
 {
 	if (bIsPressed && !ActionComponent->IsInSpecialAction)
 	{
-		if (BattleComponent->CharacterStanceType == EPC_CharacterStanceType::Staff && AimComponent->CurrentCameraType != EPC_CameraType::Aim)
+		if (BattleComponent->CharacterStanceType == EPC_CharacterStanceType::Staff && AimComponent->GetCurrentCameraType() != EPC_CameraType::Aim)
 		{
 			AimComponent->SwitchCamera(EPC_CameraType::Aim);
 		}
 	}
 	else if (!bIsPressed && ActionComponent->IsInSpecialAction)
 	{
-		if (BattleComponent->CharacterStanceType == EPC_CharacterStanceType::Staff && AimComponent->CurrentCameraType != EPC_CameraType::Normal)
+		if (BattleComponent->CharacterStanceType == EPC_CharacterStanceType::Staff && AimComponent->GetCurrentCameraType() != EPC_CameraType::Normal)
 		{
 			AimComponent->SwitchCamera(EPC_CameraType::Normal);
 		}
@@ -662,6 +665,8 @@ bool APC_PlayableCharaceter::IsGuarding(FVector ImpactPoint)
 				HitCharDataAsset->GuardFx, ImpactPoint,
 				FRotator::ZeroRotator, 1);
 
+			FPC_GameUtil::SpawnDamageFloater(this, 0.f);
+			
 			if(HitCharDataAsset->HitGuardAnimMontage)
 			{
 				UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();

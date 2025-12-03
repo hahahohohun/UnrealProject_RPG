@@ -121,8 +121,13 @@ void UPC_StatComponent::AddStamina(float InAmount)
 
 float UPC_StatComponent::ApplyDamage(float InDamage, AActor* DamageCauser, bool SpawnEffect)
 {
+	if (InDamage <= 0.f || CurrentHp <= 0.f)
+	{
+		return 0.f;
+	}
+
 	const float PrevHp = CurrentHp;
-	const float ActualDamage = FMath::Clamp<float>(InDamage, 0, InDamage);
+	const float ActualDamage = FMath::Clamp<float>(InDamage, 0, PrevHp);
 
 	SetHp(PrevHp - ActualDamage);
 	if (CurrentHp <= KINDA_SMALL_NUMBER)

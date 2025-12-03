@@ -32,4 +32,7 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	bool PowerAttack;
+	
+	UPROPERTY(EditAnywhere)
+	bool bWeaponSwingSound = false;
 };
