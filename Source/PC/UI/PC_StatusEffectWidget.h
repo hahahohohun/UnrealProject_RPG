@@ -10,6 +10,21 @@
 /**
  * 
  */
+class UImage;
+class UTextBlock;
+USTRUCT()
+struct FStatusEffectSlot
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	UImage* Icon = nullptr;
+
+	UPROPERTY()
+	class UTextBlock* TimeText = nullptr;
+};
+
+
 UCLASS()
 class PC_API UPC_StatusEffectWidget : public UPC_UserWidget
 {
@@ -25,7 +40,7 @@ public:
 	UFUNCTION()
 	void UpdateStatusEffect( uint32 StatusEffectId, float RemainingTime);
 	UFUNCTION()
-	void AddOrUpdateStatusEffect(uint32 StatusEffectId);
+	void AddOrUpdateStatusEffect(uint32 StatusEffectId, float RemainingTime);
 	UFUNCTION()
 	void RemoveStatusEffect(uint32 StatusEffectId);
 
@@ -42,8 +57,15 @@ protected:
 	UPROPERTY()
 	TMap<uint32, TObjectPtr<class UImage>> IdToImage;
 
+	//UPROPERTY()
+	//TArray<TObjectPtr<class UImage>> Slots; //이미지 보관
+
+	// 기존 Slots 대신
 	UPROPERTY()
-	TArray<TObjectPtr<class UImage>> Slots; //이미지 보관
+	TArray<FStatusEffectSlot> Slots;
+
+	UPROPERTY()
+	TMap<uint32, int32> IdToSlotIndex;
 
 private:
 	TArray<uint32> FillOrder;

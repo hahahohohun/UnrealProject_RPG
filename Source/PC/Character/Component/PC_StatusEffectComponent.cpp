@@ -31,7 +31,6 @@ void UPC_StatusEffectComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 	if (ActiveStatusEffectInfos.Num() == 0 || !StatComponent.IsValid())
 		return;
 	
-	// 안전한 삭제를 위해 이터레이터 사용
 	for (auto It = ActiveStatusEffectInfos.CreateIterator(); It; ++It)
 	{
 		const uint32 EffectId = It.Key();
@@ -39,7 +38,6 @@ void UPC_StatusEffectComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 
 		if (Info.Duration <= KINDA_SMALL_NUMBER || Info.Type == EPC_StatusEffectType::None)
 		{
-			// 비정상 데이터 방어적 제거
 			RemoveEffect(EffectId);
 			continue;
 		}
@@ -105,7 +103,7 @@ void UPC_StatusEffectComponent::ApplyStatusEffect(uint32 StatusEffectID)
 		ActiveStatusEffectInfos.Add(StatusEffectID, NewInfo);
 
 		// Cascade FX 시작
-		StartCascadeFX(StatusEffectID, *EffectTableRow);
+		StartFX(StatusEffectID, *EffectTableRow);
 	}
 	else
 	{
@@ -125,7 +123,7 @@ void UPC_StatusEffectComponent::ApplyStatusEffect(uint32 StatusEffectID)
 				StatComponent->AddStatusEffect(StatusEffectID);
 			}
 			
-			StartCascadeFX(StatusEffectID, *EffectTableRow);
+			StartFX(StatusEffectID, *EffectTableRow);
 		}
 	}
 }
@@ -159,7 +157,7 @@ FPC_StatusEffectInfo* UPC_StatusEffectComponent::GetActiveStatusEffectInfo(uint3
 	return ActiveStatusEffectInfos.Find(StatusEffectID);
 }
 
-void UPC_StatusEffectComponent::StartCascadeFX(uint32 StatusEffectID, const FPC_StatusEffectTableRow& Row)
+void UPC_StatusEffectComponent::StartFX(uint32 StatusEffectID, const FPC_StatusEffectTableRow& Row)
 {
 	if (!OwnerCharacter.IsValid())
 		return;

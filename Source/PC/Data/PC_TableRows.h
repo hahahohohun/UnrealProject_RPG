@@ -249,6 +249,14 @@ struct FPC_SkillTableRow : public FTableRowBase
 
 	UPROPERTY(EditAnywhere)
 	TArray<FPC_ExecData> ExecDatas;
+
+
+	//레코드
+	UPROPERTY(EditAnywhere)
+	FVector HitLocation;
+
+	UPROPERTY(EditAnywhere)
+	TWeakObjectPtr<AActor> HitTarget;
 };
 
 USTRUCT(BlueprintType)
@@ -256,17 +264,32 @@ struct FPC_ExecTableRow : public FTableRowBase
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Main")
 	uint32 DataId = 0;
+
+	UPROPERTY(EditAnywhere, Category="Main")
+	EPC_ExecType ExecType = EPC_ExecType::None;
+
+	UPROPERTY(EditAnywhere, Category="Main")
+	FName SkillPosBoneName = NAME_None;
+	
+	UPROPERTY(EditAnywhere, Category="Main")
+	float Duration = 0.f;
+
+	UPROPERTY(EditAnywhere, Category="Main")
+	float Damage = 0.f;
+
+	UPROPERTY(EditAnywhere, Category="Anim")
+	TObjectPtr<UAnimMontage> SkillAnim;
+
+	UPROPERTY(EditAnywhere , Category="Anim")
+	TObjectPtr<UCurveFloat> ExeCurve;
 
 	UPROPERTY(EditAnywhere, Category="SFX")
 	TObjectPtr<USoundBase> StartSFX; //스킬 시작할때
 
 	UPROPERTY(EditAnywhere, Category="SFX")
 	TObjectPtr<USoundBase> ActiveSFX; //
-
-	UPROPERTY(EditAnywhere, Category="Decal")
-	TObjectPtr<UAnimMontage> SkillAnim;
 
 	UPROPERTY(EditAnywhere, Category="Decal")
 	TObjectPtr<UMaterialInterface> SkillDecalMaterial;
@@ -300,31 +323,19 @@ struct FPC_ExecTableRow : public FTableRowBase
 	UParticleSystem* HitFX_Cascade = nullptr;
 	UPROPERTY(EditAnywhere, Category="Effect")
 	float HitEffectScale = 1.f;
+	
 	UPROPERTY(EditAnywhere, Category="Effect")
 	EPC_SkillFxAttachType SkillFxAttachType = EPC_SkillFxAttachType::None;
 
 	//
 
-	UPROPERTY(EditAnywhere)
-	TObjectPtr<UCurveFloat> ExeCurve;
 
-	UPROPERTY(EditAnywhere)
-	float Duration = 0.f;
-
-	UPROPERTY(EditAnywhere)
-	float Damage = 0.f;
-
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Projectile")
 	FRotator ProjectileAdditiveRot = FRotator::ZeroRotator;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Projectile")
 	FVector ProjectileAdditivePos = FVector::ZeroVector;
 
-	UPROPERTY(EditAnywhere)
-	EPC_ExecType ExecType = EPC_ExecType::None;
-
-	UPROPERTY(EditAnywhere)
-	EPC_ExecCollisionType ExecCollisionType = EPC_ExecCollisionType::None;
 
 	//EPC_ExecType에 따라 유동적으로 값에 의미가 바뀜
 	UPROPERTY(EditAnywhere)
@@ -336,6 +347,8 @@ struct FPC_ExecTableRow : public FTableRowBase
 	UPROPERTY(EditAnywhere)
 	float ExecProperty_2 = 0;
 	//
+	UPROPERTY(EditAnywhere, Category="Coliison")
+	EPC_ExecCollisionType ExecCollisionType = EPC_ExecCollisionType::None;
 
 	UPROPERTY(EditAnywhere, Category="Coliison")
 	bool bSpawnCollision = true;
@@ -353,18 +366,20 @@ struct FPC_ExecTableRow : public FTableRowBase
 	UPROPERTY(EditAnywhere, Category="Coliison")
 	FRotator ExecCollisionRelativeRot = FRotator::ZeroRotator;
 
-	UPROPERTY(EditAnywhere)
-	float CrowdControlId = INDEX_NONE;
+	UPROPERTY(EditAnywhere, Category="CrowdControll")
+	float CrowdControlId = -1;
 
-	UPROPERTY(EditAnywhere)
-	FName SkillPosBoneName = NAME_None;
-
-
-	UPROPERTY(EditAnywhere, Category="ETC")
+	UPROPERTY(EditAnywhere, Category="Gimmick")
 	bool bEffectBlur = false;
 
-	UPROPERTY(EditAnywhere, Category="ETC")
+	UPROPERTY(EditAnywhere, Category="Gimmick")
 	float HitDilationTime = 0.0f;
+
+	UPROPERTY(EditAnywhere, Category="Gimmick")
+	bool bApplySlowMotion = false; //
+
+	UPROPERTY(EditAnywhere, Category="Gimmick")
+	bool bRecordHitSnapshot = false;
 
 	UPROPERTY(EditAnywhere, Category="Material")
 	TObjectPtr<UMaterialInterface> MaterialInterface = nullptr;
@@ -379,7 +394,7 @@ struct FPC_ExecTableRow : public FTableRowBase
 	EPC_CameraShakeActionType CameraShakeAction = EPC_CameraShakeActionType::None;
 
 
-	UPROPERTY(EditAnywhere, Category="CineCamera")
+	UPROPERTY(EditAnywhere, Category="Link")
 	uint32 LinkSkillId = 0;
 
 	UPROPERTY(EditAnywhere, Category="CineCamera")
@@ -387,6 +402,9 @@ struct FPC_ExecTableRow : public FTableRowBase
 
 	UPROPERTY(EditAnywhere, Category="AfterImage")
 	TSubclassOf<AActor> AfterImageActorClass;
+
+	UPROPERTY(EditAnywhere, Category= "AfterImage") //단일로 한번 찍기 여부
+	bool bHitPosableMeshSpawn = false;
 
 	UPROPERTY(EditAnywhere, Category="AfterImage") //몇초간격으로 스폰시킬지
 	float PosableMeshSpawnInterval = 0.f;

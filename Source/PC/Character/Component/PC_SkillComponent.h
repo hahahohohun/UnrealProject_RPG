@@ -32,6 +32,7 @@ struct FPC_ExecInfo
 	float ElapsedTime = 0.f;
 	float IntervalElapsedTime = 0.f;
 	float PosableMeshSpawnElapsedTime = 0.f;
+	bool bPosableMeshSpawned = false;
 	
 	uint32 ExecSequence = 0;
 	uint32 SpawnedCount = 0;
@@ -41,9 +42,12 @@ struct FPC_ExecInfo
 
 	FVector ExecEndPos = FVector::ZeroVector;
 	FRotator ExecEndRot = FRotator::ZeroRotator;
-
+	
 	TObjectPtr<UNiagaraComponent> AttachedFx = nullptr;
 	TArray<TObjectPtr<UMaterialInterface>> OriginalMaterials;
+	
+	FVector HitSnapShotPos = FVector::ZeroVector;
+	FRotator HitSnapShotRot = FRotator::ZeroRotator;
 	
 };
 
@@ -59,6 +63,13 @@ struct FPC_SkillInfo
 	FRotator SkillStartRot = FRotator::ZeroRotator;
 
 	TArray<FPC_ExecInfo> ExecInfos;
+
+	//
+	bool bReturning = false;        
+	int32 ReturnIndex = -1;           
+	float ReturnStepElapsedTime = 0.f;
+	TObjectPtr<UAnimMontage> ReturnAnimMontage = nullptr;
+	USoundBase* ReturnSound = nullptr;
 };
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
@@ -71,6 +82,7 @@ public:
 	UPC_SkillComponent();
 
 	void Tick_PlaySkill(float DeltaTime);
+	void Tick_ReturnChain(float DeltaTime, FPC_SkillInfo& SkillInfo);
 
 public:
 	virtual void BeginPlay() override;
@@ -106,6 +118,7 @@ public:
 
 	void SpawnCollisionDecal(UMaterialInterface* DecalMaterial, const FVector& Shape, const FVector& Pos,
 	                         const FRotator& Rot, float LifeTime);
+	void SetTargetSlow(TArray<TWeakObjectPtr<AActor>> Target, float SlowValue);
 
 public:
 	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType,
@@ -117,7 +130,7 @@ public:
 	TArray<FPC_SkillInfo> CoolDownSkillInfos;
 
 	TWeakObjectPtr<ACharacter> OwnerCharacter = nullptr;
-
+	bool IsPlayer = false;
 	FPC_OnStartSkillDelegate OnStartSkillDelegate;
 	FPC_OnEndSkillDelegate OnEndSkillDelegate;
 

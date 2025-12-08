@@ -29,6 +29,9 @@ void UPC_SkillComponent::BeginPlay()
 {
 	Super::BeginPlay();
 	OwnerCharacter = CastChecked<ACharacter>(GetOwner());
+
+	if(OwnerCharacter.IsValid())
+		IsPlayer = OwnerCharacter->Implements<UPC_PlayerCharacterInterface>();
 }
 
 void UPC_SkillComponent::RequestPlaySkill(uint32 SkillId, TWeakObjectPtr<AActor> TargetActor)
@@ -232,27 +235,36 @@ void UPC_SkillComponent::ProcessPosableMesh(float DeltaTime, FPC_ExecInfo& ExecI
 	check(World);
 
 	ExecInfo.IntervalElapsedTime += DeltaTime;
-	ExecInfo.PosableMeshSpawnElapsedTime += DeltaTime;
-	if (ExecInfo.PosableMeshSpawnElapsedTime > ExecTableRow->PosableMeshSpawnInterval)
+
+	if (ExecTableRow->bHitPosableMeshSpawn)
 	{
-		ExecInfo.PosableMeshSpawnElapsedTime = 0.f;
-
-		USkeletalMeshComponent* SkeletalMeshComponent = OwnerCharacter->GetMesh();
-		check(SkeletalMeshComponent);
-
-		FTransform SpawnTransform = SkeletalMeshComponent->GetComponentTransform();
-		APC_AfterImageActor* AfterImage = World->SpawnActorDeferred<APC_AfterImageActor>(
-			ExecTableRow->AfterImageActorClass,
-			SpawnTransform,
-			OwnerCharacter.Get(),
-			nullptr,
-			ESpawnActorCollisionHandlingMethod::AlwaysSpawn
-		);
-
-		if (AfterImage)
+		//
+	}
+	else
+	{
+		ExecInfo.PosableMeshSpawnElapsedTime += DeltaTime;
+		
+		if (ExecInfo.PosableMeshSpawnElapsedTime > ExecTableRow->PosableMeshSpawnInterval)
 		{
-			AfterImage->InitFromMesh(SkeletalMeshComponent);
-			UGameplayStatics::FinishSpawningActor(AfterImage, SpawnTransform);
+			ExecInfo.PosableMeshSpawnElapsedTime = 0.f;
+
+			USkeletalMeshComponent* SkeletalMeshComponent = OwnerCharacter->GetMesh();
+			check(SkeletalMeshComponent);
+
+			FTransform SpawnTransform = SkeletalMeshComponent->GetComponentTransform();
+			APC_AfterImageActor* AfterImage = World->SpawnActorDeferred<APC_AfterImageActor>(
+				ExecTableRow->AfterImageActorClass,
+				SpawnTransform,
+				OwnerCharacter.Get(),
+				nullptr,
+				ESpawnActorCollisionHandlingMethod::AlwaysSpawn
+			);
+
+			if (AfterImage)
+			{
+				AfterImage->InitFromMesh(SkeletalMeshComponent);
+				UGameplayStatics::FinishSpawningActor(AfterImage, SpawnTransform);
+			}
 		}
 	}
 }
@@ -990,6 +1002,103 @@ void UPC_SkillComponent::ProcessSingleTargetExec(float DeltaTime, FPC_SkillInfo&
 			}
 		}
 	}
+	else
+	{
+		if (!ExecInfo.bExecCollisionSpawned)
+		{
+			ExecInfo.bExecCollisionSpawned = true;
+
+			FRotator ExecCollisionRot = ExecInfo.ExecStartRot;
+			FVector ExecCollisionPos = FVector::ZeroVector;
+			if (ExecTableRow->SkillPosBoneName != NAME_None)
+			{
+				ExecCollisionPos = FPC_GameUtil::GetSocketTransform(OwnerCharacter.Get(),
+																	ExecTableRow->SkillPosBoneName).GetLocation();
+			}
+			else
+			{
+				ExecCollisionPos = ExecInfo.ExecStartPos;
+			}
+			
+			EPC_ExecCollisionType CollisionType = ExecTableRow->ExecCollisionType;
+			if (CollisionType == EPC_ExecCollisionType::Box)
+			{
+				float BoxHeight = ExecTableRow->ExecCollisionProperty_0;
+				float BoxWidth = ExecTableRow->ExecCollisionProperty_1;
+				float BoxLength = ExecTableRow->ExecCollisionProperty_2;
+
+				FCollisionShape CollisionShape = FCollisionShape::MakeBox(FVector(BoxLength, BoxWidth, BoxHeight));
+				CheckCollision(ExecInfo, CollisionShape, ExecCollisionPos, ExecCollisionRot);
+			}
+		}
+	}
+}
+
+void UPC_SkillComponent::Tick_ReturnChain(float DeltaTime, FPC_SkillInfo& SkillInfo)
+{
+	UWorld* World = GetWorld();
+	check(World);
+
+	if(SkillInfo.ReturnIndex < 0)
+	{
+		SkillInfo.bReturning = false;
+		SkillInfo.ElapsedTime = SkillInfo.LifeTime + 1.f;
+		return;
+	}
+
+	SkillInfo.ReturnStepElapsedTime += DeltaTime;
+	const float ReturnStepDuration = 0.5f;
+
+	if (SkillInfo.ReturnStepElapsedTime - DeltaTime <= 0.f)
+	{
+		if (!SkillInfo.ExecInfos.IsValidIndex(SkillInfo.ReturnIndex))
+			return;
+
+		FPC_ExecInfo& ReturnExecInfo = SkillInfo.ExecInfos[SkillInfo.ReturnIndex];
+
+		FPC_ExecTableRow* ReturnExecRow = FPC_GameUtil::GetExecData(ReturnExecInfo.ExecData->ExecDataId);
+		check(ReturnExecRow);
+
+		if(ReturnExecRow->ExecType == EPC_ExecType::ReturnChainExec)
+		{
+			SkillInfo.ReturnStepElapsedTime = 0.f;
+			SkillInfo.ReturnIndex--;
+			return;
+		}
+
+		if(SkillInfo.ReturnSound)
+		{
+			FPC_GameUtil::PlaySFXAtLocation(this, SkillInfo.ReturnSound, OwnerCharacter->GetActorLocation());
+		}
+		
+		FVector ReturnLocation = ReturnExecInfo.ExecEndPos;
+		if (ReturnLocation.IsNearlyZero())
+		{
+			//스냅샷 위치가 없으면
+			ReturnLocation = ReturnExecInfo.ExecStartPos;
+		}
+		
+		ReturnLocation = FPC_GameUtil::FindSurfacePos(OwnerCharacter.Get(), ReturnLocation);
+		OwnerCharacter->SetActorLocation(ReturnLocation);
+		UAnimInstance* AnimInstance = OwnerCharacter->GetMesh()->GetAnimInstance();
+		check(AnimInstance);
+		AnimInstance->StopAllMontages(0.3f);
+		if (SkillInfo.ReturnAnimMontage)
+		{
+			AnimInstance->Montage_Play(SkillInfo.ReturnAnimMontage, 1.f,
+			                           EMontagePlayReturnType::MontageLength, 0.f, true);
+			
+		}
+		FVector ToDir = ReturnExecInfo.HitSnapShotPos - GetOwner()->GetActorLocation();
+		FRotator ToRot = ToDir.GetSafeNormal2D().Rotation();
+		OwnerCharacter->SetActorRotation(ToRot);
+	}
+			
+	if (SkillInfo.ReturnStepElapsedTime >= ReturnStepDuration)
+	{
+		SkillInfo.ReturnStepElapsedTime = 0.f;
+		SkillInfo.ReturnIndex--;
+	}
 }
 
 void UPC_SkillComponent::CheckCollision(FPC_ExecInfo& ExecInfo, FCollisionShape CollisionShape, FVector Pos,
@@ -1037,10 +1146,17 @@ void UPC_SkillComponent::CheckCollision(FPC_ExecInfo& ExecInfo, FCollisionShape 
 				if (ExecInfo.HitActors.Contains(HitCharacter))
 					continue; // 이미 맞은 적이면 스킵
 
+				//피격위치 저장
+				ExecInfo.HitSnapShotPos = HitCharacter->GetActorLocation();
+				ExecInfo.HitSnapShotRot = HitCharacter->GetActorRotation();
+				
+				if(FPC_GameUtil::IsDebugDrawing(this))
+					DrawDebugSphere(World, ExecInfo.HitSnapShotPos, 10, 16, FColor::Green, false, 5, 0, 1.f);
+				
 				LastCharacter = HitCharacter;
 
 				ExecInfo.HitActors.Add(HitCharacter);
-
+				
 				FDamageEvent DamageEvent;
 				HitCharacter->TakeDamage(ExecTableRow->Damage, DamageEvent, OwnerCharacter->GetController(),
 				                         OwnerCharacter.Get());
@@ -1054,7 +1170,7 @@ void UPC_SkillComponent::CheckCollision(FPC_ExecInfo& ExecInfo, FCollisionShape 
 				if (ExecTableRow->HitFX_Niagara)
 				{
 					FPC_GameUtil::SpawnEffectAtLocation(GetWorld(), ExecTableRow->HitFX_Niagara,
-					                                    HitCharacter->GetActorLocation(), FRotator::ZeroRotator, 1);
+					                                    HitCharacter->GetActorLocation(), FRotator::ZeroRotator, ExecTableRow->HitEffectScale);
 				}
 
 				if (IPC_CharacterInterface* CharacterInterface = Cast<IPC_CharacterInterface>(Result.GetActor()))
@@ -1081,8 +1197,7 @@ void UPC_SkillComponent::CheckCollision(FPC_ExecInfo& ExecInfo, FCollisionShape 
 		{
 			if (ExecTableRow->LinkSkillId)
 			{
-				DelayedRequestSkillIds.Add(
-					TPair<uint32, TWeakObjectPtr<AActor>>(ExecTableRow->LinkSkillId, LastCharacter));
+				DelayedRequestSkillIds.Add(TPair<uint32, TWeakObjectPtr<AActor>>(ExecTableRow->LinkSkillId, LastCharacter));
 			}
 
 			if (ExecTableRow->AttackSequenceAsset)
@@ -1180,7 +1295,18 @@ void UPC_SkillComponent::OnStartExec(FPC_SkillInfo& SkillInfo, FPC_ExecInfo& Exe
 		                                    ExecInfo.ExecStartRot);
 	}
 
-	if(ExecTableRow->ExecType == EPC_ExecType::Dash)
+	//Slow
+	SetTargetSlow(SkillInfo.Targets, ExecTableRow->bApplySlowMotion ? 0.2f : 1.f);
+
+	if(ExecTableRow->ExecType == EPC_ExecType::ReturnChainExec)
+	{
+		SkillInfo.bReturning = true;
+		SkillInfo.ReturnStepElapsedTime = 0.f;
+		SkillInfo.ReturnIndex = SkillInfo.ExecInfos.Num() - 1;
+		SkillInfo.ReturnAnimMontage = ExecTableRow->SkillAnim;
+		SkillInfo.ReturnSound = ExecTableRow->ActiveSFX;
+	}
+	else if (ExecTableRow->ExecType == EPC_ExecType::Dash)
 	{
 		FVector ControlVector = OwnerCharacter->GetControlRotation().Vector().GetSafeNormal2D();
 		ExecInfo.ExecStartRot = ControlVector.Rotation();
@@ -1253,6 +1379,7 @@ void UPC_SkillComponent::OnStartExec(FPC_SkillInfo& SkillInfo, FPC_ExecInfo& Exe
 		DestPos = FPC_GameUtil::FindSurfacePos(OwnerCharacter.Get(), DestPos);
 		ExecInfo.ExecEndPos = DestPos;
 	}
+
 }
 
 void UPC_SkillComponent::OnEndExec(FPC_SkillInfo& SkillInfo, FPC_ExecInfo& ExecInfo)
@@ -1272,6 +1399,31 @@ void UPC_SkillComponent::OnEndExec(FPC_SkillInfo& SkillInfo, FPC_ExecInfo& ExecI
 	if (ExecInfo.AttachedFx)
 	{
 		ExecInfo.AttachedFx->Deactivate(); //Deactivate : 
+	}
+
+	if (ExecTableRow->bHitPosableMeshSpawn)
+	{
+		if (ExecInfo.bPosableMeshSpawned == false)
+		{
+			ExecInfo.bPosableMeshSpawned = true;
+			USkeletalMeshComponent* SkeletalMeshComponent = OwnerCharacter->GetMesh();
+			check(SkeletalMeshComponent);
+
+			FTransform SpawnTransform = SkeletalMeshComponent->GetComponentTransform();
+			APC_AfterImageActor* AfterImage = GetWorld()->SpawnActorDeferred<APC_AfterImageActor>(
+				ExecTableRow->AfterImageActorClass,
+				SpawnTransform,
+				OwnerCharacter.Get(),
+				nullptr,
+				ESpawnActorCollisionHandlingMethod::AlwaysSpawn
+			);
+
+			if (AfterImage)
+			{
+				AfterImage->InitFromMesh(SkeletalMeshComponent);
+				UGameplayStatics::FinishSpawningActor(AfterImage, SpawnTransform);
+			}
+		}
 	}
 }
 
@@ -1329,12 +1481,23 @@ void UPC_SkillComponent::Tick_PlaySkill(float DeltaTime)
 		FPC_SkillTableRow* SkillTableRow = FPC_GameUtil::GetSkillData(SkillInfo.SkillDataId);
 		check(SkillTableRow);
 
-		SkillInfo.ElapsedTime += DeltaTime;
-		ProcessSkill(DeltaTime, SkillInfo);
-
-		if (SkillInfo.ElapsedTime > SkillInfo.LifeTime)
+		if(SkillInfo.bReturning)
 		{
-			SkillToCoolDown.Add(SkillInfo);
+			Tick_ReturnChain(DeltaTime, SkillInfo);
+			if (!SkillInfo.bReturning && SkillInfo.ElapsedTime > SkillInfo.LifeTime)
+			{
+				SkillToCoolDown.Add(SkillInfo);
+			}
+		}
+		else 
+		{
+			SkillInfo.ElapsedTime += DeltaTime;
+			ProcessSkill(DeltaTime, SkillInfo);
+
+			if (SkillInfo.ElapsedTime > SkillInfo.LifeTime)
+			{
+				SkillToCoolDown.Add(SkillInfo);
+			}
 		}
 	}
 
@@ -1401,6 +1564,20 @@ void UPC_SkillComponent::SpawnCollisionDecal(UMaterialInterface* DecalMaterial, 
 		if (Decal)
 		{
 			Decal->SetFadeOut(LifeTime, 1.5f, true);
+		}
+	}
+}
+
+void UPC_SkillComponent::SetTargetSlow(TArray<TWeakObjectPtr<AActor>> Targets, float SlowValue)
+{
+	for (TWeakObjectPtr<AActor> Target : Targets)
+	{
+		if (Target.IsValid())
+		{
+			if(AActor* TargetActor = Target.Get())
+			{
+				TargetActor->CustomTimeDilation = SlowValue;
+			}
 		}
 	}
 }

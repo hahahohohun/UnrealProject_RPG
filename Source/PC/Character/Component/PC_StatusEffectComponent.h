@@ -66,7 +66,7 @@ private:
 
 	TWeakObjectPtr<ACharacter> OwnerCharacter = nullptr;
 
-	void StartCascadeFX(uint32 StatusEffectID, const FPC_StatusEffectTableRow& Row);
+	void StartFX(uint32 StatusEffectID, const FPC_StatusEffectTableRow& Row);
 	void StopCascadeFX(uint32 StatusEffectID, const FPC_StatusEffectTableRow* RowPtr);
 	void PlayStartFX(const FPC_StatusEffectTableRow& Row);
 	void PlayEndFX(const FPC_StatusEffectTableRow& Row);

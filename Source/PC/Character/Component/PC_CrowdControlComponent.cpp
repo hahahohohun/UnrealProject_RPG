@@ -62,18 +62,11 @@ void UPC_CrowdControlComponent::ProcessCC(float DeltaTime)
 
     		// 최종적으로 Causer 위치까지 끌려오기
     		FVector TargetPos = CauserPos;
-
-    		// 수평 이동만 할거면 Z 맞춰주기
+    		
     		FVector CurrentPos = OwnerCharacter->GetActorLocation();
     		TargetPos.Z = CurrentPos.Z;
-
-    		// 경로: StartPos → CauserPos
     		FVector NewPos = FMath::Lerp(StartPos, TargetPos, Alpha);
-
-    		// 바닥 위치 보정
     		NewPos = FPC_GameUtil::FindSurfacePos(OwnerCharacter.Get(), NewPos);
-
-    		// 회전: 시전자 쪽을 바라보게
     		FVector DirToCauser = (CauserPos - CurrentPos);
     		DirToCauser.Z = 0.f;
     		if (!DirToCauser.IsNearlyZero())
@@ -81,8 +74,7 @@ void UPC_CrowdControlComponent::ProcessCC(float DeltaTime)
     			DirToCauser.Normalize();
     			OwnerCharacter->SetActorRotation(DirToCauser.Rotation());
     		}
-
-    		// 실제 이동
+    		
     		OwnerCharacter->SetActorLocation(NewPos, true); // bSweep=true 로 충돌 체크
     	}
     }

@@ -789,6 +789,9 @@ bool FPC_GameUtil::IsDebugDrawing(UObject* WorldContextObject)
 	APCGameMode* GameMode = Cast<APCGameMode>(World->GetAuthGameMode());
 	check(GameMode);
 
+	if(!GameMode)
+		return false;
+
 	return GameMode->DebugDrawing;
 }
 

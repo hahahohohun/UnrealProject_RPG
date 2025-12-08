@@ -161,6 +161,7 @@ enum class EPC_ExecType : uint8
 	ArcProjectile,
 	MultiAngleAttack,
 	ChaseTarget,
+	ReturnChainExec,
 	Num,
 };
 
