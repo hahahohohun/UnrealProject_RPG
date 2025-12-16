@@ -9,7 +9,7 @@
 https://www.youtube.com/watch?v=ubiRG0wtUXU
 
 ---
-## 📘 목차
+## 목차
 - [기본 기능](#기본-기능)
 - [대형 보스 시스템](#대형-보스-시스템)
 - [전투 & enemy-ai](#전투--enemy-ai)
@@ -115,8 +115,7 @@ https://www.youtube.com/watch?v=ubiRG0wtUXU
 | **루트모션 기반 공격 (거리 맞춰 선택)**     | <img src="gifs/rm_attack.gif" width="500"/> |
 
 ---
-
-## 🧩 기술 스택
+## 기술 스택
 - **Engine**: Unreal Engine 5.5
 - **Language**: C++20 / Blueprint
 - **Animation**: Control Rig, Montage, Notify
@@ -126,13 +125,13 @@ https://www.youtube.com/watch?v=ubiRG0wtUXU
 - **툴링**: Rider / Visual Studio / Git LFS
 
 ---
-## 📂 소스 코드 구조
+## 소스 코드 구조
 
 <details>
 <summary>펼쳐보기 / 접기</summary>
 
 ```plaintext
-## 📂 소스 코드 구조
+## 소스 코드 구조
 
 <details>
 <summary>펼쳐보기 / 접기</summary>
