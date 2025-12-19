@@ -6,7 +6,8 @@
 언리얼 기반 핵심 Gameplay 시스템을 직접 설계·구현했습니다.
 
 //>  **플레이 영상**:
-https://www.youtube.com/watch?v=ubiRG0wtUXU
+https://www.youtube.com/watch?v=PY9_UBey97g
+하이라이트 : https://www.youtube.com/watch?v=ubiRG0wtUXU
 
 ---
 ## 목차
